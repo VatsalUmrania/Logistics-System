@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { authService } from '../services/api';
+// import { authService } from '../services/api';
 import logo from '../assets/logo_lms-removebg-preview.jpg';
 
 const LoginPage = () => {
