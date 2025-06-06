@@ -13,5 +13,25 @@ const getAllBanks = async () => {
   return rows;
 };
 
+const updateBank = async (id, bankData) => {
+  const [result] = await db.query(
+    `UPDATE banks SET ? WHERE id = ?`,
+    [bankData, id]
+  );
+  return result.affectedRows;
+};
 
-module.exports = { createBank, getAllBanks };
+const deleteBank = async (id) => {
+  const [result] = await db.query(
+    `DELETE FROM banks WHERE id = ?`,
+    [id]
+  );
+  return result.affectedRows;
+};
+
+module.exports = {
+  createBank,
+  getAllBanks,
+  updateBank,
+  deleteBank,
+};
