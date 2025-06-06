@@ -1,5 +1,5 @@
 const db = require('../config/db');
-
+const bcrypt = require('bcryptjs');
 
 // Generic create function
 const createRecord = async (table, data) => {
@@ -12,17 +12,23 @@ const getAllRecords = async (table) => {
   const [rows] = await db.query(`SELECT * FROM ${table}`);
   return rows;
 };
-const bcrypt = require('bcryptjs');
 
-// Update createUser method
+// Generic update function
+const updateRecord = async (table, id, data) => {
+  const [result] = await db.query(`UPDATE ${table} SET ? WHERE id = ?`, [data, id]);
+  return result.affectedRows;
+};
+
+// Generic delete function
+const deleteRecord = async (table, id) => {
+  const [result] = await db.query(`DELETE FROM ${table} WHERE id = ?`, [id]);
+  return result.affectedRows;
+};
+
+// User functions (with password hash)
 const createUser = async (userData) => {
-  // Hash password
   const hashedPassword = await bcrypt.hash(userData.password, 12);
-  const newUser = {
-    ...userData,
-    password: hashedPassword
-  };
-  
+  const newUser = { ...userData, password: hashedPassword };
   const [result] = await db.query('INSERT INTO users SET ?', newUser);
   return result.insertId;
 };
@@ -37,38 +43,41 @@ const getUserById = async (id) => {
   return rows;
 };
 
-
 module.exports = {
-
   getUserByEmail,
   getUserById,
+
   // Banks
   createBank: (data) => createRecord('banks', data),
   getBanks: () => getAllRecords('banks'),
-  
+  updateBank: (id, data) => updateRecord('banks', id, data),
+  deleteBank: (id) => deleteRecord('banks', id),
+
   // Clients
   createClient: (data) => createRecord('clients', data),
   getClients: () => getAllRecords('clients'),
-  
+
   // Commodities
   createCommodity: (data) => createRecord('commodities', data),
   getCommodity: () => getAllRecords('commodities'), 
-  
+
   // Categories
   createCategory: (data) => createRecord('categories', data),
   getCategory: () => getAllRecords('categories'),
-  
+
   // Vessels
   createVessel: (data) => createRecord('vessels', data),
   getVessel: () => getAllRecords('vessels'),
-  
+
   // Containers
-  createContainer: (data) => createRecord('containers', data),
+  createContainer: (data) => getAllRecords('containers'),
   getContainer: (data) => getAllRecords('containers'),
+
   // Ports
   createPort: (data) => createRecord('ports', data),
   getPort: (data) => getAllRecords('ports'),
+
   // Users
   createUser: (data) => createRecord('users', data),
-  getUser: (data) => getAllRecords('users')
+  getUser: (data) => getAllRecords('users'),
 };
