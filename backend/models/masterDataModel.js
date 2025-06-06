@@ -12,8 +12,36 @@ const getAllRecords = async (table) => {
   const [rows] = await db.query(`SELECT * FROM ${table}`);
   return rows;
 };
+const bcrypt = require('bcryptjs');
+
+// Update createUser method
+const createUser = async (userData) => {
+  // Hash password
+  const hashedPassword = await bcrypt.hash(userData.password, 12);
+  const newUser = {
+    ...userData,
+    password: hashedPassword
+  };
+  
+  const [result] = await db.query('INSERT INTO users SET ?', newUser);
+  return result.insertId;
+};
+
+const getUserByEmail = async (email) => {
+  const [rows] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
+  return rows;
+};
+
+const getUserById = async (id) => {
+  const [rows] = await db.query('SELECT * FROM users WHERE id = ?', [id]);
+  return rows;
+};
+
 
 module.exports = {
+
+  getUserByEmail,
+  getUserById,
   // Banks
   createBank: (data) => createRecord('banks', data),
   getBanks: () => getAllRecords('banks'),
