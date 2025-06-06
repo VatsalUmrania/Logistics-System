@@ -11,7 +11,8 @@ router.delete('/banks/:id', controller.deleteBank);      // Delete bank by id
 // Client routes
 router.post('/clients', controller.createClient);
 router.get('/clients', controller.getClients);
-
+router.put('/clients/:client_id', controller.updateClient);         
+router.delete('/clients/:client_id', controller.updateClient);
 // Commodity routes
 router.post('/commodities', controller.createCommodity);
 router.get('/commodities', controller.getCommodity);

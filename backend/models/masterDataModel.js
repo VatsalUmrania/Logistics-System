@@ -56,7 +56,8 @@ module.exports = {
   // Clients
   createClient: (data) => createRecord('clients', data),
   getClients: () => getAllRecords('clients'),
-
+  updateClient: (client_id, data) => updateRecord('clients', client_id, data),
+  deleteClient: (client_id) => deleteRecord('clients', client_id),
   // Commodities
   createCommodity: (data) => createRecord('commodities', data),
   getCommodity: () => getAllRecords('commodities'), 

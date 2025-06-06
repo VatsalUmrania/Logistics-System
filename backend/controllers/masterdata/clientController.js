@@ -20,7 +20,7 @@ exports.getClient = async (req, res) => {
 
 exports.updateClient = async (req, res) => {
   try {
-    const updated = await clientModel.updateClients(req.params.id, req.body);
+    const updated = await clientModel.updateClients(req.params.client_id, req.body);
     if (updated === 0) {
       return res.status(404).json({ error: 'Client not found' });
     }
@@ -33,7 +33,7 @@ exports.updateClient = async (req, res) => {
 // NEW
 exports.deleteClient = async (req, res) => {
   try {
-    const deleted = await clientModel.deleteClients(req.params.id);
+    const deleted = await clientModel.deleteClients(req.params.client_id);
     if (deleted === 0) {
       return res.status(404).json({ error: 'Client not found' });
     }

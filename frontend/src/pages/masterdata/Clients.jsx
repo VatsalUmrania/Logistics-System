@@ -1,33 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { User, Briefcase, Phone, Mail, MapPin, Globe, Edit, Trash2, ChevronDown, Search, Plus, X } from 'lucide-react';
 
+const API_URL = 'http://localhost:5000/api/clients';
 const ClientManagementPage = () => {
-  const [clients, setClients] = useState([
-    {
-      id: 1,
-      clientId: '2361',
-      name: 'ROCKY MOUNTAIN TECH GENERAL TRADING L.L.C (UAE)',
-      industryType: 'Technology',
-      phone1: '+971 4 123 4567',
-      phone2: '+971 4 123 4568',
-      phone3: '+971 4 123 4569',
-      creditLimit: '50,000 AED',
-      valNo: '31118288900003',
-      commercialRegNo: '2060081404',
-      cp1: 'John Smith',
-      notes: 'Premium client with fast payment',
-      shipper: 'Cneo Shipping',
-      arName: 'روكي ماونتن للتجارة العامة',
-      cp1Position: 'Operations Manager',
-      agentName: 'Ali Hassan',
-      address: 'Business Bay, Dubai, UAE',
-      country: 'United Arab Emirates',
-      cp1Email: 'john.smith@rockymountain.ae',
-      agentEnName: 'Ali Hassan',
-      city: 'Dubai',
-      agentArName: 'علي حسن'
-    }
-  ]);
+  const [clients, setClients] = useState([]);
   
   const [newClient, setNewClient] = useState({
     clientId: '',
@@ -64,60 +40,147 @@ const ClientManagementPage = () => {
     'Qatar', 'Kuwait', 'Bahrain', 'Egypt', 'Jordan'
   ];
 
-  const handleAddClient = () => {
-    if (!newClient.clientId || !newClient.name) return;
-    
-    if (editingId !== null) {
-      // Update existing client
-      setClients(clients.map(c => 
-        c.id === editingId ? { ...c, ...newClient } : c
-      ));
-      setEditingId(null);
-    } else {
-      // Add new client
-      const newClientWithId = {
-        ...newClient,
-        id: clients.length + 1,
-      };
-      setClients([...clients, newClientWithId]);
+  // Convert API snake_case object to camelCase
+  const toCamelCaseClient = (obj) => ({
+    clientId: obj.client_id,
+    name: obj.name,
+    industryType: obj.industry_type,
+    phone1: obj.phone1,
+    phone2: obj.phone2,
+    phone3: obj.phone3,
+    creditLimit: obj.credit_limit,
+    valNo: obj.val_no,
+    commercialRegNo: obj.commercial_reg_no,
+    cp1: obj.cp1,
+    notes: obj.notes,
+    shipper: obj.shipper,
+    arName: obj.ar_name,
+    cp1Position: obj.cp1_position,
+    agentName: obj.agent_name,
+    address: obj.address,
+    country: obj.country,
+    cp1Email: obj.cp1_email,
+    agentEnName: obj.agent_en_name,
+    city: obj.city,
+    agentArName: obj.agent_ar_name
+  });
+  // Convert camelCase to snake_case for API
+  const formatToSnakeCaseClient = (client) => ({
+    client_id: client.clientId,
+    name: client.name,
+    industry_type: client.industryType,
+    phone1: client.phone1,
+    phone2: client.phone2,
+    phone3: client.phone3,
+    credit_limit: client.creditLimit,
+    val_no: client.valNo,
+    commercial_reg_no: client.commercialRegNo,
+    cp1: client.cp1,
+    notes: client.notes,
+    shipper: client.shipper,
+    ar_name: client.arName,
+    cp1_position: client.cp1Position,
+    agent_name: client.agentName,
+    address: client.address,
+    country: client.country,
+    cp1_email: client.cp1Email,
+    agent_en_name: client.agentEnName,
+    city: client.city,
+    agent_ar_name: client.agentArName
+  });
+  
+  const fetchClients = async () => {
+    try {
+      const res = await fetch(API_URL);
+      const data = await res.json();
+      setClients(data.map(toCamelCaseClient));
+    } catch (err) {
+      console.error('Failed to fetch clients:', err);
     }
-    
-    setNewClient({
-      clientId: '',
-      name: '',
-      industryType: '',
-      phone1: '',
-      phone2: '',
-      phone3: '',
-      creditLimit: '',
-      valNo: '',
-      commercialRegNo: '',
-      cp1: '',
-      notes: '',
-      shipper: '',
-      arName: '',
-      cp1Position: '',
-      agentName: '',
-      address: '',
-      country: '',
-      cp1Email: '',
-      agentEnName: '',
-      city: '',
-      agentArName: ''
-    });
-    
-    setIsAdding(false);
   };
+  
+  useEffect(() => {
+    fetchClients();
+  }, []);
+
+  const handleAddClient = async () => {
+    if (!newClient.clientId || !newClient.name) return;
+  
+    try {
+      const payload = formatToSnakeCaseClient(newClient);
+      
+      if (editingId !== null) {
+        // Use primary key (id) for updates
+        await fetch(`${API_URL}/${editingId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      } else {
+        // Include client_id only for new creations
+        await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...payload, client_id: newClient.clientId })
+        });
+      }
+      
+      // Refresh list and reset form
+      fetchClients();
+      setIsAdding(false);
+      setNewClient({ /* reset fields */ });
+      setEditingId(null);
+      
+    } catch (err) {
+      console.error('Error saving client:', err);
+    }
+  };
+  // const handleEdit = (client) => {
+  //   setNewClient({ ...client });
+  //   setEditingId(client.id);
+  //   setIsAdding(true);
+  // };
 
   const handleEdit = (client) => {
-    setNewClient({ ...client });
-    setEditingId(client.id);
+    setNewClient({
+      clientId: client.clientId,
+      name: client.name,
+      industryType: client.industryType,
+      phone1: client.phone1,
+      phone2: client.phone2,
+      phone3: client.phone3,
+      creditLimit: client.creditLimit,
+      valNo: client.valNo,
+      commercialRegNo: client.commercialRegNo,
+      cp1: client.cp1,
+      notes: client.notes,
+      shipper: client.shipper,
+      arName: client.arName,
+      cp1Position: client.cp1Position,
+      agentName: client.agentName,
+      address: client.address,
+      country: client.country,
+      cp1Email: client.cp1Email,
+      agentEnName: client.agentEnName,
+      city: client.city,
+      agentArName: client.agentArName
+    });
+    setEditingId(client.clientId); // Use clientId, not id
     setIsAdding(true);
   };
-
-  const handleDelete = (id) => {
-    setClients(clients.filter(c => c.id !== id));
+  
+  
+  const handleDelete = async (id) => {
+    try {
+      // Use primary key (id) for deletion
+      await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+      fetchClients();
+    } catch (err) {
+      console.error('Failed to delete client:', err);
+    }
   };
+  
+  
 
   const filteredClients = clients.filter(client => 
     client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -167,7 +230,7 @@ const ClientManagementPage = () => {
               `}
               >
               {isAdding ? <X className="w-5 h-5 mr-2" /> : <Plus className="w-5 h-5 mr-2" />}
-              {isAdding ? 'Close' : 'Add Bank'}
+              {isAdding ? 'Close' : 'Add Client'}
           </button>
           </div>
         </div>
@@ -568,9 +631,9 @@ const ClientManagementPage = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {currentClients.length > 0 ? (
-                  currentClients.map((client, index) => (
-                    <tr key={client.id} className="hover:bg-gray-50">
+              {currentClients.length > 0 ? (
+                      currentClients.map((client, index) => (
+                        <tr key={client.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">
                           {(currentPage - 1) * itemsPerPage + index + 1}
@@ -612,19 +675,20 @@ const ClientManagementPage = () => {
                         <div className="text-sm text-gray-900">{client.industryType}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button 
-                          onClick={() => handleEdit(client)}
-                          className="text-indigo-600 hover:text-indigo-900 mr-4"
-                        >
-                          <Edit className="w-5 h-5" />
-                        </button>
-                        <button 
-                          onClick={() => handleDelete(client.id)}
-                          className="text-red-600 hover:text-red-900"
-                        >
-                          <Trash2 className="w-5 h-5" />
-                        </button>
-                      </td>
+            <button 
+              onClick={() => handleEdit(client)}
+              className="text-indigo-600 hover:text-indigo-900 mr-4"
+            >
+              <Edit className="w-5 h-5" />
+            </button>
+            <button 
+              // Pass primary key (id) to delete handler
+              onClick={() => handleDelete(client.id)}
+              className="text-red-600 hover:text-red-900"
+            >
+              <Trash2 className="w-5 h-5" />
+            </button>
+          </td>
                     </tr>
                   ))
                 ) : (

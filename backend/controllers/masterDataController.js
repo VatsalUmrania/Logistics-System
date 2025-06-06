@@ -1,5 +1,6 @@
 const model = require('../models/masterDataModel');
 
+
 // Generic create controller
 const createHandler = (modelMethod) => async (req, res) => {
   try {
@@ -52,7 +53,8 @@ module.exports = {
   // Clients
   createClient: createHandler(model.createClient),
   getClients: getAllHandler(model.getClients),
-
+  updateClient: updateHandler(model.updateClient),
+  deleteClient: deleteHandler(model.deleteClient),
   // Commodities
   createCommodity: createHandler(model.createCommodity),
   getCommodity: getAllHandler(model.getCommodity),

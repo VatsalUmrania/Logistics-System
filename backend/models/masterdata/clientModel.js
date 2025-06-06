@@ -11,19 +11,41 @@ const getClients = async () => {
   return rows;
 };
 
-const updateClients = async (id, clientsData) => {
+// const updateClients = async (id, clientsData) => {
+//   const [result] = await db.query(
+//     `UPDATE clients SET ? WHERE client_id = ?`,
+//     [clientsData, id]
+//   );
+//   return result.affectedRows;
+// };
+
+const updateClients = async (clientId, clientsData) => {
+  // Clean undefined values if needed
+  const cleanData = {};
+  for (const key in clientsData) {
+    if (clientsData[key] !== undefined) {
+      cleanData[key] = clientsData[key];
+    }
+  }
   const [result] = await db.query(
-    `UPDATE clients SET ? WHERE id = ?`,
-    [clientsData, id]
+    `UPDATE clients SET ? WHERE client_id = ?`,
+    [cleanData, clientId]
   );
   return result.affectedRows;
 };
 
-const deleteClients = async (id) => {
+const deleteClients = async (clientId) => {
   const [result] = await db.query(
-    `DELETE FROM clients WHERE id = ?`,
-    [id]
+    `DELETE FROM clients WHERE client_id = ?`,
+    [clientId]
   );
   return result.affectedRows;
 };
-module.exports = { createClient, getClients, updateClients, deleteClients };
+
+const getClientById = async (clientId) => {
+  const [rows] = await db.query(
+    `SELECT * FROM clients WHERE client_id = ?`,
+    [clientId]
+  );
+  return rows[0];
+};
