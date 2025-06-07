@@ -49,3 +49,14 @@ const getClientById = async (clientId) => {
   );
   return rows[0];
 };
+
+const updateClientByClientId = async (client_id, data) => {
+  const [result] = await db.query(`UPDATE clients SET ? WHERE client_id = ?`, [data, client_id]);
+  return result.affectedRows;
+};
+
+const deleteClientByClientId = async (client_id) => {
+  const [result] = await db.query(`DELETE FROM clients WHERE client_id = ?`, [client_id]);
+  return result.affectedRows;
+};
+

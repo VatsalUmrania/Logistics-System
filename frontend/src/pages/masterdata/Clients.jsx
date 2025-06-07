@@ -1,34 +1,18 @@
 import { useState, useEffect } from 'react';
-import { User, Briefcase, Phone, Mail, MapPin, Globe, Edit, Trash2, ChevronDown, Search, Plus, X } from 'lucide-react';
+import {
+  User, Briefcase, Phone, Mail, MapPin, Globe, Edit, Trash2, ChevronDown,
+  Search, Plus, X, ChevronLeft, ChevronRight
+} from 'lucide-react';
 
 const API_URL = 'http://localhost:5000/api/clients';
+
 const ClientManagementPage = () => {
   const [clients, setClients] = useState([]);
-  
   const [newClient, setNewClient] = useState({
-    clientId: '',
-    name: '',
-    industryType: '',
-    phone1: '',
-    phone2: '',
-    phone3: '',
-    creditLimit: '',
-    valNo: '',
-    commercialRegNo: '',
-    cp1: '',
-    notes: '',
-    shipper: '',
-    arName: '',
-    cp1Position: '',
-    agentName: '',
-    address: '',
-    country: '',
-    cp1Email: '',
-    agentEnName: '',
-    city: '',
-    agentArName: ''
+    clientId: '', name: '', industryType: '', phone1: '', phone2: '', phone3: '', creditLimit: '',
+    valNo: '', commercialRegNo: '', cp1: '', notes: '', shipper: '', arName: '', cp1Position: '',
+    agentName: '', address: '', country: '', cp1Email: '', agentEnName: '', city: '', agentArName: ''
   });
-  
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -64,6 +48,7 @@ const ClientManagementPage = () => {
     city: obj.city,
     agentArName: obj.agent_ar_name
   });
+
   // Convert camelCase to snake_case for API
   const formatToSnakeCaseClient = (client) => ({
     client_id: client.clientId,
@@ -88,7 +73,7 @@ const ClientManagementPage = () => {
     city: client.city,
     agent_ar_name: client.agentArName
   });
-  
+
   const fetchClients = async () => {
     try {
       const res = await fetch(API_URL);
@@ -98,7 +83,7 @@ const ClientManagementPage = () => {
       console.error('Failed to fetch clients:', err);
     }
   };
-  
+
   useEffect(() => {
     fetchClients();
   }, []);
@@ -107,39 +92,72 @@ const ClientManagementPage = () => {
     if (!newClient.clientId || !newClient.name) return;
   
     try {
+      // Log the input data to check if all fields are present
+      console.log('Client Data (before conversion):', newClient);
+  
       const payload = formatToSnakeCaseClient(newClient);
-      
+  
+      // Log the formatted payload to ensure correct transformation
+      console.log('Formatted Payload (snake_case):', payload);
+  
+      // Ensure credit_limit is a number
+      payload.credit_limit = parseFloat(payload.credit_limit);
+  
+      // Convert empty strings to null for optional fields
+      Object.keys(payload).forEach(key => {
+        if (payload[key] === "") {
+          payload[key] = null;
+        }
+      });
+  
+      // Log the cleaned payload
+      console.log('Cleaned Payload:', payload);
+  
       if (editingId !== null) {
-        // Use primary key (id) for updates
+        const { client_id, ...updatePayload } = payload; // Remove client_id for PUT request
         await fetch(`${API_URL}/${editingId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+          body: JSON.stringify(updatePayload),
         });
       } else {
-        // Include client_id only for new creations
         await fetch(API_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...payload, client_id: newClient.clientId })
+          body: JSON.stringify(payload),
         });
       }
-      
-      // Refresh list and reset form
+  
       fetchClients();
       setIsAdding(false);
-      setNewClient({ /* reset fields */ });
+      setNewClient({
+        clientId: '', name: '', industryType: '', phone1: '', phone2: '', phone3: '', creditLimit: '',
+        valNo: '', commercialRegNo: '', cp1: '', notes: '', shipper: '', arName: '', cp1Position: '',
+        agentName: '', address: '', country: '', cp1Email: '', agentEnName: '', city: '', agentArName: ''
+      });
       setEditingId(null);
-      
     } catch (err) {
       console.error('Error saving client:', err);
     }
   };
-  // const handleEdit = (client) => {
-  //   setNewClient({ ...client });
-  //   setEditingId(client.id);
-  //   setIsAdding(true);
-  // };
+  
+  
+  const payload = formatToSnakeCaseClient(newClient);
+console.log('Formatted Payload:', payload); // Check this in the console
+
+
+
+  const handleDelete = async (clientId) => {
+    try {
+      await fetch(`${API_URL}/${clientId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      fetchClients();
+    } catch (err) {
+      console.error('Failed to delete client:', err);
+    }
+  };
 
   const handleEdit = (client) => {
     setNewClient({
@@ -165,35 +183,25 @@ const ClientManagementPage = () => {
       city: client.city,
       agentArName: client.agentArName
     });
-    setEditingId(client.clientId); // Use clientId, not id
+    setEditingId(client.clientId); // Use clientId for editing
     setIsAdding(true);
   };
-  
-  
-  const handleDelete = async (id) => {
-    try {
-      // Use primary key (id) for deletion
-      await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-      fetchClients();
-    } catch (err) {
-      console.error('Failed to delete client:', err);
-    }
-  };
-  
-  
 
-  const filteredClients = clients.filter(client => 
+  // Filter and search functionality
+  const filteredClients = clients.filter(client =>
     client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     client.clientId.toLowerCase().includes(searchTerm.toLowerCase()) ||
     client.city.toLowerCase().includes(searchTerm.toLowerCase()) ||
     client.country.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Pagination
+  // Pagination logic
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentClients = filteredClients.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(filteredClients.length / itemsPerPage);
+
+  
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-8">
@@ -633,7 +641,7 @@ const ClientManagementPage = () => {
               <tbody className="divide-y divide-gray-200">
               {currentClients.length > 0 ? (
                       currentClients.map((client, index) => (
-                        <tr key={client.id} className="hover:bg-gray-50">
+                        <tr key={client.clientId} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">
                           {(currentPage - 1) * itemsPerPage + index + 1}
@@ -683,7 +691,8 @@ const ClientManagementPage = () => {
             </button>
             <button 
               // Pass primary key (id) to delete handler
-              onClick={() => handleDelete(client.id)}
+              onClick={() => handleDelete(client.clientId)}
+
               className="text-red-600 hover:text-red-900"
             >
               <Trash2 className="w-5 h-5" />

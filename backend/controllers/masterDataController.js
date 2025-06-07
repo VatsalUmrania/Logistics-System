@@ -43,6 +43,28 @@ const deleteHandler = (modelMethod) => async (req, res) => {
   }
 };
 
+const updateHandlerByClientId = (modelMethod) => async (req, res) => {
+  try {
+    const client_id = req.params.client_id;
+    const updated = await modelMethod(client_id, req.body);
+    if (!updated) return res.status(404).json({ error: 'Client not found' });
+    res.json({ message: 'Client updated successfully', client_id });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+const deleteHandlerByClientId = (modelMethod) => async (req, res) => {
+  try {
+    const client_id = req.params.client_id;
+    const deleted = await modelMethod(client_id);
+    if (!deleted) return res.status(404).json({ error: 'Client not found' });
+    res.json({ message: 'Client deleted successfully', client_id });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 module.exports = {
   // Banks
   createBank: createHandler(model.createBank),
@@ -53,8 +75,8 @@ module.exports = {
   // Clients
   createClient: createHandler(model.createClient),
   getClients: getAllHandler(model.getClients),
-  updateClient: updateHandler(model.updateClient),
-  deleteClient: deleteHandler(model.deleteClient),
+  updateClient: updateHandlerByClientId(model.updateClientByClientId),
+  deleteClient: deleteHandlerByClientId(model.deleteClientByClientId),
   // Commodities
   createCommodity: createHandler(model.createCommodity),
   getCommodity: getAllHandler(model.getCommodity),
@@ -62,7 +84,8 @@ module.exports = {
   // Categories
   createCategory: createHandler(model.createCategory),
   getCategory: getAllHandler(model.getCategory),
-
+  updateCategory: updateHandler(model.updateCategory),
+  deleteCategory: deleteHandler(model.deleteCategory),
   // Vessels
   createVessel: createHandler(model.createVessel),
   getVessel: getAllHandler(model.getVessel),

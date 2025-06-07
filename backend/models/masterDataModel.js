@@ -43,6 +43,16 @@ const getUserById = async (id) => {
   return rows;
 };
 
+const updateClientByClientId = async (client_id, data) => {
+  const [result] = await db.query(`UPDATE clients SET ? WHERE client_id = ?`, [data, client_id]);
+  return result.affectedRows;
+};
+
+const deleteClientByClientId = async (client_id) => {
+  const [result] = await db.query(`DELETE FROM clients WHERE client_id = ?`, [client_id]);
+  return result.affectedRows;
+};
+
 module.exports = {
   getUserByEmail,
   getUserById,
@@ -56,8 +66,8 @@ module.exports = {
   // Clients
   createClient: (data) => createRecord('clients', data),
   getClients: () => getAllRecords('clients'),
-  updateClient: (client_id, data) => updateRecord('clients', client_id, data),
-  deleteClient: (client_id) => deleteRecord('clients', client_id),
+  updateClientByClientId,
+  deleteClientByClientId,
   // Commodities
   createCommodity: (data) => createRecord('commodities', data),
   getCommodity: () => getAllRecords('commodities'), 
@@ -65,6 +75,8 @@ module.exports = {
   // Categories
   createCategory: (data) => createRecord('categories', data),
   getCategory: () => getAllRecords('categories'),
+  updateCategory:(id, data) => updateRecord('categories', id, data),
+  deleteCategory: (id) => deleteRecord('categories', id),
 
   // Vessels
   createVessel: (data) => createRecord('vessels', data),
