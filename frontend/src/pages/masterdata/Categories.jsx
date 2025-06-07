@@ -402,11 +402,20 @@ const CategoryInformationPage = () => {
     try {
       const res = await fetch(API_URL);
       const data = await res.json();
-      setCategories(data.map(toCamelCase));
+      
+      // Convert the data to camel case using the 'toCamelCase' function
+      const categories = data.map(toCamelCase);
+      
+      // Log the fetched data for debugging
+      console.log('Fetched Categories:', data[0].sino);
+      
+      // Set the categories in the state
+      setCategories(categories);
     } catch (err) {
       console.error('Failed to fetch categories:', err);
     }
   };
+  
 
   useEffect(() => {
     fetchCategories();
@@ -642,7 +651,7 @@ const CategoryInformationPage = () => {
                   {filteredCategories.length > 0 ? (
                     filteredCategories.map((category, index) => (
                       <tr key={category.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">{index + 1}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">{category[index]}</td>
                         <td className="px-6 py-4 text-indigo-600">{category.code}</td>
                         <td className="px-6 py-4">{category.name}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-center">

@@ -32,7 +32,8 @@ router.get('/vessels', controller.getVessel);
 // Container routes
 router.post('/containers', controller.createContainer);
 router.get('/containers', controller.getContainer);
-
+router.put('/containers/:id', controller.updateContainer);
+router.delete('/containers/:id', controller.deleteContainer);
 // Port routes
 router.post('/ports', controller.createPol);
 router.get('/ports', controller.getPol);

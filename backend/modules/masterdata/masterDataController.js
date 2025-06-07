@@ -36,8 +36,10 @@ module.exports = {
   getVessel: getAllHandler(model.getVessel),
 
   // Containers
-  createContainer: (data) => createHandler('containers', data),
-  getContainer: () => getAllHandler('containers'),
+  createContainer: createHandler(model.createContainer),
+  getContainer: getAllHandler(model.getContainer),
+  updateContainer: updateHandler(model.updateContainer),
+  deleteContainer: deleteHandler(model.deleteContainer),
 
   // Ports
   createPol: createHandler(model.createPol),    

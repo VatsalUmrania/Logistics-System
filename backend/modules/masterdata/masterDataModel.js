@@ -91,9 +91,10 @@ module.exports = {
   getVessel: () => getAllRecords('vessels'),
 
   // Containers
-  createContainer: (data) => getAllRecords('containers'),
-  getContainer: (data) => getAllRecords('containers'),
-
+  createContainer: (data) => createRecord('containers', data),
+  getContainer: () => getAllRecords('containers'),
+  updateContainer: (id, data) => updateRecord('containers', id, data),
+  deleteContainer: (id) => deleteRecord('containers', id),
   // Ports
   createPol: (data) => createRecord('ports', data),
   getPol: () => getAllRecords('ports'),
