@@ -1,4 +1,4 @@
-const db = require('../../config/db');
+const db = require('../../../config/db');
 
 const createBank = async (bankData) => {
   const [result] = await db.query(

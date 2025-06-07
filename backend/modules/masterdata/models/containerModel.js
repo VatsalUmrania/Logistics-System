@@ -1,4 +1,4 @@
-const db = require('../../config/db');
+const db = require('../../../config/db');
 
 const createContainer = async (containerData) => {
   const [result] = await db.query(

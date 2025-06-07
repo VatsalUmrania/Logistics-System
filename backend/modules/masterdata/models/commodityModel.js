@@ -1,4 +1,4 @@
-const db = require('../../config/db');
+const db = require('../../../config/db');
 
 const createCommodity = async (name, categoryId) => {
   const [result] = await db.query(

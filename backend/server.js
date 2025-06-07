@@ -12,7 +12,7 @@ app.use(cors({
 app.use(express.json());
 
 // Combined routes
-app.use('/api', require('./routes/masterDataRoutes'));
+app.use('/api', require('./modules/masterdata/masterDataRoutes'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {

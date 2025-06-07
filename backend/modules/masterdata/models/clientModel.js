@@ -1,5 +1,5 @@
 // clientModel.js
-const db = require('../../config/db');
+const db = require('../../../config/db');
 
 const createClient = async (clientData) => {
   const [result] = await db.query(`INSERT INTO clients SET ?`, clientData);

@@ -1,4 +1,4 @@
-const db = require('../../config/db');
+const db = require('../../../config/db');
 
 const createPort = async (portData) => {
   const [result] = await db.query(

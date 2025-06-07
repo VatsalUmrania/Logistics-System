@@ -1,5 +1,4 @@
-const model = require('../models/masterDataModel');
-
+const model = require('./masterDataModel');
 
 // Generic create controller
 const createHandler = (modelMethod) => async (req, res) => {

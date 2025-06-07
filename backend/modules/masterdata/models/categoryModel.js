@@ -1,4 +1,4 @@
-const db = require('../../config/db');
+const db = require('../../../config/db');
 
 // Create a new category
 const createCategory = async (code, name) => {

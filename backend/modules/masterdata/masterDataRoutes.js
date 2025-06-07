@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const controller = require('../controllers/masterDataController');
+const controller = require('./masterDataController');
 
 // Bank routes
 router.post('/banks', controller.createBank);            // Create a new bank

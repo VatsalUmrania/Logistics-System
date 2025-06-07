@@ -41,7 +41,7 @@ exports.getCategoryById = async (req, res) => {
 // Update a category
 // In your category controller (e.g., `categoryController.js`)
 exports.updateCategoryStatus = async (req, res) => {
-  const { id } = req.params;
+  const { sino } = req.params;
   const { status } = req.body;
 
   if (!['Active', 'Inactive'].includes(status)) {
@@ -49,7 +49,7 @@ exports.updateCategoryStatus = async (req, res) => {
   }
 
   try {
-    const result = await categoryModel.updateStatus(id, status);
+    const result = await categoryModel.updateStatus(sino, status);
     if (result.affectedRows > 0) {
       res.json({ message: 'Status updated successfully' });
     } else {
