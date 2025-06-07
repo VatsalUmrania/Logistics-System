@@ -28,20 +28,22 @@ module.exports = {
   // Categories
   createCategory: createHandler(model.createCategory),
   getCategory: getAllHandler(model.getCategory),
-  updateCategory: updateHandler(model.updateCategory),
-  deleteCategory: deleteHandler(model.deleteCategory),
+  updateCategory: updateHandlerByField(model.updateCategory, 'sino'),
+  deleteCategory: deleteHandlerByField(model.deleteCategory, 'sino'),
+
   // Vessels
   createVessel: createHandler(model.createVessel),
   getVessel: getAllHandler(model.getVessel),
 
   // Containers
-  createContainer: createHandler(model.createContainer),
-  getContainer: getAllHandler(model.getContainer),
+  createContainer: (data) => createHandler('containers', data),
+  getContainer: () => getAllHandler('containers'),
 
   // Ports
-  createPort: createHandler(model.createPort),
-  getPort: getAllHandler(model.getPort),
-
+  createPol: createHandler(model.createPol),    
+  getPol: getAllHandler(model.getPol),        
+  updatePol: updateHandler(model.updatePol),    
+  deletePol: deleteHandler(model.deletePol),    
   // Users
   createUser: createHandler(model.createUser),
   getUser: getAllHandler(model.getUser),

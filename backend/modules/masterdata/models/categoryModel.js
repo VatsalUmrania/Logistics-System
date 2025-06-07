@@ -9,31 +9,29 @@ const createCategory = async (code, name) => {
   return result.insertId;
 };
 
-// Get all categories
-// In your category model (e.g., `categoryModel.js`)
 const getCategory = async () => {
   const [rows] = await db.query(`SELECT * FROM categories`);
   return rows;
 };
 
+const getCategoryById = async (sino) => {
+  const [rows] = await db.query(`SELECT * FROM categories WHERE sino = ?`, [sino]);
+  return rows[0]; // Return only the first record or undefined
+};
 
-
-
-
-// Update an existing category
-const updateCategory = async (id, code, name) => {
+const updateCategory = async (sino, code, name) => {
   const [result] = await db.query(
-    `UPDATE categories SET code = ?, name = ? WHERE id = ?`,
-    [code, name, id]
+    `UPDATE categories SET code = ?, name = ? WHERE sino = ?`,
+    [code, name, sino]
   );
   return result.affectedRows; // Returns the number of rows affected (1 if updated)
 };
 
 // Delete a category by ID
-const deleteCategory = async (id) => {
+const deleteCategory = async (sino) => {
   const [result] = await db.query(
-    `DELETE FROM categories WHERE id = ?`,
-    [id]
+    `DELETE FROM categories WHERE sino = ?`,
+    [sino]
   );
   return result.affectedRows; // Returns the number of rows deleted (1 if deleted)
 };

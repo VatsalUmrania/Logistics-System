@@ -21,8 +21,9 @@ router.get('/commodities', controller.getCommodity);
 // Category routes
 router.post('/categories', controller.createCategory);
 router.get('/categories', controller.getCategory);
-router.put('/categories/:id', controller.updateCategory);    
-router.delete('/categories/:id', controller.deleteCategory);
+router.put('/:sino', controller.updateCategory);
+router.delete('/:sino', controller.deleteCategory);
+
 
 // Vessel routes
 router.post('/vessels', controller.createVessel);
@@ -33,8 +34,11 @@ router.post('/containers', controller.createContainer);
 router.get('/containers', controller.getContainer);
 
 // Port routes
-router.post('/ports', controller.createPort);
-router.get('/ports', controller.getPort);
+router.post('/ports', controller.createPol);
+router.get('/ports', controller.getPol);
+router.put('/ports/:id', controller.updatePol);
+router.delete('/ports/:id', controller.deletePol);
+
 
 // User routes
 router.post('/users', controller.createUser);

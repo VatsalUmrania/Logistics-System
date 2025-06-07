@@ -1,18 +1,15 @@
 const categoryModel = require('../models/categoryModel');
 
-// Create a new category
 exports.createCategory = async (req, res) => {
   try {
     const { code, name } = req.body;
     const cat_id = await categoryModel.createCategory(code, name);
-    res.status(201).json({ id: cat_id, code, name });
+    res.status(201).json({ sino: cat_id, code, name });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-// Get all categories
-// In your category controller (e.g., `categoryController.js`)
 exports.getCategory = async (req, res) => {
   try {
     const categories = await categoryModel.getCategory();  // Fetch categories from DB
@@ -22,13 +19,9 @@ exports.getCategory = async (req, res) => {
   }
 };
 
-
-
-
-// Get a category by ID
 exports.getCategoryById = async (req, res) => {
   try {
-    const category = await categoryModel.getCategoryById(req.params.id);
+    const category = await categoryModel.getCategoryById(req.params.sino);
     if (!category) {
       return res.status(404).json({ error: 'Category not found' });
     }
@@ -38,8 +31,6 @@ exports.getCategoryById = async (req, res) => {
   }
 };
 
-// Update a category
-// In your category controller (e.g., `categoryController.js`)
 exports.updateCategoryStatus = async (req, res) => {
   const { sino } = req.params;
   const { status } = req.body;
@@ -64,7 +55,7 @@ exports.updateCategoryStatus = async (req, res) => {
 // Delete a category
 exports.deleteCategory = async (req, res) => {
   try {
-    const deletedRows = await categoryModel.deleteCategory(req.params.id);
+    const deletedRows = await categoryModel.deleteCategory(req.params.sino);
     if (deletedRows === 0) {
       return res.status(404).json({ error: 'Category not found' });
     }

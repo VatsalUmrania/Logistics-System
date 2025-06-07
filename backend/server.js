@@ -24,4 +24,4 @@ app.listen(PORT, () =>
   console.log(`Server running on port ${PORT}`));
 
 app.get('/', (req, res) => res.send('Logistics Backend Running ✅'));
-// Add these to server.js
+

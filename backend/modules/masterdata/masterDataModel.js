@@ -14,14 +14,20 @@ const getAllRecords = async (table) => {
 };
 
 // Generic update function
-const updateRecord = async (table, id, data) => {
-  const [result] = await db.query(`UPDATE ${table} SET ? WHERE id = ?`, [data, id]);
+const updateRecord = async (table, id, data, idField = 'id') => {
+  const [result] = await db.query(
+    `UPDATE ${table} SET ? WHERE ${idField} = ?`,
+    [data, id]
+  );
   return result.affectedRows;
 };
 
-// Generic delete function
-const deleteRecord = async (table, id) => {
-  const [result] = await db.query(`DELETE FROM ${table} WHERE id = ?`, [id]);
+// Generic delete function with dynamic ID field
+const deleteRecord = async (table, id, idField = 'id') => {
+  const [result] = await db.query(
+    `DELETE FROM ${table} WHERE ${idField} = ?`,
+    [id]
+  );
   return result.affectedRows;
 };
 
@@ -75,8 +81,10 @@ module.exports = {
   // Categories
   createCategory: (data) => createRecord('categories', data),
   getCategory: () => getAllRecords('categories'),
-  updateCategory:(id, data) => updateRecord('categories', id, data),
-  deleteCategory: (id) => deleteRecord('categories', id),
+  updateCategory: (sino, data) => updateRecord('categories', sino, data, 'sino'),
+  deleteCategory: (sino) => deleteRecord('categories', sino, 'sino'),
+  updateClientByClientId: (client_id, data) => updateRecord('clients', client_id, data, 'client_id'),
+  deleteClientByClientId: (client_id) => deleteRecord('clients', client_id, 'client_id'),
 
   // Vessels
   createVessel: (data) => createRecord('vessels', data),
@@ -87,10 +95,12 @@ module.exports = {
   getContainer: (data) => getAllRecords('containers'),
 
   // Ports
-  createPort: (data) => createRecord('ports', data),
-  getPort: (data) => getAllRecords('ports'),
+  createPol: (data) => createRecord('ports', data),
+  getPol: () => getAllRecords('ports'),
+  updatePol: (id,data) => updateRecord('ports', id , data),
+  deletePol: (id) => deleteRecord('ports', id),
 
   // Users
   createUser: (data) => createRecord('users', data),
-  getUser: (data) => getAllRecords('users'),
+  getUser: () => getAllRecords('users'),
 };
