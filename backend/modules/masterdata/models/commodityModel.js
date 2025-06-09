@@ -13,4 +13,14 @@ const getCommodity = async () => {
   return rows;
 };
 
-module.exports = { createCommodity ,getCommodity};
+const updateCommodity = async (id, commodities) => {
+  const [result] = await db.query('UPDATE commodities SET ? WHERE id = ?', [commodities, id]);
+  return result.affectedRows;
+};
+
+const deleteCommodity = async (id) => {
+  const [result] = await db.query('DELETE FROM commodities WHERE id = ?', [id]);
+  return result.affectedRows;
+};
+
+module.exports = { createCommodity ,getCommodity, updateCommodity, deleteCommodity};

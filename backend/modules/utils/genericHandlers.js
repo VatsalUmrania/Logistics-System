@@ -71,11 +71,27 @@ const deleteHandlerByField = (modelMethod, field = 'id') => async (req, res) => 
   }
 };
 
+const loginUser = async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    const user = await model.loginUser(email, password);
+    if (!user) {
+      return res.status(401).json({ success: false, message: 'Invalid email or password' });
+    }
+
+    res.json({ success: true, message: 'Login successful', user });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   createHandler,
   getAllHandler,
   updateHandler,
   deleteHandler,
   updateHandlerByField,
-  deleteHandlerByField
+  deleteHandlerByField,
+  loginUser
 }

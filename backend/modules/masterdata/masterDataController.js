@@ -5,11 +5,31 @@ const {
   updateHandler,
   deleteHandler,
   updateHandlerByField,
-  deleteHandlerByField,
+  deleteHandlerByField
 } = require('../utils/genericHandlers');
 
+const loginUser = async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    const user = await model.loginUser(email, password);
+
+    if (!user) {
+      return res.status(401).json({ success: false, message: 'Invalid email or password' });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Login successful',
+      user
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
 
 module.exports = {
+  loginUser,
   // Banks
   createBank: createHandler(model.createBank),
   getBanks: getAllHandler(model.getBanks),
@@ -24,7 +44,8 @@ module.exports = {
   // Commodities
   createCommodity: createHandler(model.createCommodity),
   getCommodity: getAllHandler(model.getCommodity),
-
+  updateCommodity: updateHandler(model.updateCommodity),
+  deleteCOmmodity: deleteHandler(model.deleteCommodity),
   // Categories
   createCategory: createHandler(model.createCategory),
   getCategory: getAllHandler(model.getCategory),
@@ -34,7 +55,8 @@ module.exports = {
   // Vessels
   createVessel: createHandler(model.createVessel),
   getVessel: getAllHandler(model.getVessel),
-
+  updateVessel: updateHandler(model.updateVessel),
+  deleteVessel: deleteHandler(model.deleteVessel),
   // Containers
   createContainer: createHandler(model.createContainer),
   getContainer: getAllHandler(model.getContainer),
@@ -49,4 +71,7 @@ module.exports = {
   // Users
   createUser: createHandler(model.createUser),
   getUser: getAllHandler(model.getUser),
+  updateUser: updateHandler(model.updateUser),
+  deleteUser: deleteHandler(model.deleteUser),
+  
 };
