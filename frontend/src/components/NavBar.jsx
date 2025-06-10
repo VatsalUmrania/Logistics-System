@@ -21,28 +21,29 @@ const masterDataMenu = [
 
 // Supplier submenu
 const supplierMenu = [
-  { label: 'Add Supplier', key: 'add_supplier', icon: <span className="mr-2 text-indigo-500">•</span>, href:"/addsupplier" },
+  { label: 'Add Supplier', key: 'add_supplier', icon: <span className="mr-2 text-indigo-500">•</span>, href:"/supplier-add-supplier" },
   { label: 'Supplier Purchase', key: 'supplier_purchase', icon: <span className="mr-2 text-indigo-500">•</span> },
-  { label: 'Supplier Payment', key: 'supplier_payment', icon: <span className="mr-2 text-indigo-500">•</span> },
-  { label: 'Supplier Invoice Edit', key: 'supplier_invoice_edit', icon: <span className="mr-2 text-indigo-500">•</span>,  href:"/invoice-edit"},
+  { label: 'Supplier Payment', key: 'supplier_payment', icon: <span className="mr-2 text-indigo-500">•</span>, href:"/supplier-payment" },
+  { label: 'Supplier Invoice Edit', key: 'supplier_invoice_edit', icon: <span className="mr-2 text-indigo-500">•</span>,  href:"/supplier-invoice-edit"},
+  { label: 'Assign Supplier', key: 'supplier_assign', icon: <span className="mr-2 text-indigo-500">•</span>, href:"/supplier-assign" },
   { label: 'Supplier Creditnote', key: 'supplier_creditnote', icon: <span className="mr-2 text-indigo-500">•</span> },
   { label: 'Supplier Invoice Cancel', key: 'supplier_invoice_cancel', icon: <span className="mr-2 text-indigo-500">•</span> },
   { label: 'Supplier Statement Report', key: 'supplier_statement_report', icon: <span className="mr-2 text-indigo-500">•</span> },
-  { label: 'Purchase Search By Supplier', key: 'purchase_search_supplier', icon: <span className="mr-2 text-indigo-500">•</span> },
+  { label: 'Purchase Search By Supplier', key: 'purchase_search_supplier', icon: <span className="mr-2 text-indigo-500">•</span>, href:"/purchase-search" },
 ];
 
 // Custom Clearance submenu
 const clearanceMenu = [
   { label: 'Add Clearance Operation', key: 'add_clearance_op' },
   { label: 'Edit Clearance Operation', key: 'edit_clearance_op' },
-  { label: 'Assign Expense', key: 'assign_expense' },
-  { label: 'Invoice', key: 'invoice' },
+  { label: 'Assign Expense', key: 'assign_expense', href:"/assign-expenses" },
+  { label: 'Invoice Search', key: 'invoice' },
   { label: 'Invoice Creditnote', key: 'invoice_creditnote' },
-  { label: 'Creditnote Search', key: 'creditnote_search' },
+  { label: 'Creditnote Search', key: 'creditnote_search', href:"/credit-note-search" },
   { label: 'Invoice Creditnote Edit', key: 'invoice_creditnote_edit' },
   { label: 'Job Other Charges', key: 'job_other_charges' },
   { label: 'Receipt Cancelation', key: 'receipt_cancelation' },
-  { label: 'Delivery Note', key: 'delivery_note' },
+  { label: 'Delivery Note', key: 'delivery_note' ,href:"/delivery-note" },
   { label: 'Delivery Note Edit', key: 'delivery_note_edit' },
   { label: 'Delivery Note Search', key: 'delivery_note_search' },
   { label: 'Expense Posting', key: 'expense_posting' },
@@ -50,7 +51,7 @@ const clearanceMenu = [
 
 // Reports submenu
 const reportsMenu = [
-  { label: 'Search Invoice', key: 'search_invoice' },
+  { label: 'Search Invoice', key: 'search_invoice', href:"/invoice-search" },
   { label: 'Search Invoice By Date', key: 'search_invoice_date', href:"/invoice-search-by-date" },
   { label: 'Search By Invoice No', key: 'search_by_invoice_no', href:"/invoice-search" },
   { label: 'Invoice Search By Bayan No', key: 'invoice_search_bayan', href:"/bayanno"},

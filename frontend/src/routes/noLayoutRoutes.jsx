@@ -9,7 +9,7 @@ import LoginPage from "../components/LoginPage";
 const noLayoutRoutes = (
   <>
     <Route path="/assignup" element={<AssignSupplier />} />
-    <Route path="/" element={<LandingPage />} />
+    <Route path="/landingpage" element={<LandingPage />} />
     <Route path="/login" element={<LoginPage />} />
   </>
 );

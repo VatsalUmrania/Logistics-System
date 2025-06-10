@@ -2,12 +2,16 @@
 import React from "react";
 import { Route } from "react-router-dom";
 
-import DeliveryNotePage from "../components/DeliveryNote";
+
+import AssignExpenses from "../pages/customclearance/AssignExpenses";
+import CreditNoteSearch from "../pages/customclearance/CreditNoteSearch";
+import DeliveryNotePage from "../pages/customclearance/DeliveryNotePage";
 
 const clearanceRoutes = (
   <>
-    <Route path="/deliverynote" element={<DeliveryNotePage />} />
-    {/* Add other clearance routes like edit, assign, etc. */}
+    <Route path="/assign-expenses" element={<AssignExpenses />} />
+    <Route path="/credit-note-search" element={<CreditNoteSearch />} />
+    <Route path="/delivery-note" element={<DeliveryNotePage />} />
   </>
 );
 

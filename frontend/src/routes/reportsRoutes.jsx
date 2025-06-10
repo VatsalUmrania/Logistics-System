@@ -14,6 +14,7 @@ import CancelledReceiptDetails from "../pages/reports/CancelledReceiptDetails";
 import VatStatementReport from "../pages/reports/VatStatementReport";
 import ProfitReportByDate from "../pages/reports/ProfitReportByDate";
 
+
 const reportsRoutes = (
   <>
     <Route path="/jobno" element={<JobSearchByNo />} />
