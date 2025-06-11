@@ -45,31 +45,30 @@ exports.loginUser = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const [rows] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
-    const user = rows[0];
-
-    if (!user) {
-      return res.status(401).json({ success: false, message: 'Invalid email or password' });
-    }
-
-    const passwordMatch = await bcrypt.compare(password, user.password);
-
-    if (!passwordMatch) {
-      return res.status(401).json({ success: false, message: 'Invalid email or password' });
-    }
-
-    // Optional: generate a token here using JWT if needed
+    const result = await model.loginUser(email, password);
     res.json({
       success: true,
       message: 'Login successful',
-      user: {
-        id: user.id,
-        employee_name: user.employee_name,
-        email: user.email,
-        is_admin: user.is_admin,
-      },
-      token: 'mock-token-or-jwt-if-implemented'
+      ...result
     });
+  } catch (err) {
+    res.status(401).json({ success: false, message: err.message });
+  }
+};
+
+exports.logoutUser = async (req, res) => {
+  const token = req.headers['authorization']?.split(' ')[1]; // Get token from Authorization header
+
+  if (!token) {
+    return res.status(400).json({ success: false, message: 'Token is required for logout' });
+  }
+
+  try {
+    // Add the token to the blacklist (if you're using token blacklisting)
+    await model.logoutUser(token);
+
+    // Respond with success message
+    res.json({ success: true, message: 'Logout successful' });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

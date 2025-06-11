@@ -70,7 +70,7 @@ const reportsMenu = [
 
 // Accounts submenu
 const accountsMenu = [
-  { label: 'Account Head', key: 'account_head' },
+  { label: 'Account Head', key: 'account_head', href:"/account-head" },
   { label: 'Sub Account Head', key: 'sub_account_head' },
   { label: 'Opening Balance', key: 'opening_balance' },
   { label: 'Journal Voucher', key: 'journal_voucher' },
@@ -145,7 +145,19 @@ const Navbar = () => {
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
 
   useEffect(() => {
+    const getAuthHeaders = () => {
+      const token = localStorage.getItem('authToken'); // or use cookies, sessionStorage, etc.
     
+      if (!token) {
+        // Handle the case where the token is not available
+        console.log("No token found!");
+        return {};
+      }
+    
+      return {
+        Authorization: `Bearer ${token}`,  // Add the token to the request headers
+      };
+    };
 
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
@@ -175,10 +187,13 @@ const Navbar = () => {
   };
 
   const handleLogout = () => {
-    console.log('User logged out');
-    setIsUserDropdownOpen(false);
-  };
-
+    // Clear user data and token from localStorage
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('username');
+    
+    // Optionally redirect the user to the login page
+    window.location.href = '/';
+};
   return (
     <div className="w-full">
       <div
@@ -236,24 +251,24 @@ const Navbar = () => {
               </div>
               {/* User Menu */}
               <div className="flex items-center space-x-3 relative user-dropdown">
-                <button
-                  onClick={toggleUserDropdown}
-                  className="flex items-center space-x-2 focus:outline-none"
-                >
-                  <div className="w-9 h-9 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-full flex items-center justify-center">
-                    <User className="w-5 h-5 text-white" />
-                  </div>
-                  <div className="hidden md:flex flex-col items-end">
-                    <span className="text-sm font-medium text-gray-800">{user}</span>
-                    
-                    
-                  </div>
-                  <ChevronDown
-                    className={`w-4 h-4 text-gray-500 transition-transform ${
-                      isUserDropdownOpen ? 'rotate-180' : ''
-                    }`}
-                  />
-                </button>
+              <button
+        onClick={toggleUserDropdown}
+        className="flex items-center space-x-2 focus:outline-none"
+      >
+        <div className="w-9 h-9 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-full flex items-center justify-center">
+          <User className="w-5 h-5 text-white" />
+        </div>
+        <div className="hidden md:flex flex-col items-end">
+          <span className="text-sm font-medium text-gray-800">
+            {user ? user : 'Loading...'}  {/* Display loading text if user is not yet set */}
+          </span>
+        </div>
+        <ChevronDown
+          className={`w-4 h-4 text-gray-500 transition-transform ${
+            isUserDropdownOpen ? 'rotate-180' : ''
+          }`}
+        />
+      </button>
                 
                 {/* User Dropdown */}
                 {isUserDropdownOpen && (

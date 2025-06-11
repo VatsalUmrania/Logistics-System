@@ -490,6 +490,7 @@ const convertObjectKeys = (obj, converter) => {
 };
 
 const UserManagementPage = () => {
+  
   // State variables
   const [users, setUsers] = useState([]);
   const [newUser, setNewUser] = useState({
@@ -517,21 +518,53 @@ const UserManagementPage = () => {
     'France', 'Japan', 'India', 'Brazil', 'South Africa'
   ];
 
-  // Fetch users from backend
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('authToken');
+    
+    if (!token) {
+      // Token is missing, handle it by logging out the user or redirecting to the login page.
+      alert('Authentication required. Redirecting to login...');
+      window.location.href = '/login';  // Or any other route for login
+      throw new Error('Authentication token missing');
+    }
+  
+    return { 'Authorization': `Bearer ${token}` };
+  };
+
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const response = await axios.get('http://localhost:5000/api/users/');
-      // Convert snake_case to camelCase
+      const token = localStorage.getItem('authToken');
+      const response = await axios.get('http://localhost:5000/api/users/', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+  
+      // Assuming 'response.data' is an array of users.
+      // Convert snake_case to camelCase (if needed)
       const camelCaseUsers = convertObjectKeys(response.data, toCamelCase);
-      setUsers(camelCaseUsers);
+  
+      // Optionally, you can filter out passwords here if you don't want them in the response.
+      const usersWithoutPasswords = camelCaseUsers.map(user => {
+        const { password, ...userWithoutPassword } = user; // Remove password from the user object
+        return userWithoutPassword;
+      });
+  
+      setUsers(usersWithoutPasswords);  // Set the users list without passwords
     } catch (err) {
-      setError('Error fetching users: ' + err.message);
+      if (err.response && err.response.status === 401) {
+        // Handle 401 Unauthorized
+        alert('Session expired or invalid token. Please log in again.');
+        window.location.href = '/login';  // Redirect to login
+      } else {
+        setError('Error fetching users: ' + err.message);
+      }
     } finally {
       setLoading(false);
     }
   };
-
+  
   useEffect(() => {
     fetchUsers();
   }, []);
@@ -539,7 +572,10 @@ const UserManagementPage = () => {
   // Handle add/update user
   const handleAddUser = async () => {
     // Basic validation
-    if (!newUser.employeeName.trim() || !newUser.username.trim() || !newUser.password) return;
+    if (!newUser.employeeName.trim() || !newUser.username.trim() || !newUser.password) {
+      setError("Please fill out all required fields.");
+      return;
+    }
   
     if (newUser.password !== newUser.confirmPassword) {
       setPasswordMatchError(true);
@@ -551,7 +587,7 @@ const UserManagementPage = () => {
     try {
       setLoading(true);
   
-      // Create a payload matching the backend's expected field names
+      // Create the user payload matching the backend's expected field names
       const userPayload = {
         employee_name: newUser.employeeName || null,
         username: newUser.username || null,
@@ -568,35 +604,52 @@ const UserManagementPage = () => {
   
       console.log("Payload to send:", userPayload);
   
+      // Make the API call to either add or update the user
+      let res;
       if (editingId !== null) {
         // Update user
-        await axios.put(`http://localhost:5000/api/users/${editingId}`, userPayload);
+        res = await axios.put(`http://localhost:5000/api/users/${editingId}`, userPayload, {
+          headers: getAuthHeaders(),
+        });
       } else {
         // Add new user
-        await axios.post('http://localhost:5000/api/users/', userPayload);
+        res = await axios.post('http://localhost:5000/api/users/', userPayload, {
+          headers: getAuthHeaders(),
+        });
       }
   
-      // Reset form
-      setNewUser({
-        employeeName: '',
-        username: '',
-        email: '',
-        password: '',
-        confirmPassword: '',
-        nationality: '',
-        passportIqama: '',
-        address: '',
-        phone: '',
-        licenseNo: '',
-        isAdmin: 0,
-        isProtected: 0,
-      });
+      // If the request is successful (200 or 201), reset form and refresh users
+      if (res.status === 200 || res.status === 201) {
+        setNewUser({
+          employeeName: '',
+          username: '',
+          email: '',
+          password: '',
+          confirmPassword: '',
+          nationality: '',
+          passportIqama: '',
+          address: '',
+          phone: '',
+          licenseNo: '',
+          isAdmin: 0,
+          isProtected: 0,
+        });
   
-      setIsAdding(false);
-      setEditingId(null);
-      fetchUsers();
+        setIsAdding(false);
+        setEditingId(null);
+        fetchUsers();  // Refresh the user list
+      } else {
+        setError('Failed to save user. Please try again.');
+      }
+  
     } catch (err) {
-      setError('Error saving user: ' + err.message);
+      // Handle token expiration (401 error)
+      if (err.response && err.response.status === 401) {
+        alert('Session expired or invalid token. Please log in again.');
+        window.location.href = '/login';  // Redirect to login page
+      } else {
+        setError('Error saving user: ' + (err.response ? err.response.data.message : err.message));
+      }
     } finally {
       setLoading(false);
     }
@@ -608,24 +661,40 @@ const UserManagementPage = () => {
     setNewUser({
       employeeName: user.employeeName,
       username: user.username,
-      password: user.password,
-      confirmPassword: user.password,
+      password: '',  // Leave password empty for security
+      confirmPassword: '',  // Leave confirmPassword empty for security
       nationality: user.nationality,
       passportIqama: user.passportIqama,
       address: user.address,
       phone: user.phone,
       licenseNo: user.licenseNo,
     });
-    
-    setEditingId(user.id);
-    setIsAdding(true);
+  
+    setEditingId(user.id);  // Set the ID of the user being edited
+    setIsAdding(true);  // Set the form to "adding" state, though it's really "editing"
   };
+  
 
   // Handle delete user
   const handleDelete = async (id) => {
     try {
       setLoading(true);
-      await axios.delete(`http://localhost:5000/api/users/${id}`);
+      
+      // Get the auth token from localStorage or another secure source
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        setError('No authentication token found.');
+        return;
+      }
+  
+      // Perform the DELETE request with the Authorization header
+      await axios.delete(`http://localhost:5000/api/users/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+  
+      // Refresh the user list after successful deletion
       fetchUsers();
     } catch (err) {
       setError('Error deleting user: ' + err.message);
@@ -633,7 +702,7 @@ const UserManagementPage = () => {
       setLoading(false);
     }
   };
-
+  
   // Password visibility toggles
   const togglePasswordVisibility = () => setShowPassword(!showPassword);
   const toggleConfirmPasswordVisibility = () => setShowConfirmPassword(!showConfirmPassword);

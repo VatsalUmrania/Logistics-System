@@ -6,6 +6,7 @@ import {
   createRoutesFromElements,
   Outlet,
 } from "react-router-dom";
+import { AuthProvider } from "../../backend/modules/auth/AuthContext";
 
 import Navbar from "./components/NavBar";
 import HomePage from "./components/Home";
@@ -31,7 +32,7 @@ const router = createBrowserRouter(
   createRoutesFromElements(
     <>
       <Route element={<Layout />} errorElement={<ErrorPage />}>
-      <Route path="/" element={<HomePage />} />
+      <Route path="/home" element={<HomePage />} />
         {masterDataRoutes}
         {supplierRoutes}
         {clearanceRoutes}

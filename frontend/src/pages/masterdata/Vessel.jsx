@@ -409,59 +409,100 @@ const VesselDetailsPage = () => {
   const itemsPerPage = 5;
 
   // Fetch vessels on mount
-  useEffect(() => {
-    fetchVessels();
-  }, []);
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('authToken');
+    if (!token) throw new Error('Authentication token missing');
+    return { 'Authorization': `Bearer ${token}` };
+  };
 
+  // Fetch vessels from the backend
   const fetchVessels = async () => {
+    // Start loading before the fetch
+
     try {
-      const res = await fetch('http://localhost:5000/api/vessels/');
+      const res = await fetch('http://localhost:5000/api/vessels/', {
+        headers: getAuthHeaders(),
+      });
+
+      if (!res.ok) {
+        throw new Error(`Failed to fetch vessels: ${res.status} ${res.statusText}`);
+      }
+
       const data = await res.json();
-      // Convert backend keys (name, number) to vesselName, vesselNo + keep id and status
+
+      // Format the vessel data
       const formatted = data.map(item => ({
         id: item.id,
         vesselName: item.name,
         vesselNo: item.number,
-        status: item.status || 'Active'
+        status: item.status || 'Active',
       }));
-      setVessels(formatted);
+
+      setVessels(formatted); // Update the state with the vessels data
     } catch (err) {
       console.error('Failed to fetch vessels:', err);
-    }
+      setError('Failed to load vessels'); // Set error message
+    } 
   };
 
+  useEffect(() => {
+    fetchVessels(); // Fetch vessels when the component mounts
+  }, []);
+  
   const handleAddVessel = async () => {
-    if (!newVessel.vesselName.trim()) return;
-
+    // Basic validation
+    if (!newVessel.vesselName.trim()) {
+      alert("Vessel name is required.");
+      return;
+    }
+    
     try {
+      const headers = getAuthHeaders(); // Get the Authorization header
+  
       if (editingId !== null) {
         // Update existing vessel on backend
-        await fetch(`http://localhost:5000/api/vessels/${editingId}`, {
+        const res = await fetch(`http://localhost:5000/api/vessels/${editingId}`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            ...headers, // Include the Authorization header
+          },
           body: JSON.stringify({
             name: newVessel.vesselName,
-            number: newVessel.vesselNo
+            number: newVessel.vesselNo,
           }),
         });
-
+  
+        if (!res.ok) {
+          throw new Error(`Failed to update vessel: ${res.status} ${res.statusText}`);
+        }
+  
         // Update frontend state
         setVessels(vessels.map(v =>
           v.id === editingId ? { ...v, vesselName: newVessel.vesselName, vesselNo: newVessel.vesselNo } : v
         ));
-        setEditingId(null);
+  
+        setEditingId(null); // Clear editing state
       } else {
         // Create new vessel on backend
         const res = await fetch('http://localhost:5000/api/vessels/', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            ...getAuthHeaders(), // Include the Authorization header
+          },
           body: JSON.stringify({
             name: newVessel.vesselName,
-            number: newVessel.vesselNo
+            number: newVessel.vesselNo,
           }),
         });
+  
+        if (!res.ok) {
+          throw new Error(`Failed to create vessel: ${res.status} ${res.statusText}`);
+        }
+  
         const created = await res.json();
-
+  
         // Add new vessel to frontend state, mapping backend keys
         setVessels([...vessels, {
           id: created.id,
@@ -470,26 +511,49 @@ const VesselDetailsPage = () => {
           status: created.status || 'Active',
         }]);
       }
-
+  
+      // Reset form and state
       setNewVessel({ vesselNo: '', vesselName: '' });
       setIsAdding(false);
     } catch (err) {
       console.error('Error adding/updating vessel:', err);
-    }
+      setError(err.message || 'An error occurred while adding or updating the vessel.');
+    } 
   };
+  
 
   const handleEdit = (vessel) => {
-    setNewVessel({ vesselNo: vessel.vesselNo, vesselName: vessel.vesselName });
-    setEditingId(vessel.id);
-    setIsAdding(true);
+    if (!vessel) {
+      console.error("Vessel object is missing or undefined.");
+      return;
+    }
+  
+    setNewVessel({
+      vesselNo: vessel.vesselNo || '',
+      vesselName: vessel.vesselName || '',
+    });
+  
+    setEditingId(vessel.id);  // Set the ID of the vessel to edit
   };
 
   const handleDelete = async (id) => {
     try {
-      await fetch(`http://localhost:5000/api/vessels/${id}`, { method: 'DELETE' });
+      // Make DELETE request with authorization header
+      const res = await fetch(`http://localhost:5000/api/vessels/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(), // Add authorization header
+      });
+  
+      // Check if the deletion was successful
+      if (!res.ok) {
+        throw new Error(`Failed to delete vessel with id ${id}`);
+      }
+  
+      // Remove the deleted vessel from frontend state
       setVessels(vessels.filter(v => v.id !== id));
     } catch (err) {
       console.error('Error deleting vessel:', err);
+      // Optionally handle the error (e.g., show a message to the user)
     }
   };
 
@@ -497,25 +561,35 @@ const VesselDetailsPage = () => {
     try {
       const vessel = vessels.find(v => v.id === id);
       const newStatus = vessel.status === 'Active' ? 'Inactive' : 'Active';
-
-      await fetch(`http://localhost:5000/api/vessels/${id}`, {
+  
+      // Send the PUT request with Authorization header
+      const res = await fetch(`http://localhost:5000/api/vessels/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeaders(), // Add authorization header
+        },
         body: JSON.stringify({
           name: vessel.vesselName,
           number: vessel.vesselNo,
           status: newStatus,
         }),
       });
-
+  
+      if (!res.ok) {
+        throw new Error(`Failed to update vessel status with id ${id}`);
+      }
+  
+      // Update the vessel status in frontend state
       setVessels(vessels.map(v =>
         v.id === id ? { ...v, status: newStatus } : v
       ));
     } catch (err) {
       console.error('Error toggling status:', err);
+      // Optionally, handle the error (e.g., show a message to the user)
     }
   };
-
+  
   const handleSort = (field) => {
     if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');

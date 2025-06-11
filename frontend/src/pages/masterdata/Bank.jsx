@@ -46,16 +46,31 @@ const BankInformationPage = () => {
     address: bank.address,
   });
 
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('authToken');
+    if (!token) throw new Error('Authentication token missing');
+    return { 'Authorization': `Bearer ${token}` };
+  };
+  
   // Fetch banks from backend
   const fetchBanks = async () => {
     try {
-      const res = await fetch(API_URL);
+      const res = await fetch(API_URL, {
+        headers: getAuthHeaders()
+      });
+  
+      if (!res.ok) {
+        throw new Error(`Failed to fetch banks: ${res.status} ${res.statusText}`);
+      }
+  
       const data = await res.json();
       setBanks(data.map(toCamelCase));
     } catch (err) {
       console.error('Failed to fetch banks:', err);
+      setError('Failed to load banks');
     }
   };
+  
 
   useEffect(() => {
     fetchBanks();
@@ -64,29 +79,36 @@ const BankInformationPage = () => {
   // Add or update bank handler
   const handleAddBank = async () => {
     if (!newBank.bankName.trim() || !newBank.accountNo.trim()) return;
-
+  
     try {
+      const headers = {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json',
+      };
+  
+      let res;
       if (editingId !== null) {
         // Update existing bank
-        const res = await fetch(`${API_URL}/${editingId}`, {
+        res = await fetch(`${API_URL}/${editingId}`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify(formatToSnakeCase(newBank)),
         });
+  
         if (!res.ok) throw new Error('Failed to update bank');
       } else {
         // Add new bank
-        const res = await fetch(API_URL, {
+        res = await fetch(API_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify(formatToSnakeCase(newBank)),
         });
+  
         if (!res.ok) throw new Error('Failed to add bank');
       }
-
-      // Refresh bank list after add/update
+  
       await fetchBanks();
-
+  
       setNewBank({
         bankName: '',
         branchNo: '',
@@ -102,20 +124,29 @@ const BankInformationPage = () => {
       alert(err.message);
     }
   };
-
+  
   // Delete bank handler
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this bank?')) return;
-
+  
     try {
-      const res = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Failed to delete bank');
+      const res = await fetch(`${API_URL}/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      });
+  
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`Failed to delete bank: ${errorText}`);
+      }
+  
       await fetchBanks();
     } catch (err) {
       console.error(err);
-      alert(err.message);
+      alert(err.message || 'Failed to delete bank');
     }
   };
+  
 
   // Edit bank handler (populate form)
   const handleEdit = (bank) => {

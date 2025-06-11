@@ -4,10 +4,265 @@ import {
   Search, Plus, X, ChevronLeft, ChevronRight
 } from 'lucide-react';
 
+
 const API_URL = 'http://localhost:5000/api/clients';
 
 const ClientManagementPage = () => {
-  const [clients, setClients] = useState([]);
+//   const [clients, setClients] = useState([]);
+//   const [newClient, setNewClient] = useState({
+//     clientId: '', name: '', industryType: '', phone1: '', phone2: '', phone3: '', creditLimit: '',
+//     valNo: '', commercialRegNo: '', cp1: '', notes: '', shipper: '', arName: '', cp1Position: '',
+//     agentName: '', address: '', country: '', cp1Email: '', agentEnName: '', city: '', agentArName: ''
+//   });
+//   const [isAdding, setIsAdding] = useState(false);
+//   const [editingId, setEditingId] = useState(null);
+//   const [searchTerm, setSearchTerm] = useState('');
+//   const [currentPage, setCurrentPage] = useState(1);
+//   const itemsPerPage = 5;
+
+//   const countries = [
+//     'United Arab Emirates', 'Saudi Arabia', 'Oman', 
+//     'Qatar', 'Kuwait', 'Bahrain', 'Egypt', 'Jordan'
+//   ];
+
+//   // Convert API snake_case object to camelCase
+//   const toCamelCaseClient = (obj) => ({
+//     clientId: obj.client_id,
+//     name: obj.name,
+//     industryType: obj.industry_type,
+//     phone1: obj.phone1,
+//     phone2: obj.phone2,
+//     phone3: obj.phone3,
+//     creditLimit: obj.credit_limit,
+//     valNo: obj.val_no,
+//     commercialRegNo: obj.commercial_reg_no,
+//     cp1: obj.cp1,
+//     notes: obj.notes,
+//     shipper: obj.shipper,
+//     arName: obj.ar_name,
+//     cp1Position: obj.cp1_position,
+//     agentName: obj.agent_name,
+//     address: obj.address,
+//     country: obj.country,
+//     cp1Email: obj.cp1_email,
+//     agentEnName: obj.agent_en_name,
+//     city: obj.city,
+//     agentArName: obj.agent_ar_name
+//   });
+
+//   // Convert camelCase to snake_case for API
+//   const formatToSnakeCaseClient = (client) => ({
+//     client_id: client.clientId,
+//     name: client.name,
+//     industry_type: client.industryType,
+//     phone1: client.phone1,
+//     phone2: client.phone2,
+//     phone3: client.phone3,
+//     credit_limit: client.creditLimit,
+//     val_no: client.valNo,
+//     commercial_reg_no: client.commercialRegNo,
+//     cp1: client.cp1,
+//     notes: client.notes,
+//     shipper: client.shipper,
+//     ar_name: client.arName,
+//     cp1_position: client.cp1Position,
+//     agent_name: client.agentName,
+//     address: client.address,
+//     country: client.country,
+//     cp1_email: client.cp1Email,
+//     agent_en_name: client.agentEnName,
+//     city: client.city,
+//     agent_ar_name: client.agentArName
+//   });
+
+//   const fetchClients = async () => {
+//     try {
+//       const token = localStorage.getItem('authToken');
+//       if (!token) throw new Error('Authentication token missing');
+  
+//       const res = await fetch(API_URL, {
+//         headers: {
+//           'Authorization': `Bearer ${token}`
+//         }
+//       });
+  
+//       if (!res.ok) throw new Error(`Error fetching clients: ${res.status}`);
+  
+//       const data = await res.json();
+//       setClients(data.map(toCamelCaseClient));
+//     } catch (err) {
+//       console.error('Failed to fetch clients:', err);
+//     }
+//   };
+//   useEffect(() => {
+//     fetchClients();
+//   }, []);
+
+//   // const handleAddClient = async () => {
+//   //   if (!newClient.clientId || !newClient.name) return;
+  
+//   //   try {
+//   //     // Log the input data to check if all fields are present
+//   //     console.log('Client Data (before conversion):', newClient);
+//   //     const token = localStorage.getItem('authToken');
+      
+//   //     const payload = formatToSnakeCaseClient(newClient);
+  
+//   //     // Log the formatted payload to ensure correct transformation
+//   //     console.log('Formatted Payload (snake_case):', payload);
+  
+//   //     // Ensure credit_limit is a number
+//   //     payload.credit_limit = parseFloat(payload.credit_limit);
+  
+//   //     // Convert empty strings to null for optional fields
+//   //     Object.keys(payload).forEach(key => {
+//   //       if (payload[key] === "") {
+//   //         payload[key] = null;
+//   //       }
+//   //     });
+  
+//   //     // Log the cleaned payload
+//   //     console.log('Cleaned Payload:', payload);
+  
+//   //     if (editingId !== null) {
+//   //       const { client_id, ...updatePayload } = payload; // Remove client_id for PUT request
+//   //       await fetch(`${API_URL}/${editingId}`, {
+//   //         method: 'PUT',
+//   //         headers: { 'Content-Type': 'application/json' },
+//   //         body: JSON.stringify(updatePayload),
+//   //       });
+//   //     } else {
+//   //       await fetch(API_URL, {
+//   //         method: 'POST',
+//   //         headers: { 'Content-Type': 'application/json' },
+//   //         body: JSON.stringify(payload),
+//   //       });
+//   //     }
+  
+//   //     fetchClients();
+//   //     setIsAdding(false);
+//   //     setNewClient({
+//   //       clientId: '', name: '', industryType: '', phone1: '', phone2: '', phone3: '', creditLimit: '',
+//   //       valNo: '', commercialRegNo: '', cp1: '', notes: '', shipper: '', arName: '', cp1Position: '',
+//   //       agentName: '', address: '', country: '', cp1Email: '', agentEnName: '', city: '', agentArName: ''
+//   //     });
+//   //     setEditingId(null);
+//   //   } catch (err) {
+//   //     console.error('Error saving client:', err);
+//   //   }
+//   // };
+  
+//   const handleAddClient = async () => {
+//     if (!newClient.clientId || !newClient.name) return;
+  
+//     try {
+//       const token = localStorage.getItem('authToken');
+//       if (!token) throw new Error('Authentication token missing');
+  
+//       const payload = formatToSnakeCaseClient(newClient);
+//       payload.credit_limit = parseFloat(payload.credit_limit);
+  
+//       Object.keys(payload).forEach(key => {
+//         if (payload[key] === "") payload[key] = null;
+//       });
+  
+//       if (editingId !== null) {
+//         const { client_id, ...updatePayload } = payload;
+//         await fetch(`${API_URL}/${editingId}`, {
+//           method: 'PUT',
+//           headers: {
+//             'Content-Type': 'application/json',
+//             'Authorization': `Bearer ${token}`
+//           },
+//           body: JSON.stringify(updatePayload),
+//         });
+//       } else {
+//         await fetch(API_URL, {
+//           method: 'POST',
+//           headers: {
+//             'Content-Type': 'application/json',
+//             'Authorization': `Bearer ${token}`
+//           },
+//           body: JSON.stringify(payload),
+//         });
+//       }
+  
+//       fetchClients();
+//       setIsAdding(false);
+//       setNewClient({
+//         clientId: '', name: '', industryType: '', phone1: '', phone2: '', phone3: '', creditLimit: '',
+//         valNo: '', commercialRegNo: '', cp1: '', notes: '', shipper: '', arName: '', cp1Position: '',
+//         agentName: '', address: '', country: '', cp1Email: '', agentEnName: '', city: '', agentArName: ''
+//       });
+//       setEditingId(null);
+//     } catch (err) {
+//       console.error('Error saving client:', err);
+//     }
+//   };
+  
+  
+//   const payload = formatToSnakeCaseClient(newClient);
+// console.log('Formatted Payload:', payload); // Check this in the console
+
+
+
+//   const handleDelete = async (clientId) => {
+    
+//     try {
+//       await fetch(`${API_URL}/${clientId}`, {
+//         method: 'DELETE',
+//         headers: { 'Content-Type': 'application/json' }
+//       });
+//       fetchClients();
+//     } catch (err) {
+//       console.error('Failed to delete client:', err);
+//     }
+//   };
+
+//   const handleEdit = (client) => {
+//     setNewClient({
+//       clientId: client.clientId,
+//       name: client.name,
+//       industryType: client.industryType,
+//       phone1: client.phone1,
+//       phone2: client.phone2,
+//       phone3: client.phone3,
+//       creditLimit: client.creditLimit,
+//       valNo: client.valNo,
+//       commercialRegNo: client.commercialRegNo,
+//       cp1: client.cp1,
+//       notes: client.notes,
+//       shipper: client.shipper,
+//       arName: client.arName,
+//       cp1Position: client.cp1Position,
+//       agentName: client.agentName,
+//       address: client.address,
+//       country: client.country,
+//       cp1Email: client.cp1Email,
+//       agentEnName: client.agentEnName,
+//       city: client.city,
+//       agentArName: client.agentArName
+//     });
+//     setEditingId(client.clientId); // Use clientId for editing
+//     setIsAdding(true);
+//   };
+
+//   // Filter and search functionality
+//   const filteredClients = clients.filter(client =>
+//     client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+//     client.clientId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+//     client.city.toLowerCase().includes(searchTerm.toLowerCase()) ||
+//     client.country.toLowerCase().includes(searchTerm.toLowerCase())
+//   );
+
+//   // Pagination logic
+//   const indexOfLastItem = currentPage * itemsPerPage;
+//   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+//   const currentClients = filteredClients.slice(indexOfFirstItem, indexOfLastItem);
+//   const totalPages = Math.ceil(filteredClients.length / itemsPerPage);
+
+  
+const [clients, setClients] = useState([]);
   const [newClient, setNewClient] = useState({
     clientId: '', name: '', industryType: '', phone1: '', phone2: '', phone3: '', creditLimit: '',
     valNo: '', commercialRegNo: '', cp1: '', notes: '', shipper: '', arName: '', cp1Position: '',
@@ -76,11 +331,27 @@ const ClientManagementPage = () => {
 
   const fetchClients = async () => {
     try {
-      const res = await fetch(API_URL);
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        console.error('Authentication token missing');
+        return;
+      }
+  
+      const res = await fetch(API_URL, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+  
+      if (!res.ok) {
+        throw new Error(`Error fetching clients: ${res.status} ${res.statusText}`);
+      }
+  
       const data = await res.json();
       setClients(data.map(toCamelCaseClient));
     } catch (err) {
       console.error('Failed to fetch clients:', err);
+      alert('Failed to fetch clients. Please check your connection and try again.');
     }
   };
 
@@ -89,46 +360,69 @@ const ClientManagementPage = () => {
   }, []);
 
   const handleAddClient = async () => {
-    if (!newClient.clientId || !newClient.name) return;
-  
+    if (!newClient.clientId || !newClient.name) {
+      alert('Client ID and Name are required fields');
+      return;
+    }
+
     try {
-      // Log the input data to check if all fields are present
-      console.log('Client Data (before conversion):', newClient);
-  
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        alert('Authentication token missing. Please login again.');
+        return;
+      }
+
       const payload = formatToSnakeCaseClient(newClient);
-  
-      // Log the formatted payload to ensure correct transformation
-      console.log('Formatted Payload (snake_case):', payload);
-  
-      // Ensure credit_limit is a number
-      payload.credit_limit = parseFloat(payload.credit_limit);
-  
+      
+      // Convert credit_limit to number if it's not empty
+      if (payload.credit_limit) {
+        payload.credit_limit = parseFloat(payload.credit_limit);
+        if (isNaN(payload.credit_limit)) {
+          alert('Credit limit must be a valid number');
+          return;
+        }
+      }
+
       // Convert empty strings to null for optional fields
       Object.keys(payload).forEach(key => {
         if (payload[key] === "") {
           payload[key] = null;
         }
       });
-  
-      // Log the cleaned payload
-      console.log('Cleaned Payload:', payload);
-  
+
+      console.log('Payload being sent:', payload);
+
+      let response;
       if (editingId !== null) {
-        const { client_id, ...updatePayload } = payload; // Remove client_id for PUT request
-        await fetch(`${API_URL}/${editingId}`, {
+        // For editing, remove client_id from payload and use it in URL
+        const { client_id, ...updatePayload } = payload;
+        response = await fetch(`${API_URL}/${editingId}`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
           body: JSON.stringify(updatePayload),
         });
       } else {
-        await fetch(API_URL, {
+        // For adding new client
+        response = await fetch(API_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
           body: JSON.stringify(payload),
         });
       }
-  
-      fetchClients();
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(`Error ${response.status}: ${errorData}`);
+      }
+
+      // Reset form and refresh data
+      await fetchClients();
       setIsAdding(false);
       setNewClient({
         clientId: '', name: '', industryType: '', phone1: '', phone2: '', phone3: '', creditLimit: '',
@@ -136,26 +430,46 @@ const ClientManagementPage = () => {
         agentName: '', address: '', country: '', cp1Email: '', agentEnName: '', city: '', agentArName: ''
       });
       setEditingId(null);
+      
+      alert(editingId ? 'Client updated successfully!' : 'Client added successfully!');
     } catch (err) {
       console.error('Error saving client:', err);
+      alert(`Error saving client: ${err.message}`);
     }
   };
-  
-  
-  const payload = formatToSnakeCaseClient(newClient);
-console.log('Formatted Payload:', payload); // Check this in the console
-
-
 
   const handleDelete = async (clientId) => {
+    if (!window.confirm('Are you sure you want to delete this client?')) {
+      return;
+    }
+
     try {
-      await fetch(`${API_URL}/${clientId}`, {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        alert('Authentication token missing. Please login again.');
+        return;
+      }
+
+      console.log('Deleting client with ID:', clientId);
+
+      const response = await fetch(`${API_URL}/${clientId}`, {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' }
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
       });
-      fetchClients();
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(`Error ${response.status}: ${errorData}`);
+      }
+
+      await fetchClients();
+      alert('Client deleted successfully!');
     } catch (err) {
       console.error('Failed to delete client:', err);
+      alert(`Failed to delete client: ${err.message}`);
     }
   };
 
@@ -163,36 +477,46 @@ console.log('Formatted Payload:', payload); // Check this in the console
     setNewClient({
       clientId: client.clientId,
       name: client.name,
-      industryType: client.industryType,
-      phone1: client.phone1,
-      phone2: client.phone2,
-      phone3: client.phone3,
-      creditLimit: client.creditLimit,
-      valNo: client.valNo,
-      commercialRegNo: client.commercialRegNo,
-      cp1: client.cp1,
-      notes: client.notes,
-      shipper: client.shipper,
-      arName: client.arName,
-      cp1Position: client.cp1Position,
-      agentName: client.agentName,
-      address: client.address,
-      country: client.country,
-      cp1Email: client.cp1Email,
-      agentEnName: client.agentEnName,
-      city: client.city,
-      agentArName: client.agentArName
+      industryType: client.industryType || '',
+      phone1: client.phone1 || '',
+      phone2: client.phone2 || '',
+      phone3: client.phone3 || '',
+      creditLimit: client.creditLimit || '',
+      valNo: client.valNo || '',
+      commercialRegNo: client.commercialRegNo || '',
+      cp1: client.cp1 || '',
+      notes: client.notes || '',
+      shipper: client.shipper || '',
+      arName: client.arName || '',
+      cp1Position: client.cp1Position || '',
+      agentName: client.agentName || '',
+      address: client.address || '',
+      country: client.country || '',
+      cp1Email: client.cp1Email || '',
+      agentEnName: client.agentEnName || '',
+      city: client.city || '',
+      agentArName: client.agentArName || ''
     });
-    setEditingId(client.clientId); // Use clientId for editing
+    setEditingId(client.clientId);
     setIsAdding(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsAdding(false);
+    setEditingId(null);
+    setNewClient({
+      clientId: '', name: '', industryType: '', phone1: '', phone2: '', phone3: '', creditLimit: '',
+      valNo: '', commercialRegNo: '', cp1: '', notes: '', shipper: '', arName: '', cp1Position: '',
+      agentName: '', address: '', country: '', cp1Email: '', agentEnName: '', city: '', agentArName: ''
+    });
   };
 
   // Filter and search functionality
   const filteredClients = clients.filter(client =>
-    client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.clientId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.city.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.country.toLowerCase().includes(searchTerm.toLowerCase())
+    (client.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (client.clientId || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (client.city || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (client.country || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Pagination logic
@@ -200,8 +524,6 @@ console.log('Formatted Payload:', payload); // Check this in the console
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentClients = filteredClients.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(filteredClients.length / itemsPerPage);
-
-  
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-8">

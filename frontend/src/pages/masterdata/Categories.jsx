@@ -389,7 +389,16 @@ const CategoryInformationPage = () => {
     description: obj.description,
     createdAt: obj.created_at,
   });
-
+  const handleEdit = (category) => {
+    setNewCategory({
+      code: category.code,
+      name: category.name,
+      description: category.description,
+    });
+    setEditingId(category.id);
+    setIsAdding(true);
+  };
+  
   // Convert camelCase to snake_case for API
   const formatToSnakeCase = (category) => ({
     code: category.code,
@@ -400,37 +409,59 @@ const CategoryInformationPage = () => {
   // Fetch categories from backend
   const fetchCategories = async () => {
     try {
-      const res = await fetch(API_URL);
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        console.error('Authentication token missing');
+        setError('Please log in to fetch categories');
+        return;
+      }
+  
+      const res = await fetch(API_URL, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+  
+      if (!res.ok) {
+        throw new Error(`Failed to fetch categories: ${res.status} ${res.statusText}`);
+      }
+  
       const data = await res.json();
-      
-      // Convert the data to camel case using the 'toCamelCase' function
       const categories = data.map(toCamelCase);
-      
-      // Log the fetched data for debugging
-      console.log('Fetched Categories:', data[0].sino);
-      
-      // Set the categories in the state
+  
+      console.log('Fetched Categories (sample):', data[0]?.sino); // Optional chaining for safety
+  
       setCategories(categories);
     } catch (err) {
       console.error('Failed to fetch categories:', err);
+      setError('Failed to load categories');
     }
   };
   
-
   useEffect(() => {
     fetchCategories();
   }, []);
-
+  
   // Add or update category handler
   const handleAddCategory = async () => {
     if (!newCategory.code.trim() || !newCategory.name.trim()) return;
   
     try {
-      // Format data before sending (exclude `id`)
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        alert('Authentication token missing. Please log in again.');
+        return;
+      }
+  
       const categoryData = {
         code: newCategory.code,
         name: newCategory.name,
-        status: newCategory.status, // Add more fields if necessary
+        status: newCategory.status,
+      };
+  
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
       };
   
       let res;
@@ -438,14 +469,14 @@ const CategoryInformationPage = () => {
         // Update existing category
         res = await fetch(`${API_URL}/${editingId}`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify(categoryData),
         });
       } else {
         // Add new category
         res = await fetch(API_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify(categoryData),
         });
       }
@@ -455,12 +486,11 @@ const CategoryInformationPage = () => {
         throw new Error(errorData.message || 'Failed to add category');
       }
   
-      // Fetch categories after adding/updating
       await fetchCategories();
       setNewCategory({
         code: '',
         name: '',
-        status: 'Active',  // Default status value, can be changed as needed
+        status: 'Active',
       });
       setEditingId(null);
       setIsAdding(false);
@@ -470,31 +500,38 @@ const CategoryInformationPage = () => {
     }
   };
   
+  
 
   // Delete category handler
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this category?')) return;
-
+  
     try {
-      const res = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Failed to delete category');
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        alert('Authentication token missing. Please log in again.');
+        return;
+      }
+  
+      const res = await fetch(`${API_URL}/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+  
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`Failed to delete category: ${errorText}`);
+      }
+  
       await fetchCategories();
     } catch (err) {
-      console.error(err);
-      alert(err.message);
+      console.error('Delete error:', err);
+      alert(err.message || 'Failed to delete category');
     }
   };
-
-  // Edit category handler (populate form)
-  const handleEdit = (category) => {
-    setNewCategory({
-      code: category.code,
-      name: category.name,
-      description: category.description,
-    });
-    setEditingId(category.id);
-    setIsAdding(true);
-  };
+  
 
   // Sort handler
   const handleSort = (field) => {

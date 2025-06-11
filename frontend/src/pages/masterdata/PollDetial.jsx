@@ -270,12 +270,22 @@ const PolDetailsPage = () => {
   const [editingName, setEditingName] = useState('');
   const [polList, setPolList] = useState([]);
 
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('authToken');
+    if (!token) throw new Error('Authentication token missing');
+    return { 'Authorization': `Bearer ${token}` };
+  };
+
   const fetchPolList = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/ports');
+      const response = await axios.get('http://localhost:5000/api/ports', {
+        headers: getAuthHeaders(),  // Add auth headers here
+      });
+  
       console.log("Fetched POL List response:", response);  // Log the full response
       console.log("Fetched POL List data:", response.data); // Log the data
-      console.log("Fetched POL List data:", response.data[0].id);
+      console.log("Fetched POL List data:", response.data[0]?.id);  // Access first item's id safely
+  
       // Ensure state is set properly
       setPolList(prevPolList => {
         console.log("Previous POL List:", prevPolList); // Log previous state to track updates
@@ -285,17 +295,22 @@ const PolDetailsPage = () => {
       console.error("Error fetching POL list:", error);
     }
   };
+  
   // Fetch POL list from the API on component mount
   useEffect(() => {
-    
-    
     fetchPolList();
   }, []);
 
   const handleAddPol = async () => {
-    if (polName.trim() && slno.trim()) {
+    // Check if polName is defined and not empty
+    if (polName.trim()) {
       try {
-        const response = await axios.post('http://localhost:5000/api/ports', { name: polName.trim() });
+        const response = await axios.post('http://localhost:5000/api/ports', 
+          { name: polName.trim() },  // Send only polName to the backend
+          {
+            headers: getAuthHeaders(), // Ensure the request includes the Authorization header
+          }
+        );
   
         console.log("New POL response:", response.data); // Log the response from the backend
         const newPol = { id: response.data.id, name: response.data.name };
@@ -307,40 +322,57 @@ const PolDetailsPage = () => {
           return updatedList;
         });
   
+        // Reset the polName input after successful submission
         setPolName('');
       } catch (error) {
         console.error("Error adding POL:", error);
       }
+    } else {
+      console.error("polName is undefined or empty.");
+      alert("POL name is required.");
     }
   };
   
-  
-
   const handleEditStart = (pol) => {
+    // Start editing by setting the current POL details
     setEditingId(pol.id);
-    setEditingName(pol.name);
+    setEditingName(pol.name);  // Set the name of the POL to be edited
   };
-
+  
   const handleEditSave = async (id) => {
+    // Ensure name is not empty before saving
     if (editingName.trim()) {
       try {
-        await axios.put(`http://localhost:5000/api/ports/${id}`, { name: editingName.trim() });
-        setPolList(polList.map(pol => 
+        // Send PUT request to update the POL name
+        const response = await axios.put(`http://localhost:5000/api/ports/${id}`, {
+          name: editingName.trim()  // Trim and send the updated name
+        }, {
+          headers: getAuthHeaders()  // Include auth headers to authenticate the request
+        });
+  
+        // Update frontend state with the new POL name
+        setPolList(polList.map(pol =>
           pol.id === id ? { ...pol, name: editingName.trim().toUpperCase() } : pol
         ));
+  
+        // Reset editing state after successful save
         setEditingId(null);
         setEditingName('');
       } catch (error) {
         console.error("Error editing POL:", error);
+        alert("There was an error updating the POL name. Please try again.");
       }
+    } else {
+      alert("POL name cannot be empty.");
     }
   };
-
+  
   const handleEditCancel = () => {
+    // Reset the editing state if user cancels the edit
     setEditingId(null);
     setEditingName('');
   };
-
+  
   const handleKeyPress = (e, id) => {
     if (e.key === 'Enter') {
       handleEditSave(id);
@@ -370,13 +402,22 @@ const PolDetailsPage = () => {
 
   const handleDeletePol = async (id) => {
     try {
-      await axios.delete(`http://localhost:5000/api/ports/${id}`);
-      setPolList(polList.filter(pol => pol.id !== id));
+      // Send DELETE request to backend with authentication headers
+      await axios.delete(`http://localhost:5000/api/ports/${id}`, {
+        headers: getAuthHeaders(), // Include auth token for authentication
+      });
+  
+      // Remove the deleted POL from the frontend list by filtering out the POL with the deleted ID
+      setPolList(prevPolList => prevPolList.filter(pol => pol.id !== id));
+  
+      console.log(`POL with ID ${id} deleted successfully`);
     } catch (error) {
+      // If there's an error, log it to the console
       console.error("Error deleting POL:", error);
+      alert("There was an error deleting the POL. Please try again.");
     }
   };
-
+  
   const getSortIcon = (field) => {
     if (sortOrder.field !== field) return null;
     return sortOrder.direction === 'asc' 
