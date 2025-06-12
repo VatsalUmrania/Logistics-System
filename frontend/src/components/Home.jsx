@@ -1,5 +1,7 @@
-import React from "react";
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Truck, Users, FileText, Database, CreditCard, FileCheck, Home } from "lucide-react";
+import { useAuth } from "../../../backend/modules/auth/AuthContext";
 import logo from '../assets/logo_lms-removebg-preview.jpg';
 const cards = [
   {
@@ -42,16 +44,7 @@ const cards = [
 
 
 const HomePage = () => {
-  useEffect(() => {
-    if (!isAuthenticated) {
-      // Redirect to login page if the user is not authenticated
-      navigate("/login");
-    }
-  }, [isAuthenticated, navigate]);
-
-  if (!isAuthenticated) {
-    return null;  // Alternatively, you can show a loading spinner while redirecting
-  }
+ 
   return (
     <div className="bg-gradient-to-br from-white via-[#f8fafc] to-indigo-50 min-h-screen pt-40 pb-20 px-4">
       <div className="max-w-7xl mx-auto">

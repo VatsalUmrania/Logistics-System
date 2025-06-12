@@ -608,7 +608,6 @@ const LoginPage = () => {
         email: formData.email,
         password: formData.password
       });
-
       const { data } = res.data;
 
       if (data?.token) {

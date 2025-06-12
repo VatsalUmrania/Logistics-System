@@ -13,7 +13,7 @@ import VoucherDetails from "../pages/reports/VoucherDetails";
 import CancelledReceiptDetails from "../pages/reports/CancelledReceiptDetails";
 import VatStatementReport from "../pages/reports/VatStatementReport";
 import ProfitReportByDate from "../pages/reports/ProfitReportByDate";
-
+import VatStat from "../pages/reports/VatReport";
 
 const reportsRoutes = (
   <>

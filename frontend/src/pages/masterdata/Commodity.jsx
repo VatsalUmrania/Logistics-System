@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Package, Search, Filter, Plus, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Pencil, Trash2, AlertCircle, CheckCircle } from 'lucide-react';
+import { Package, Search, Filter, Plus, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Pencil, Trash2, AlertCircle, CheckCircle, Flashlight } from 'lucide-react';
 
 
 const CommodityManagementPage = () => {
@@ -116,7 +116,6 @@ const CommodityManagementPage = () => {
     }
   };
   
-
   // Update commodity in database
   const updateCommodity = async (id, commodityData) => {
     try {
@@ -201,34 +200,82 @@ const CommodityManagementPage = () => {
   
 
   // Toggle commodity status (Active/Inactive)
-  const toggleCommodityStatus = async (id, currentStatus) => {
+  // const toggleCommodityStatus = async (id, currentStatus) => {
+  //   const newStatus = currentStatus === 'Active' ? 'Inactive' : 'Active';
+    
+  //   try {
+  //     setLoading(true);
+  
+  //     const token = localStorage.getItem('authToken');
+  //     if (!token) {
+  //       setError('Authentication token missing. Please login again.');
+  //       return false;
+  //     }
+  
+  //     // Prepare commodity data for updating the status
+  //     const commodityData = {
+
+  //       status: newStatus
+  //     };
+  
+  //     // Reuse the updateCommodity function to update the status
+  //     const isUpdated = await updateCommodity(id, commodityData);
+  
+  //     if (isUpdated) {
+  //       setSuccess(`Commodity status updated to ${newStatus}!`);
+  //       return true;
+  //     } else {
+  //       throw new Error('Failed to update commodity status');
+  //     }
+  
+  //   } catch (err) {
+  //     console.error('Error updating status:', err);
+  //     setError(err.message || 'Failed to update status');
+  //     return false;
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+  const toggleCommodityStatus = async (id, currentStatus, name) => {
     const newStatus = currentStatus === 'Active' ? 'Inactive' : 'Active';
+    
     try {
       setLoading(true);
-      const response = await post(`${API_BASE_URL}/commodities/${id}/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status: newStatus }),
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update status');
+  
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        setError('Authentication token missing. Please login again.');
+        return false;
+      }
+  
+      // Prepare commodity data for updating the status
+      const commodityData = {
+        id,         // Include id to be sent in the request
+        name,       // Include name to be sent in the request
+        status: newStatus,
+      };
+  
+      // Reuse the updateCommodity function to update the status
+      const isUpdated = await updateCommodity(id, commodityData);
+  
+      if (isUpdated) {
+        setSuccess(`Commodity status updated to ${newStatus}!`);
+        await fetchCommodities();
+        return true;
+      } else {
+        throw new Error('Failed to update commodity status');
       }
       
-      setCommodities(prev => prev.map(c => 
-        c.id === id ? { ...c, status: newStatus } : c
-      ));
-      setSuccess(`Commodity status updated to ${newStatus}!`);
     } catch (err) {
       console.error('Error updating status:', err);
       setError(err.message || 'Failed to update status');
+      return false;
     } finally {
       setLoading(false);
     }
   };
+  
+
 
   // Load data on component mount
   useEffect(() => {
@@ -255,36 +302,43 @@ const CommodityManagementPage = () => {
 
   // Filter and sort commodities
   const filteredCommodities = commodities
-    .filter(c => {
-      const categoryName = getCategoryName(c.category_sino);
-      return (
-        c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        categoryName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        c.id.toString().includes(searchTerm) ||
-        (c.code && c.code.toLowerCase().includes(searchTerm.toLowerCase()))
-      );
-    });
+  .filter(c => {
+    // Ensure categoryName is a string (fallback to empty string if undefined)
+    const categoryName = getCategoryName(c.category_sino) || '';
 
-  if (sortField) {
-    filteredCommodities.sort((a, b) => {
-      let aField, bField;
-      
-      if (sortField === 'category_name') {
-        aField = getCategoryName(a.category_sino);
-        bField = getCategoryName(b.category_sino);
-      } else {
-        aField = a[sortField] || '';
-        bField = b[sortField] || '';
-      }
-      
-      if (typeof aField === 'string') aField = aField.toLowerCase();
-      if (typeof bField === 'string') bField = bField.toLowerCase();
+    // Safeguard to ensure .toLowerCase() is called only on valid strings
+    return (
+      (c.name && c.name.toLowerCase().includes(searchTerm.toLowerCase())) || // Check if c.name exists
+      categoryName.toLowerCase().includes(searchTerm.toLowerCase()) || // Always safe with fallback
+      c.id.toString().includes(searchTerm) || // Always safe, as c.id should be a number
+      (c.code && c.code.toLowerCase().includes(searchTerm.toLowerCase())) // Check if c.code exists
+    );
+  });
 
-      if (aField < bField) return sortDirection === 'asc' ? -1 : 1;
-      if (aField > bField) return sortDirection === 'asc' ? 1 : -1;
-      return 0;
-    });
-  }
+if (sortField) {
+  filteredCommodities.sort((a, b) => {
+    let aField, bField;
+
+    // Ensure category name is fetched safely
+    if (sortField === 'category_name') {
+      aField = getCategoryName(a.category_sino) || ''; // Fallback to empty string
+      bField = getCategoryName(b.category_sino) || ''; // Fallback to empty string
+    } else {
+      // Safeguard for undefined properties
+      aField = a[sortField] || '';  // Default to empty string if undefined
+      bField = b[sortField] || '';  // Default to empty string if undefined
+    }
+
+    // Convert to lower case only if the field is a string
+    if (typeof aField === 'string') aField = aField.toLowerCase();
+    if (typeof bField === 'string') bField = bField.toLowerCase();
+
+    // Sort logic based on direction
+    if (aField < bField) return sortDirection === 'asc' ? -1 : 1;
+    if (aField > bField) return sortDirection === 'asc' ? 1 : -1;
+    return 0;
+  });
+}
 
   // Pagination
   const totalPages = Math.ceil(filteredCommodities.length / itemsPerPage);
