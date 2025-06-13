@@ -73,3 +73,31 @@ exports.logoutUser = async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 };
+
+exports.getCurrentUser = async (req, res) => {
+  try {
+      // 1. Extract the user ID from the token (already added to req.user by authMiddleware)
+      const userId = req.user.id;
+
+      // 2. Get the user details from the database
+      const user = await User.getUserById(userId);
+
+      // 3. If user not found, return an error
+      if (!user) {
+          return res.status(404).json({ message: 'User not found' });
+      }
+
+      // 4. Return the user details (excluding sensitive data like password)
+      res.json({
+          id: user.id,
+          email: user.email,
+          employee_name: user.employee_name,
+          is_admin: user.is_admin,
+          created_at: user.created_at,
+          updated_at: user.updated_at,
+      });
+  } catch (err) {
+      console.error(err);
+      res.status(500).send('Server Error');
+  }
+};

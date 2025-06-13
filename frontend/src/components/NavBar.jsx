@@ -134,27 +134,64 @@ const navItems = [
   },
 ];
 
+const toCamelCase = (str) => {
+  return str.replace(/([-_][a-z])/ig, ($1) => {
+    return $1.toUpperCase().replace('-', '').replace('_', '');
+  });
+};
+
 const Navbar = () => {
-  const [user] = useState('User');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
+  const [user, setUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchUserData = async () => {
+    try {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        window.location.href = '/login';
+        return;
+      }
+      
+      const response = await fetch('http://localhost:5000/api/users/me', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const result = await response.json();
+      
+      if (response.ok) {
+        if (result.data && result.data.employee_name) {
+          setUser(result.data.employee_name);
+        } else {
+          console.error('User data not found in response', result);
+        }
+      } else {
+        if (response.status === 401) {
+          localStorage.removeItem('authToken');
+          window.location.href = '/login';
+        } else {
+          console.error('API error:', result.message || 'Unknown error');
+        }
+      }
+    } catch (error) {
+      console.error('Network error:', error);
+      localStorage.removeItem('authToken');
+      window.location.href = '/login';
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const getAuthHeaders = () => {
-      const token = localStorage.getItem('authToken'); // or use cookies, sessionStorage, etc.
-    
-      if (!token) {
-        // Handle the case where the token is not available
-        console.log("No token found!");
-        return {};
-      }
-    
-      return {
-        Authorization: `Bearer ${token}`,  // Add the token to the request headers
-      };
-    };
+    fetchUserData();
+  }, []);
+
+  useEffect(() => {  
 
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
@@ -190,6 +227,8 @@ const Navbar = () => {
     
     // Optionally redirect the user to the login page
     window.location.href = '/';
+
+    fetchUserData();
 };
   return (
     <div className="w-full">

@@ -91,7 +91,7 @@ router.use(authMiddleware);
 
 // Admin-only routes
 router.post('/users', adminMiddleware, controller.createUser);
-
+router.get('/users/me', controller.getCurrentUser);
 // Bank routes
 router.post('/banks', controller.createBank);
 router.get('/banks', controller.getBanks);
@@ -139,4 +139,5 @@ router.get('/users', controller.getUser);
 router.put('/users/:id', controller.updateUser);
 router.delete('/users/:id', controller.deleteUser);
 router.post('/logout', controller.logoutUser);
+
 module.exports = router;

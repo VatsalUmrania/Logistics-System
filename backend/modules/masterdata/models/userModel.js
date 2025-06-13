@@ -138,6 +138,12 @@ const isTokenBlacklisted = async (token) => {
 const logoutUser = async (token) => {
     await blacklistToken(token);
 };
+
+const getUserById = async (id) => {
+    const [rows] = await db.query('SELECT id, email, employee_name, is_admin, created_at, updated_at FROM users WHERE id = ?', [id]);
+    return rows[0]; // Return the user details, or undefined if no user is found
+};
+
 module.exports = {
     createUser,
     loginUser,
@@ -145,5 +151,6 @@ module.exports = {
     deleteUser,
     getUsers,
     isTokenBlacklisted,
-    logoutUser
+    logoutUser,
+    getUserById
 };

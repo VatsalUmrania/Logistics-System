@@ -134,6 +134,7 @@ const {
   deleteHandlerByField
 } = require('../utils/genericHandlers');
 
+
 const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -211,11 +212,40 @@ const logoutUser = async (req, res) => {
   }
 };
 
+const getCurrentUser = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const userData = await model.getUserById(userId);
+
+    if (!userData) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    // Remove sensitive data
+    const { password, ...userWithoutPassword } = userData;
+
+    return res.status(200).json({
+      success: true,
+      message: 'User data fetched successfully',
+      data: userWithoutPassword,
+    });
+  } catch (error) {
+    console.error('Error fetching user data:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while fetching user data',
+    });
+  }
+};
+
 module.exports = {
   loginUser,
   createUser,
   logoutUser,
-  
+  getCurrentUser,
   // Banks
   createBank: createHandler(model.createBank),
   getBanks: getAllHandler(model.getBanks),

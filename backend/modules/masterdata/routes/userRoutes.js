@@ -12,4 +12,6 @@ router.post('/login', controller.loginUser); // User login
 // Add the logout route here
 router.post('/logout', controller.logoutUser); // User logout
 
+// User route to get current user
+router.get('/me', authMiddleware, controller.getCurrentUser);
 module.exports = router;

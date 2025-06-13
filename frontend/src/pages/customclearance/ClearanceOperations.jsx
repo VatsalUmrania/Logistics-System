@@ -636,7 +636,7 @@
 //                           type="text"
 //                           placeholder="Bill Number"
 //                           value={bill.billNo}
-//                           onChange={(e) => updateBill(bill.id, 'billNo', e.target.value)}
+//                `           onChange={(e) => updateBill(bill.id, 'billNo', e.target.value)}
 //                           className="w-full px-2 py-1.5 border border-gray-300 rounded-md text-xs bg-white text-gray-800 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all"
 //                         />
 //                       </div>
@@ -693,8 +693,7 @@
 // };
 
 // export default ClearanceOperation;
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   ClipboardList, 
   Plus, 
@@ -709,77 +708,77 @@ import {
   Trash2
 } from 'lucide-react';
 
+// Initial form data structure
+const initialFormData = {
+  operationType: 'Import',
+  transportMode: 'Sea',
+  client: '',
+  jobNo: '',
+  commodity: '',
+  noOfPackages: '',
+  pod: '',
+  line: '',
+  vessel: '',
+  netWeight: '',
+  grossWeight: '',
+  shipper: '',
+  clientRefName: '',
+  lineAgent: '',
+  representative: '',
+  receivingRep: '',
+  pol: '',
+  bayanNo: '',
+  bayanDate: '',
+  paymentDate: '',
+  group: '',
+  eta: '',
+  date: '',
+  yardDate: '',
+  hijriDate: '',
+  endDate: '',
+  releaseDate: '',
+  status: '',
+  notes: '',
+  bl: '',
+  poNo: ''
+};
+
 const ClearanceOperation = () => {
-  const [formData, setFormData] = useState({
-    // Basic Info
-    operationType: 'Import',
-    transportMode: 'Sea',
-    client: '',
-    jobNo: '',
-    commodity: '',
-    noOfPackages: '',
-    pod: '',
-    line: '',
-    vessel: '',
-    netWeight: '',
-    grossWeight: '',
-    shipper: '',
-    
-    // Client Details
-    clientRefName: '',
-    lineAgent: '',
-    representative: '',
-    receivingRep: '',
-    pol: '',
-    
-    // Dates and Numbers
-    bayanNo: '',
-    bayanDate: '',
-    paymentDate: '',
-    group: '',
-    eta: '',
-    date: '',
-    yardDate: '',
-    hijriDate: '',
-    endDate: '',
-    releaseDate: '',
-    
-    // Status and Notes
-    status: '',
-    notes: '',
-    bl: '',
-    poNo: '',
-    searchTerm: ''
-  });
-
-  const [containers, setContainers] = useState([
-    { id: 1, qty: '', type: '' }
-  ]);
-
-  const [bills, setBills] = useState([
-    { id: 1, clientRef: '', doDate: '', doNo: '', endorseNo: '', billNo: '' }
-  ]);
-
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
+  // State management
+  const [formData, setFormData] = useState(initialFormData);
+  const [containers, setContainers] = useState([{ id: Date.now(), qty: '', type: '' }]);
+  const [bills, setBills] = useState([{ id: Date.now(), clientRef: '', doDate: '', doNo: '', endorseNo: '', billNo: '' }]);
+  const [operations, setOperations] = useState([]);
+  const [currentOperationId, setCurrentOperationId] = useState(null);
+  const [currentContainerPage, setCurrentContainerPage] = useState(1);
+  const [currentOperationsPage, setCurrentOperationsPage] = useState(1);
   const [sortField, setSortField] = useState('client');
   const [sortDirection, setSortDirection] = useState('asc');
   const [isAdding, setIsAdding] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
+  // Constants
   const vesselOptions = ['Select', 'MSC Maya', 'OOCL Hamburg', 'Maersk Madrid', 'CMA CGM Liberty'];
   const polOptions = ['Select', 'Jeddah', 'Dubai', 'Shanghai', 'Rotterdam'];
   const containerTypes = ['20GP', '40GP', '40HC', '45HC', '20RF', '40RF'];
+  const itemsPerPageForContainers = 5;
+  const itemsPerPageForOperations = 5;
 
+  // Form handlers
   const handleFormChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  // Container handlers
   const addContainer = () => {
     setContainers(prev => [...prev, { id: Date.now(), qty: '', type: '' }]);
+    setCurrentContainerPage(Math.ceil((containers.length + 1) / itemsPerPageForContainers));
   };
 
   const removeContainer = (id) => {
-    setContainers(prev => prev.filter(container => container.id !== id));
+    if (containers.length > 1) {
+      setContainers(prev => prev.filter(container => container.id !== id));
+    }
   };
 
   const updateContainer = (id, field, value) => {
@@ -788,12 +787,15 @@ const ClearanceOperation = () => {
     ));
   };
 
+  // Bill handlers
   const addBill = () => {
     setBills(prev => [...prev, { id: Date.now(), clientRef: '', doDate: '', doNo: '', endorseNo: '', billNo: '' }]);
   };
 
   const removeBill = (id) => {
-    setBills(prev => prev.filter(bill => bill.id !== id));
+    if (bills.length > 1) {
+      setBills(prev => prev.filter(bill => bill.id !== id));
+    }
   };
 
   const updateBill = (id, field, value) => {
@@ -802,14 +804,92 @@ const ClearanceOperation = () => {
     ));
   };
 
+  // File and save handlers
   const handleAddFiles = () => {
     console.log('Add files functionality');
+    alert('File upload functionality would go here');
   };
 
   const handleSave = () => {
-    console.log('Save functionality', { formData, containers, bills });
+    const newOperation = {
+      id: currentOperationId || Date.now(),
+      ...formData,
+      containers: containers,
+      bills: bills
+    };
+
+    if (currentOperationId) {
+      // Update existing operation
+      setOperations(prev => prev.map(op => 
+        op.id === currentOperationId ? newOperation : op
+      ));
+    } else {
+      // Add new operation
+      setOperations(prev => [...prev, newOperation]);
+    }
+
+    resetForm();
+    setIsAdding(false);
   };
 
+  // Edit and delete operations
+  const handleEdit = (operation) => {
+    setFormData({
+      operationType: operation.operationType,
+      transportMode: operation.transportMode,
+      client: operation.client,
+      jobNo: operation.jobNo,
+      commodity: operation.commodity,
+      noOfPackages: operation.noOfPackages,
+      pod: operation.pod,
+      line: operation.line,
+      vessel: operation.vessel,
+      netWeight: operation.netWeight,
+      grossWeight: operation.grossWeight,
+      shipper: operation.shipper,
+      clientRefName: operation.clientRefName,
+      lineAgent: operation.lineAgent,
+      representative: operation.representative,
+      receivingRep: operation.receivingRep,
+      pol: operation.pol,
+      bayanNo: operation.bayanNo,
+      bayanDate: operation.bayanDate,
+      paymentDate: operation.paymentDate,
+      group: operation.group,
+      eta: operation.eta,
+      date: operation.date,
+      yardDate: operation.yardDate,
+      hijriDate: operation.hijriDate,
+      endDate: operation.endDate,
+      releaseDate: operation.releaseDate,
+      status: operation.status,
+      notes: operation.notes,
+      bl: operation.bl,
+      poNo: operation.poNo
+    });
+    
+    setContainers(operation.containers);
+    setBills(operation.bills);
+    setCurrentOperationId(operation.id);
+    setIsAdding(true);
+  };
+
+  const handleDelete = (id) => {
+    if (window.confirm('Are you sure you want to delete this operation?')) {
+      setOperations(prev => prev.filter(op => op.id !== id));
+    }
+  };
+
+  // Reset form
+  const resetForm = () => {
+    setFormData(initialFormData);
+    setContainers([{ id: Date.now(), qty: '', type: '' }]);
+    setBills([{ id: Date.now(), clientRef: '', doDate: '', doNo: '', endorseNo: '', billNo: '' }]);
+    setCurrentOperationId(null);
+    setCurrentContainerPage(1);
+  };
+
+  // Sorting handlers
   const handleSort = (field) => {
     if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -820,10 +900,40 @@ const ClearanceOperation = () => {
   };
 
   // Pagination for containers
-  const indexOfLastContainer = currentPage * itemsPerPage;
-  const indexOfFirstContainer = indexOfLastContainer - itemsPerPage;
+  const indexOfLastContainer = currentContainerPage * itemsPerPageForContainers;
+  const indexOfFirstContainer = indexOfLastContainer - itemsPerPageForContainers;
   const currentContainers = containers.slice(indexOfFirstContainer, indexOfLastContainer);
-  const totalPages = Math.ceil(containers.length / itemsPerPage);
+  const totalContainerPages = Math.ceil(containers.length / itemsPerPageForContainers);
+
+  // Pagination and sorting for operations
+  const sortedOperations = [...operations].sort((a, b) => {
+    const aValue = a[sortField] || '';
+    const bValue = b[sortField] || '';
+    
+    if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+    if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  const filteredOperations = sortedOperations.filter(op => 
+    op.client.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    op.jobNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    op.operationType.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    op.transportMode.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    op.vessel?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    op.pol?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    op.status.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const indexOfLastOperation = currentOperationsPage * itemsPerPageForOperations;
+  const indexOfFirstOperation = indexOfLastOperation - itemsPerPageForOperations;
+  const currentOperations = filteredOperations.slice(indexOfFirstOperation, indexOfLastOperation);
+  const totalOperationsPages = Math.ceil(filteredOperations.length / itemsPerPageForOperations);
+
+  // Reset operations page when search term changes
+  useEffect(() => {
+    setCurrentOperationsPage(1);
+  }, [searchTerm]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-8">
@@ -846,13 +956,16 @@ const ClearanceOperation = () => {
                   type="text"
                   placeholder="Search operations..."
                   className="bg-transparent outline-none w-40"
-                  value={formData.searchTerm}
-                  onChange={(e) => handleFormChange('searchTerm', e.target.value)}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
             </div>
             <button
-              onClick={() => setIsAdding(!isAdding)}
+              onClick={() => {
+                resetForm();
+                setIsAdding(!isAdding);
+              }}
               className={`px-5 py-2 text-white rounded-lg font-medium transition-all flex items-center shadow-md
                 ${isAdding 
                   ? 'bg-red-600 hover:bg-red-700' 
@@ -870,7 +983,7 @@ const ClearanceOperation = () => {
             <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6">
               <h2 className="text-xl font-bold text-white flex items-center">
                 <ClipboardList className="w-5 h-5 mr-2" />
-                Add New Clearance Operation
+                {currentOperationId ? 'Edit Clearance Operation' : 'Add New Clearance Operation'}
               </h2>
             </div>
             
@@ -961,6 +1074,7 @@ const ClearanceOperation = () => {
                         value={formData.client}
                         onChange={(e) => handleFormChange('client', e.target.value)}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        required
                       />
                     </div>
                     
@@ -973,6 +1087,7 @@ const ClearanceOperation = () => {
                         value={formData.jobNo}
                         onChange={(e) => handleFormChange('jobNo', e.target.value)}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        required
                       />
                     </div>
                   </div>
@@ -1078,7 +1193,7 @@ const ClearanceOperation = () => {
                         ETA
                       </label>
                       <input
-                        type="text"
+                        type="date"
                         value={formData.eta}
                         onChange={(e) => handleFormChange('eta', e.target.value)}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
@@ -1372,16 +1487,16 @@ const ClearanceOperation = () => {
                     </div>
                     <div className="flex space-x-2">
                       <button
-                        onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                        disabled={currentPage === 1}
+                        onClick={() => setCurrentContainerPage((p) => Math.max(p - 1, 1))}
+                        disabled={currentContainerPage === 1}
                         className="p-2 rounded-md hover:bg-indigo-100 disabled:opacity-50"
                         title="Previous"
                       >
                         <ChevronLeft className="w-5 h-5" />
                       </button>
                       <button
-                        onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-                        disabled={currentPage === totalPages || totalPages === 0}
+                        onClick={() => setCurrentContainerPage((p) => Math.min(p + 1, totalContainerPages))}
+                        disabled={currentContainerPage === totalContainerPages || totalContainerPages === 0}
                         className="p-2 rounded-md hover:bg-indigo-100 disabled:opacity-50"
                         title="Next"
                       >
@@ -1494,7 +1609,10 @@ const ClearanceOperation = () => {
               
               <div className="mt-6 flex justify-end space-x-4">
                 <button
-                  onClick={() => setIsAdding(false)}
+                  onClick={() => {
+                    resetForm();
+                    setIsAdding(false);
+                  }}
                   className="px-6 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg"
                 >
                   Cancel
@@ -1503,7 +1621,7 @@ const ClearanceOperation = () => {
                   onClick={handleSave}
                   className="px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-lg"
                 >
-                  Save Operation
+                  {currentOperationId ? 'Update Operation' : 'Save Operation'}
                 </button>
               </div>
             </div>
@@ -1551,106 +1669,72 @@ const ClearanceOperation = () => {
               </tr>
             </thead>
             <tbody>
-              {/* Sample data row - in a real app this would come from API */}
-              <tr className="border-b border-gray-200 hover:bg-gray-50">
-                <td className="px-4 py-3">ABC Logistics</td>
-                <td className="px-4 py-3">JOB-2023-001</td>
-                <td className="px-4 py-3">Import</td>
-                <td className="px-4 py-3">Sea</td>
-                <td className="px-4 py-3">MSC Maya</td>
-                <td className="px-4 py-3">Jeddah</td>
-                <td className="px-4 py-3">
-                  <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
-                    Completed
-                  </span>
-                </td>
-                <td className="px-4 py-3 flex space-x-3">
-                  <button
-                    title="Edit"
-                    className="text-indigo-600 hover:text-indigo-800"
-                  >
-                    <Pencil className="w-5 h-5" />
-                  </button>
-                  <button
-                    title="Delete"
-                    className="text-red-600 hover:text-red-800"
-                  >
-                    <Trash2 className="w-5 h-5" />
-                  </button>
-                </td>
-              </tr>
-              <tr className="border-b border-gray-200 hover:bg-gray-50">
-                <td className="px-4 py-3">Global Shipping Co</td>
-                <td className="px-4 py-3">JOB-2023-002</td>
-                <td className="px-4 py-3">Export</td>
-                <td className="px-4 py-3">Air</td>
-                <td className="px-4 py-3">-</td>
-                <td className="px-4 py-3">Dubai</td>
-                <td className="px-4 py-3">
-                  <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs">
-                    In Progress
-                  </span>
-                </td>
-                <td className="px-4 py-3 flex space-x-3">
-                  <button
-                    title="Edit"
-                    className="text-indigo-600 hover:text-indigo-800"
-                  >
-                    <Pencil className="w-5 h-5" />
-                  </button>
-                  <button
-                    title="Delete"
-                    className="text-red-600 hover:text-red-800"
-                  >
-                    <Trash2 className="w-5 h-5" />
-                  </button>
-                </td>
-              </tr>
-              <tr className="border-b border-gray-200 hover:bg-gray-50">
-                <td className="px-4 py-3">Marine Transport Ltd</td>
-                <td className="px-4 py-3">JOB-2023-003</td>
-                <td className="px-4 py-3">Import</td>
-                <td className="px-4 py-3">Sea</td>
-                <td className="px-4 py-3">CMA CGM Liberty</td>
-                <td className="px-4 py-3">Shanghai</td>
-                <td className="px-4 py-3">
-                  <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
-                    Pending
-                  </span>
-                </td>
-                <td className="px-4 py-3 flex space-x-3">
-                  <button
-                    title="Edit"
-                    className="text-indigo-600 hover:text-indigo-800"
-                  >
-                    <Pencil className="w-5 h-5" />
-                  </button>
-                  <button
-                    title="Delete"
-                    className="text-red-600 hover:text-red-800"
-                  >
-                    <Trash2 className="w-5 h-5" />
-                  </button>
-                </td>
-              </tr>
+              {currentOperations.length > 0 ? (
+                currentOperations.map((operation) => (
+                  <tr key={operation.id} className="border-b border-gray-200 hover:bg-gray-50">
+                    <td className="px-4 py-3">{operation.client}</td>
+                    <td className="px-4 py-3">{operation.jobNo}</td>
+                    <td className="px-4 py-3">{operation.operationType}</td>
+                    <td className="px-4 py-3">{operation.transportMode}</td>
+                    <td className="px-4 py-3">{operation.vessel || '-'}</td>
+                    <td className="px-4 py-3">{operation.pol || '-'}</td>
+                    <td className="px-4 py-3">
+                      <span className={`px-2 py-1 rounded-full text-xs ${
+                        operation.status === 'Completed' 
+                          ? 'bg-green-100 text-green-800' 
+                          : operation.status === 'In Progress' 
+                            ? 'bg-yellow-100 text-yellow-800' 
+                            : 'bg-blue-100 text-blue-800'
+                      }`}>
+                        {operation.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 flex space-x-3">
+                      <button
+                        onClick={() => handleEdit(operation)}
+                        title="Edit"
+                        className="text-indigo-600 hover:text-indigo-800"
+                      >
+                        <Pencil className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(operation.id)}
+                        title="Delete"
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="8" className="px-4 py-6 text-center text-gray-500">
+                    No operations found. Click "Add Operation" to create one.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
           
           {/* Pagination */}
           <div className="flex justify-between items-center px-4 py-3 border-t border-gray-200 bg-gray-50">
             <div className="text-sm text-gray-700">
-              Showing 1 to 3 of 3 results
+              Showing {indexOfFirstOperation + 1} to{' '}
+              {Math.min(indexOfLastOperation, filteredOperations.length)} of {filteredOperations.length} results
             </div>
             <div className="flex space-x-2">
               <button
-                disabled
+                onClick={() => setCurrentOperationsPage((p) => Math.max(p - 1, 1))}
+                disabled={currentOperationsPage === 1}
                 className="p-2 rounded-md hover:bg-indigo-100 disabled:opacity-50"
                 title="Previous"
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
               <button
-                disabled
+                onClick={() => setCurrentOperationsPage((p) => Math.min(p + 1, totalOperationsPages))}
+                disabled={currentOperationsPage === totalOperationsPages || totalOperationsPages === 0}
                 className="p-2 rounded-md hover:bg-indigo-100 disabled:opacity-50"
                 title="Next"
               >
@@ -1658,6 +1742,17 @@ const ClearanceOperation = () => {
               </button>
             </div>
           </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex justify-center gap-5 mt-6">
+          <button
+            onClick={handleAddFiles}
+            className="px-6 py-2.5 border-0 rounded-xl text-xs font-bold cursor-pointer transition-all duration-300 flex items-center gap-2 uppercase tracking-wide bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 hover:scale-105 hover:shadow-xl shadow-md transform"
+          >
+            <FileText size={14} />
+            Add Files
+          </button>
         </div>
       </div>
     </div>
