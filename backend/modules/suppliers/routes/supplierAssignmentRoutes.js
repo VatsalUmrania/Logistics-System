@@ -4,6 +4,6 @@ const supplierAssignmentController = require('../controllers/SupplierAssignmentC
 
 router.post('/', supplierAssignmentController.createSupplierAssignment);
 router.get('/last-invoice', supplierAssignmentController.getLastInvoice);
-
+router.get('/', supplierAssignmentController.getAllSupplierAssignments);
 
 module.exports = router;

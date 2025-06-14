@@ -76,11 +76,12 @@ import reportsRoutes from "./routes/reportsRoutes";
 import accountsRoutes from "./routes/accountsRoutes";
 import noLayoutRoutes from "./routes/noLayoutRoutes";
 import LandingPage from "./components/LandingPage";
-
+import Footer from "./components/Footer";
 const Layout = () => (
   <>
     <Navbar />
     <Outlet />
+    <Footer/>
   </>
 );
 
