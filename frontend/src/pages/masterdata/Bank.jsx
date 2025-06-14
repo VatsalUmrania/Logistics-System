@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Building2, Landmark, Plus, Pencil, Trash2, ChevronDown, Search, ChevronLeft, ChevronRight, X } from 'lucide-react';
 
-const API_URL = 'http://localhost:5000/api/supplier';
+const API_URL = 'http://localhost:5000/api/banks';
 
 const BankInformationPage = () => {
   const [banks, setBanks] = useState([]);

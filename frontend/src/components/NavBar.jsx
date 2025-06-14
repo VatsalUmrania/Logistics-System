@@ -62,7 +62,7 @@ const reportsMenu = [
   { label: 'Voucher', key: 'voucher', href:"/voucher-details" },
   { label: 'Profit Report By Jobno', key: 'profit_report_jobno' },
   { label: 'Profit Report By Date', key: 'profit_report_date', href:"/profit-report-by-date" },
-  // { label: 'Purchase Sales Vat Report', key: 'purchase_sales_vat_report' },
+  { label: 'Purchase Sales Vat Report', key: 'purchase_sales_vat_report' }
 ];
 
 // Accounts submenu
