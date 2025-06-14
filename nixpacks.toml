@@ -4,7 +4,7 @@ cmds = ["npm install"]
 
 [phases.build-frontend]
 workingDirectory = "frontend"
-cmds = ["npm run dev"]
+cmds = ["npm run build"]
 
 [phases.install-backend]
 workingDirectory = "backend"
