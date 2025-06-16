@@ -1,21 +1,17 @@
 [phases.setup]
 nixPkgs = ['nodejs_20']
 
-# Install frontend dependencies
 [phases.install-frontend]
 workingDirectory = "frontend"
 cmds = ["npm install"]
 
-# Optional: Build frontend (if needed for production)
 [phases.build-frontend]
 workingDirectory = "frontend"
 cmds = ["npm run build"]
 
-# Install backend dependencies
 [phases.install-backend]
 workingDirectory = "backend"
 cmds = ["npm install"]
 
-# Start the backend and frontend dev servers
 [start]
 cmd = "concurrently \"cd frontend && npm run dev\" \"cd backend && npm run dev\""
