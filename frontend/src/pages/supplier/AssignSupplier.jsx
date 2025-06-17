@@ -599,9 +599,9 @@ const AddSupplierPage = () => {
     setIsLoading(true);
     try {
       const res = await fetch(API_URL, {
-        headers: getAuthHeaders(),
+        headers: getAuthHeaders(), // Add auth headers
       });
-
+  
       if (!res.ok) throw new Error('Failed to fetch suppliers');
       const data = await res.json();
       setSuppliers(data);
@@ -612,36 +612,11 @@ const AddSupplierPage = () => {
     } finally {
       setIsLoading(false);
     }
-  };
-
+  }; 
+  
   // NEW: Fetch invoices from backend
-  const fetchInvoices = async () => {
-    setIsLoading(true);
-    try {
-      const res = await fetch(INVOICE_API_URL, {
-        headers: getAuthHeaders(),
-      });
 
-      if (!res.ok) throw new Error('Failed to fetch invoices');
-      const data = await res.json();
-      setInvoices(data);
-      setError('');
-    } catch (err) {
-      console.error('Error fetching invoices:', err);
-      setError('Failed to fetch invoices. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (activeTab === 'suppliers') {
-      fetchSuppliers();
-    } else {
-      fetchInvoices();
-    }
-  }, [activeTab]);
-
+  
   // Create or update supplier
   const handleAddSupplier = async () => {
     if (!newSupplier.name.trim()) {
@@ -743,6 +718,25 @@ const AddSupplierPage = () => {
     }));
   };
 
+  const fetchInvoices = async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch(INVOICE_API_URL, {
+        headers: getAuthHeaders(),
+      });
+  
+      if (!res.ok) throw new Error('Failed to fetch invoices');
+      const responseData = await res.json();
+      // Extract the data array from the response
+      setInvoices(responseData.data || []);
+      setError('');
+    } catch (err) {
+      console.error('Error fetching invoices:', err);
+      setError('Failed to fetch invoices. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
   // NEW: Submit invoice
   const handleSubmitInvoice = async () => {
     if (!newInvoice.selectedSupplierId) {
@@ -808,7 +802,10 @@ const AddSupplierPage = () => {
       setError('Failed to delete supplier');
     }
   };
-
+  useEffect(() => {
+    fetchSuppliers(); // Fetch suppliers
+    fetchInvoices();  // Fetch invoices
+  }, []);
   // Edit supplier
   const handleEdit = (supplier) => {
     setNewSupplier({ ...supplier });
@@ -1494,7 +1491,7 @@ const AddSupplierPage = () => {
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200">
+                  {/* <tbody className="divide-y divide-gray-200">
                     {isLoading ? (
                       <tr>
                         <td colSpan="6" className="px-6 py-12 text-center">
@@ -1557,6 +1554,40 @@ const AddSupplierPage = () => {
                         </td>
                       </tr>
                     )}
+                  </tbody> */}
+                  <tbody className="divide-y divide-gray-200">
+                    {invoices.map((invoice) => (
+                      <tr key={invoice.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900">
+                            {invoice.supplier_invoice_no}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-gray-900">
+                            {suppliers.find(s => s.id === invoice.supplier_id)?.name || 'N/A'}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-gray-900">
+                            {invoice.job_number || 'N/A'}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-gray-900">
+                            {new Date(invoice.invoice_date).toLocaleDateString()}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm font-medium text-gray-900">
+                            {parseFloat(invoice.bill_total_with_vat).toFixed(2)}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          {/* Action buttons */}
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
