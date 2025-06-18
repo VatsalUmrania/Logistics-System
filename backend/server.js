@@ -43,14 +43,18 @@ app.use((err, req, res, next) => {
 });
 
 // Start the server only after the DB is ready
-db.getPool()
-  .then(() => {
+// Use getConnection just to test DB connection at startup
+(async () => {
+  try {
+    const connection = await db.getConnection();
+    connection.release();
     app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
     });
-  })
-  .catch((err) => {
+  } catch (err) {
     console.error('❌ Failed to start server: DB not ready', err.message);
     process.exit(1);
-  });
+  }
+})();
+
 

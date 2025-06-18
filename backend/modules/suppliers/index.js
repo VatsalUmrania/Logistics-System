@@ -12,4 +12,6 @@ router.use('/supplier-assignments', require('./routes/supplierAssignmentRoutes')
 router.use('/supplier-credit-notes', require('./routes/supplierCreditNoteRoutes'));
 
 router.use('/supplier-payment', require('./routes/supplierPayments'));
+
+router.use('/invoices',require('./routes/InvoiceRoutes'));
 module.exports = router;

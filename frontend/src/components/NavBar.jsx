@@ -28,7 +28,7 @@ const supplierMenu = [
   { label: 'Assign Supplier', key: 'supplier_assign', icon: <span className="mr-2 text-indigo-500">•</span>, href:"/supplier-assign" },
   { label: 'Supplier Creditnote', key: 'supplier_creditnote', icon: <span className="mr-2 text-indigo-500">•</span>, href:"/supplier-creditnote" },
   { label: 'Supplier Invoice Cancel', key: 'supplier_invoice_cancel', icon: <span className="mr-2 text-indigo-500">•</span>, href:"/supplier-invoicecancel" },
-  { label: 'Supplier Statement Report', key: 'supplier_statement_report', icon: <span className="mr-2 text-indigo-500">•</span> },
+  { label: 'Supplier Statement Report', key: 'supplier_statement_report', icon: <span className="mr-2 text-indigo-500">•</span>, href:"/supplier-statement" },
   { label: 'Purchase Search By Supplier', key: 'purchase_search_supplier', icon: <span className="mr-2 text-indigo-500">•</span>, href:"/purchase-search" },
 ];
 

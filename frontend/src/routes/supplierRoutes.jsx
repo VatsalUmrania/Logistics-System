@@ -9,6 +9,7 @@ import AssignSupplier from "../pages/supplier/AssignSupplier";
 import PurchaseSearch from "../pages/supplier/PurchaseSearch";
 import SupplierCreditNote from "../pages/supplier/SupplierCreditNote"
 // import SupplierInvoiceCancel from "../pages/supplier/SupplierInvoiceCancel";
+import SupplierStatement from "../pages/supplier/CustomerStatement";
 
 const supplierRoutes = (
   <>
@@ -18,6 +19,7 @@ const supplierRoutes = (
     <Route path="/supplier-assign" element={<AssignSupplier />} />
     <Route path="/purchase-search" element={<PurchaseSearch />} />
     <Route path="/supplier-creditnote" element={<SupplierCreditNote />} />
+    <Route path="/supplier-statement" element={<SupplierStatement />} />
     {/* <Route path="/supplier-invoicecancel" element={<SupplierInvoiceCancel />} /> */}
   </>
 );
