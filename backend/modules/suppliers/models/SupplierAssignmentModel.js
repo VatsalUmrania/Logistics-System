@@ -148,3 +148,40 @@ exports.getAllSupplierAssignments = async () => {
     throw new Error(`Database query failed: ${error.message}`);
   }
 };
+
+exports.updateAssignment = async (assignmentId, assignmentData) => {
+  await db.query(
+    `UPDATE supplier_assignments 
+     SET supplier_id = ?, supplier_invoice_no = ?, job_number = ?, invoice_date = ?, vat_rate = ?, total_amount = ?, vat_amount = ?, bill_total_with_vat = ?
+     WHERE id = ?`,
+    [
+      assignmentData.selectedSupplierId,
+      assignmentData.supplierInvoiceNo,
+      assignmentData.jobNumber,
+      assignmentData.invoiceDate,
+      assignmentData.vatRate,
+      assignmentData.totalAmount,
+      assignmentData.vatAmount,
+      assignmentData.billTotalWithVAT,
+      assignmentId
+    ]
+  );
+};
+
+exports.deleteAssignmentItems = async (assignmentId) => {
+  await db.query(
+    `DELETE FROM supplier_assignment_items WHERE assignment_id = ?`,
+    [assignmentId]
+  );
+};
+
+exports.deleteAssignment = async (assignmentId) => {
+  // Delete items first due to foreign key constraints
+  await this.deleteAssignmentItems(assignmentId);
+
+  // Then delete the main assignment
+  await db.query(
+    `DELETE FROM supplier_assignments WHERE id = ?`,
+    [assignmentId]
+  );
+};

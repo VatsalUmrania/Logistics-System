@@ -27,7 +27,7 @@ const supplierMenu = [
   { label: 'Supplier Invoice Edit', key: 'supplier_invoice_edit', icon: <span className="mr-2 text-indigo-500">•</span>,  href:"/supplier-invoice-edit"},
   { label: 'Assign Supplier', key: 'supplier_assign', icon: <span className="mr-2 text-indigo-500">•</span>, href:"/supplier-assign" },
   { label: 'Supplier Creditnote', key: 'supplier_creditnote', icon: <span className="mr-2 text-indigo-500">•</span>, href:"/supplier-creditnote" },
-  { label: 'Supplier Invoice Cancel', key: 'supplier_invoice_cancel', icon: <span className="mr-2 text-indigo-500">•</span> },
+  { label: 'Supplier Invoice Cancel', key: 'supplier_invoice_cancel', icon: <span className="mr-2 text-indigo-500">•</span>, href:"/supplier-invoicecancel" },
   { label: 'Supplier Statement Report', key: 'supplier_statement_report', icon: <span className="mr-2 text-indigo-500">•</span> },
   { label: 'Purchase Search By Supplier', key: 'purchase_search_supplier', icon: <span className="mr-2 text-indigo-500">•</span>, href:"/purchase-search" },
 ];
@@ -147,7 +147,47 @@ const Navbar = () => {
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
 
+
+  // const fetchUserData = async () => {
+  //   try {
+  //     const token = localStorage.getItem('authToken');
+  //     if (!token) {
+  //       window.location.href = '/login';
+  //       return;
+  //     }
+      
+  //     const response = await fetch('http://localhost:5000/api/users/me', {
+  //       headers: {
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+
+  //     const result = await response.json();
+      
+  //     if (response.ok) {
+  //       if (result.data && result.data.employee_name) {
+  //         setUser(result.data.employee_name);
+  //       } else {
+  //         console.error('User data not found in response', result);
+  //       }
+  //     } else {
+  //       if (response.status === 401) {
+  //         localStorage.removeItem('authToken');
+  //         window.location.href = '/login';
+  //       } else {
+  //         console.error('API error:', result.message || 'Unknown error');
+  //       }
+  //     }
+  //   } catch (error) {
+  //     console.error('Network error:', error);
+  //     localStorage.removeItem('authToken');
+  //     window.location.href = '/login';
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
   const fetchUserData = async () => {
     try {
       const token = localStorage.getItem('authToken');
@@ -155,18 +195,28 @@ const Navbar = () => {
         window.location.href = '/login';
         return;
       }
-      
+  
       const response = await fetch('http://localhost:5000/api/users/me', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-
+  
       const result = await response.json();
-      
+  
       if (response.ok) {
         if (result.data && result.data.employee_name) {
           setUser(result.data.employee_name);
+  
+          // Check if user is admin
+          if (result.data.is_admin === 1) {
+            console.log('User is admin');
+            setIsAdmin(true); // You can use a state to store admin status
+          } else {
+            console.log('User is not admin');
+            setIsAdmin(false);
+          }
+  
         } else {
           console.error('User data not found in response', result);
         }
@@ -186,7 +236,7 @@ const Navbar = () => {
       setIsLoading(false);
     }
   };
-
+  
   useEffect(() => {
     fetchUserData();
   }, []);
@@ -219,7 +269,7 @@ const Navbar = () => {
   const toggleUserDropdown = () => {
     setIsUserDropdownOpen(!isUserDropdownOpen);
   };
-
+  
   const handleLogout = () => {
     // Clear user data and token from localStorage
     localStorage.removeItem('authToken');
@@ -316,7 +366,9 @@ const Navbar = () => {
                         </div>
                         <div>
                           <h3 className="font-semibold text-gray-800">{user}</h3>
-                          <p className="text-xs text-gray-500">Administrator</p>
+                          <p className="text-xs text-gray-500">
+                            {isAdmin ? 'Administrator' : 'User'}
+                          </p>
                         </div>
                       </div>
                     </div>
