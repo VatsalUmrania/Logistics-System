@@ -48,7 +48,7 @@ const clearanceMenu = [
 
 // Reports submenu
 const reportsMenu = [
-  { label: 'Search Invoice', key: 'search_invoice', href:"/invoice-search" },
+  { label: 'Search Invoice (Date, Invoice No, Name)', key: 'search_invoice', href:"/invoice-search" },
   { label: 'Search Invoice By Date', key: 'search_invoice_date', href:"/invoice-search-by-date" },
   { label: 'Search By Invoice No', key: 'search_by_invoice_no', href:"/invoice-search" },
   { label: 'Invoice Search By Bayan No', key: 'invoice_search_bayan', href:"/bayanno"},
