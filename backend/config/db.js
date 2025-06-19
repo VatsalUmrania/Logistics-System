@@ -1,10 +1,42 @@
 // const mysql = require('mysql2/promise');
+// const fs = require('fs');
+// const path = require('path');
 // const env = require('./env');
 
 // let pool;
 
 // async function createDBPool() {
 //   try {
+//     // Connect without specifying database
+//     const rootPool = mysql.createPool({
+//       host: env.DB_HOST,
+//       user: env.DB_USER,
+//       password: env.DB_PASSWORD,
+//       multipleStatements: true,
+//       waitForConnections: true,
+//       connectionLimit: 10,
+//       queueLimit: 0,
+//     });
+
+//     // Check if database exists
+//     const [rows] = await rootPool.query(
+//       `SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = ?`,
+//       [env.DB_NAME]
+//     );
+
+//     if (rows.length === 0) {
+//       console.log(`📦 Database '${env.DB_NAME}' not found. Creating from db.sql...`);
+//       const sqlPath = path.join(__dirname, 'db.sql');
+//       const schema = fs.readFileSync(sqlPath, 'utf8');
+//       await rootPool.query(schema);
+//       console.log(`✅ Database '${env.DB_NAME}' created.`);
+//     } else {
+//       console.log(`✅ Database '${env.DB_NAME}' already exists.`);
+//     }
+
+//     await rootPool.end(); // Close rootPool
+
+//     // Create pool with database specified
 //     pool = mysql.createPool({
 //       host: env.DB_HOST,
 //       user: env.DB_USER,
@@ -12,35 +44,39 @@
 //       database: env.DB_NAME,
 //       waitForConnections: true,
 //       connectionLimit: 10,
-//       queueLimit: 0
+//       queueLimit: 0,
 //     });
 
 //     // Test connection
 //     await pool.query('SELECT 1');
-//     console.log(`✅ Connected to MySQL at ${env.DB_HOST}`);
+//     console.log(`✅ Connected to '${env.DB_NAME}' at ${env.DB_HOST}`);
+
 //     return pool;
 //   } catch (err) {
-//     console.error('❌ DB Connection Failed:', err.message);
+//     console.error('❌ DB Initialization Failed:', err.message);
 //     throw err;
 //   }
 // }
 
-// // Initialize pool
-// const getPool = async () => {
+// async function getPool() {
 //   if (!pool) {
 //     pool = await createDBPool();
 //   }
 //   return pool;
-// };
+// }
 
 // module.exports = {
 //   query: async (...args) => {
-//     const connection = await getPool();
-//     return connection.query(...args);
+//     const pool = await getPool();
+//     return pool.query(...args);
 //   },
-//   getPool
+//   getConnection: async () => {
+//     const pool = await getPool();
+//     return pool.getConnection();
+//   }
 // };
-// config/db.js
+
+
 const mysql = require('mysql2/promise');
 const fs = require('fs');
 const path = require('path');
@@ -50,7 +86,7 @@ let pool;
 
 async function createDBPool() {
   try {
-    // Connect without specifying database
+    // Connect without specifying the database
     const rootPool = mysql.createPool({
       host: env.DB_HOST,
       user: env.DB_USER,
@@ -61,7 +97,7 @@ async function createDBPool() {
       queueLimit: 0,
     });
 
-    // Check if database exists
+    // Check if the database exists
     const [rows] = await rootPool.query(
       `SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = ?`,
       [env.DB_NAME]
@@ -79,7 +115,7 @@ async function createDBPool() {
 
     await rootPool.end(); // Close rootPool
 
-    // Create pool with database specified
+    // Create pool with the database specified
     pool = mysql.createPool({
       host: env.DB_HOST,
       user: env.DB_USER,
@@ -90,7 +126,7 @@ async function createDBPool() {
       queueLimit: 0,
     });
 
-    // Test connection
+    // Test the connection
     await pool.query('SELECT 1');
     console.log(`✅ Connected to '${env.DB_NAME}' at ${env.DB_HOST}`);
 
@@ -109,6 +145,7 @@ async function getPool() {
 }
 
 module.exports = {
+  getPool,
   query: async (...args) => {
     const pool = await getPool();
     return pool.query(...args);

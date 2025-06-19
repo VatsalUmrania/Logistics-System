@@ -22,7 +22,7 @@ const BankInformationPage = () => {
   const [sortDirection, setSortDirection] = useState('asc');
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
+  const itemsPerPage = 10;
 
   // Convert API snake_case object to camelCase
   const toCamelCase = (obj) => ({

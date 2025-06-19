@@ -1,45 +1,45 @@
-const db = require('../../../config/db');
+const db = require('../db');
 
-// Create a new category
-const createCategory = async (code, name) => {
+// CREATE
+async function createCategory({ code, name, status = 'Active' }) {
   const [result] = await db.query(
-    `INSERT INTO categories (code, name) VALUES (?, ?)`,
-    [code, name]
+    'INSERT INTO categories (code, name, status) VALUES (?, ?, ?)',
+    [code, name, status]
   );
-  return result.insertId;
-};
+  return { sino: result.insertId, code, name, status };
+}
 
-const getCategory = async () => {
-  const [rows] = await db.query(`SELECT * FROM categories`);
+// READ ALL
+async function getAllCategories() {
+  const [rows] = await db.query('SELECT * FROM categories');
   return rows;
-};
+}
 
-const getCategoryById = async (sino) => {
-  const [rows] = await db.query(`SELECT * FROM categories WHERE sino = ?`, [sino]);
-  return rows[0]; // Return only the first record or undefined
-};
+// READ ONE
+async function getCategoryById(sino) {
+  const [rows] = await db.query('SELECT * FROM categories WHERE sino = ?', [sino]);
+  return rows[0] || null;
+}
 
-const updateCategory = async (sino, code, name) => {
+// UPDATE
+async function updateCategory(sino, { code, name, status }) {
   const [result] = await db.query(
-    `UPDATE categories SET code = ?, name = ? WHERE sino = ?`,
-    [code, name, sino]
+    'UPDATE categories SET code = ?, name = ?, status = ? WHERE sino = ?',
+    [code, name, status, sino]
   );
-  return result.affectedRows; // Returns the number of rows affected (1 if updated)
-};
+  return result.affectedRows > 0;
+}
 
-// Delete a category by ID
-const deleteCategory = async (sino) => {
-  const [result] = await db.query(
-    `DELETE FROM categories WHERE sino = ?`,
-    [sino]
-  );
-  return result.affectedRows; // Returns the number of rows deleted (1 if deleted)
-};
+// DELETE
+async function deleteCategory(sino) {
+  const [result] = await db.query('DELETE FROM categories WHERE sino = ?', [sino]);
+  return result.affectedRows > 0;
+}
 
-module.exports = { 
-  createCategory, 
-  getCategory, 
-  getCategoryById, 
-  updateCategory, 
-  deleteCategory 
+module.exports = {
+  createCategory,
+  getAllCategories,
+  getCategoryById,
+  updateCategory,
+  deleteCategory,
 };

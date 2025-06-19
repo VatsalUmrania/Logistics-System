@@ -111,11 +111,12 @@ router.put('/commodities/:id', controller.updateCommodity);
 router.delete('/commodities/:id', controller.deleteCommodity);
 
 // Category routes
+// Category routes
 router.post('/categories', controller.createCategory);
-router.get('/categories', controller.getCategory);
+router.get('/categories', controller.getCategories);
+router.get('/categories/:sino', controller.getCategoryBySino);
 router.put('/categories/:sino', controller.updateCategory);
 router.delete('/categories/:sino', controller.deleteCategory);
-
 // Vessel routes
 router.post('/vessels', controller.createVessel);
 router.get('/vessels', controller.getVessel);

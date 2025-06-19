@@ -198,44 +198,6 @@ const CommodityManagementPage = () => {
     }
   };
   
-
-  // Toggle commodity status (Active/Inactive)
-  // const toggleCommodityStatus = async (id, currentStatus) => {
-  //   const newStatus = currentStatus === 'Active' ? 'Inactive' : 'Active';
-    
-  //   try {
-  //     setLoading(true);
-  
-  //     const token = localStorage.getItem('authToken');
-  //     if (!token) {
-  //       setError('Authentication token missing. Please login again.');
-  //       return false;
-  //     }
-  
-  //     // Prepare commodity data for updating the status
-  //     const commodityData = {
-
-  //       status: newStatus
-  //     };
-  
-  //     // Reuse the updateCommodity function to update the status
-  //     const isUpdated = await updateCommodity(id, commodityData);
-  
-  //     if (isUpdated) {
-  //       setSuccess(`Commodity status updated to ${newStatus}!`);
-  //       return true;
-  //     } else {
-  //       throw new Error('Failed to update commodity status');
-  //     }
-  
-  //   } catch (err) {
-  //     console.error('Error updating status:', err);
-  //     setError(err.message || 'Failed to update status');
-  //     return false;
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
   const toggleCommodityStatus = async (id, currentStatus, name) => {
     const newStatus = currentStatus === 'Active' ? 'Inactive' : 'Active';
     
