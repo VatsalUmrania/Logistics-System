@@ -21,7 +21,7 @@ exports.getVessel = async (req, res) => {
 exports.updateVessel = async (req, res) => {
   try {
     const id = req.params.id;
-    const updated = await model.vesselModel(id, req.body);
+    const updated = await vesselModel.updateVessel(id, req.body);
     if (!updated) return res.status(404).json({ error: 'Vessel not found' });
     res.json({ id, ...req.body });
   } catch (err) {
@@ -32,7 +32,7 @@ exports.updateVessel = async (req, res) => {
 exports.deleteVessel = async (req, res) => {
   try {
     const id = req.params.id;
-    const deleted = await model.vesselModel(id);
+    const deleted = await vesselModel.deleteVessel(id);
     if (!deleted) return res.status(404).json({ error: 'Vessel not found' });
     res.status(204).send();
   } catch (err) {
