@@ -217,9 +217,7 @@ const Navbar = () => {
         {/* Logo section */}
         <div className="flex items-center space-x-3">
           <div className="relative">
-            <div className="w-12 h-12 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 rounded-xl flex items-center justify-center shadow-lg ">
-              <img src={logo} alt="logo" className="w-11 h-11" />
-            </div>
+            <img src={logo} alt="logo" className="w-11 h-11" />
           </div>
           <div>
             <h1 className="text-2xl font-black bg-gradient-to-r from-gray-800 via-gray-900 to-gray-800 bg-clip-text text-transparent">LOGISTICS</h1>

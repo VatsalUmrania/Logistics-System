@@ -1,19 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FileText, Plus, Trash2, Save, XCircle, Loader2, Edit2 } from 'lucide-react';
 
-const ACCENT = "indigo";
+const ACCENT = "emerald";
 
 // Auth header utility
 const getAuthHeaders = () => {
   const token = localStorage.getItem('authToken');
   if (!token) throw new Error('Authentication token missing');
-  return { 
+  return {
     'Authorization': `Bearer ${token}`,
     'Content-Type': 'application/json'
   };
 };
 
-// API endpoints
 const API_SUPPLIERS = "http://localhost:5000/api/suppliers";
 const API_PORTS = "http://localhost:5000/api/ports";
 const API_ASSIGNMENTS = "http://localhost:5000/api/supplier-assignments";
@@ -253,329 +252,334 @@ const SupplierCreditNote = () => {
   const portName = (id) => ports.find(p => String(p.id) === String(id))?.name || "";
   const assignment = assignments.find(a => String(a.id) === String(formData.assignment_id));
 
+  // Styling helpers
   const fadeClass = "transition-all duration-200";
   const inputAccent = `focus:ring-2 focus:ring-${ACCENT}-500 focus:border-${ACCENT}-500`;
 
   // --- UI ---
   return (
-    <div className={`min-h-screen bg-gray-50 p-4 md:p-8`}>
-      {/* Header */}
-      <header className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-        <div className="flex items-center gap-3 px-24">
-          <FileText className={`h-10 w-10 text-${ACCENT}-700`} />
-          <div>
-            <h1 className={`text-4xl font-bold tracking-tight text-${ACCENT}-800`}>Supplier Credit Notes</h1>
-            <div className={`mt-1 text-${ACCENT}-600 text-base font-medium`}>Create, edit, and manage supplier credit notes</div>
+    <div className="min-h-screen bg-gradient-to-br from-[#f7fafd] via-white to-indigo-50 py-10 px-2 md:px-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <header className="mb-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <FileText className={`h-11 w-11 text-${ACCENT}-700`} />
+            <div>
+              <h1 className={`text-4xl font-extrabold bg-gradient-to-r from-indigo-800 via-indigo-600 to-blue-600 bg-clip-text text-transparent`}>
+                Supplier Credit Notes
+              </h1>
+              <div className={`mt-2 text-${ACCENT}-600 text-base font-semibold tracking-wide`}>Create, edit, and manage supplier credit notes</div>
+            </div>
           </div>
+        </header>
+
+        {/* Alerts */}
+        <div className="max-w-3xl mx-auto">
+          {successMsg && (
+            <div className="mb-4 rounded px-4 py-3 bg-green-100 text-green-800 border border-green-200 text-center shadow">{successMsg}</div>
+          )}
+          {errorMsg && (
+            <div className="mb-4 rounded px-4 py-3 bg-red-100 text-red-800 border border-red-200 text-center shadow">{errorMsg}</div>
+          )}
         </div>
-      </header>
 
-      {/* Alerts */}
-      <div className="max-w-3xl mx-auto">
-        {successMsg && (
-          <div className="mb-4 rounded px-4 py-3 bg-green-100 text-green-800 border border-green-200 text-center shadow">{successMsg}</div>
-        )}
-        {errorMsg && (
-          <div className="mb-4 rounded px-4 py-3 bg-red-100 text-red-800 border border-red-200 text-center shadow">{errorMsg}</div>
-        )}
-      </div>
-
-      {/* Main Grid */}
-      <main className="grid grid-cols-1 xl:grid-cols-2 gap-8 max-w-7xl mx-auto">
-        {/* List */}
-        <section className="bg-white rounded-xl shadow border border-gray-200 overflow-x-auto">
-          <div className={`px-6 py-4 border-b border-gray-200 flex items-center gap-2 bg-${ACCENT}-50`}>
-            <FileText className={`h-6 w-6 text-${ACCENT}-600`} />
-            <h2 className="text-2xl font-bold text-gray-700">Credit Notes List</h2>
-          </div>
-          <table className="min-w-full divide-y divide-gray-100 text-sm">
-            <thead className="bg-gray-100 sticky top-0 z-10">
-              <tr>
-                <th className="px-4 py-3 text-left font-semibold whitespace-nowrap">Credit Note #</th>
-                <th className="px-4 py-3 text-left font-semibold whitespace-nowrap">Date</th>
-                <th className="px-4 py-3 text-left font-semibold whitespace-nowrap">Supplier</th>
-                <th className="px-4 py-3 text-left font-semibold whitespace-nowrap">Total</th>
-                <th className="px-4 py-3 text-left font-semibold whitespace-nowrap">Line Items</th>
-                <th className="px-4 py-3 text-left"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {creditNotes.map((note, i) => (
-                <tr key={note.id} className={`hover:bg-${ACCENT}-50/60 ${i % 2 ? "bg-gray-50" : ""}`}>
-                  <td className="px-4 py-2 font-bold">{note.credit_note_no}</td>
-                  <td className="px-4 py-2">{note.credit_note_date?.substring(0, 10)}</td>
-                  <td className="px-4 py-2">{note.supplier_name || supplierName(note.supplier_id)}</td>
-                  <td className={`px-4 py-2 font-bold text-${ACCENT}-700`}>₹{parseFloat(note.grand_total).toLocaleString(undefined, {minimumFractionDigits:2})}</td>
-                  <td className="px-4 py-2">
-                    <ul className="text-xs rounded bg-gray-50 px-2 py-1 max-h-20 overflow-y-auto">
-                      {(note.lineItems || []).map((li, idx) => (
-                        <li key={idx}>
-                          <span className="font-medium">{li.description}</span>: {li.quantity} × {li.unit_price} = {li.amount}
-                        </li>
-                      ))}
-                    </ul>
-                  </td>
-                  <td className="px-4 py-2 whitespace-nowrap flex gap-1 items-center">
-                    <button
-                      onClick={() => handleEdit(note)}
-                      className={`p-2 rounded-full hover:bg-${ACCENT}-100 text-${ACCENT}-600 hover:text-${ACCENT}-800 ${fadeClass}`}
-                      title="Edit"
-                    >
-                      <Edit2 className="w-5 h-5" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(note.id)}
-                      className={`p-2 rounded-full hover:bg-red-100 text-red-600 hover:text-red-800 ${fadeClass}`}
-                      title="Delete"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              {creditNotes.length === 0 && (
+        {/* Main Grid */}
+        <main className="grid grid-cols-1 xl:grid-cols-2 gap-10 max-w-7xl mx-auto">
+          {/* List */}
+          <section className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-x-auto">
+            <div className={`px-8 py-5 border-b border-gray-200 flex items-center gap-3 bg-${ACCENT}-50`}>
+              <FileText className={`h-7 w-7 text-${ACCENT}-600`} />
+              <h2 className="text-2xl font-bold text-gray-800">Credit Notes List</h2>
+            </div>
+            <table className="min-w-full divide-y divide-gray-100 text-sm">
+              <thead className="bg-indigo-100 sticky top-0 z-10">
                 <tr>
-                  <td colSpan={6} className="text-center py-8 text-gray-400">No credit notes found.</td>
+                  <th className="px-5 py-3 text-left font-bold whitespace-nowrap">#</th>
+                  <th className="px-5 py-3 text-left font-bold whitespace-nowrap">Date</th>
+                  <th className="px-5 py-3 text-left font-bold whitespace-nowrap">Supplier</th>
+                  <th className="px-5 py-3 text-left font-bold whitespace-nowrap">Total</th>
+                  <th className="px-5 py-3 text-left font-bold whitespace-nowrap">Line Items</th>
+                  <th className="px-5 py-3 text-left"></th>
                 </tr>
-              )}
-            </tbody>
-          </table>
-        </section>
-        {/* Form */}
-        <section>
-          <form onSubmit={handleSubmit} className="space-y-7">
-            {/* Supplier & Assignment */}
-            <div className={`bg-white rounded-xl shadow border border-${ACCENT}-200 px-6 py-5 space-y-6`}>
-              <h2 className={`text-lg font-semibold flex items-center gap-2 text-${ACCENT}-700 mb-3`}>
-                <FileText className="h-5 w-5" /> Supplier & Assignment
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                  <label className="block mb-1 font-medium">Supplier <span className="text-red-600">*</span></label>
-                  <select
-                    value={formData.supplier_id}
-                    onChange={e => handleInputChange('supplier_id', e.target.value)}
-                    className={`w-full px-4 py-2 border rounded-lg ${inputAccent}`}
-                    required
-                  >
-                    <option value="">Select</option>
-                    {suppliers.map(supplier => (
-                      <option key={supplier.id} value={supplier.id}>{supplier.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block mb-1 font-medium">Supplier Invoice No</label>
-                  <select
-                    value={formData.assignment_id}
-                    onChange={e => handleInputChange('assignment_id', e.target.value)}
-                    className={`w-full px-4 py-2 border rounded-lg ${inputAccent}`}
-                  >
-                    <option value="">Select Invoice</option>
-                    {assignments
-                      .filter(a => !formData.supplier_id || String(a.supplier_id) === String(formData.supplier_id))
-                      .map(a => (
-                        <option key={a.id} value={a.id}>
-                          {a.supplier_invoice_no} ({a.job_number})
-                        </option>
-                      ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block mb-1 font-medium">Job No</label>
-                  <input
-                    type="text"
-                    className={`w-full px-4 py-2 border rounded-lg ${inputAccent}`}
-                    value={assignment ? assignment.job_number : formData.job_number}
-                    onChange={e => handleInputChange('job_number', e.target.value)}
-                    disabled={!!assignment}
-                  />
-                </div>
-              </div>
-            </div>
-            {/* Credit Note Info */}
-            <div className={`bg-white rounded-xl shadow border border-${ACCENT}-200 px-6 py-5 space-y-6`}>
-              <h2 className={`text-lg font-semibold flex items-center gap-2 text-${ACCENT}-700 mb-3`}>
-                <FileText className="h-5 w-5" /> Credit Note Info
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                  <label className="block mb-1 font-medium">Credit Note No <span className="text-red-600">*</span></label>
-                  <input
-                    type="text"
-                    className={`w-full px-4 py-2 border rounded-lg ${inputAccent}`}
-                    value={formData.credit_note_no}
-                    onChange={e => handleInputChange('credit_note_no', e.target.value)}
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block mb-1 font-medium">Date <span className="text-red-600">*</span></label>
-                  <input
-                    type="date"
-                    className={`w-full px-4 py-2 border rounded-lg ${inputAccent}`}
-                    value={formData.credit_note_date}
-                    onChange={e => handleInputChange('credit_note_date', e.target.value)}
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block mb-1 font-medium">Port</label>
-                  <select
-                    value={formData.port_id}
-                    onChange={e => handleInputChange('port_id', e.target.value)}
-                    className={`w-full px-4 py-2 border rounded-lg ${inputAccent}`}
-                  >
-                    <option value="">Select Port</option>
-                    {ports.map(port => (
-                      <option key={port.id} value={port.id}>{port.name}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </div>
-            {/* Line Items */}
-            <div className={`bg-white rounded-xl shadow border border-${ACCENT}-200 px-6 py-5`}>
-              <div className="flex justify-between items-center mb-4">
-                <h2 className={`text-lg font-semibold flex items-center gap-2 text-${ACCENT}-700`}>
-                  <Plus className="h-5 w-5 text-green-600" /> Line Items
+              </thead>
+              <tbody>
+                {creditNotes.map((note, i) => (
+                  <tr key={note.id} className={`hover:bg-${ACCENT}-50/60 ${i % 2 ? "bg-gray-50" : ""}`}>
+                    <td className="px-5 py-2 font-bold">{note.credit_note_no}</td>
+                    <td className="px-5 py-2">{note.credit_note_date?.substring(0, 10)}</td>
+                    <td className="px-5 py-2">{note.supplier_name || supplierName(note.supplier_id)}</td>
+                    <td className={`px-5 py-2 font-bold text-${ACCENT}-700`}>₹{parseFloat(note.grand_total).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                    <td className="px-5 py-2">
+                      <ul className="text-xs rounded bg-gray-50 px-2 py-1 max-h-20 overflow-y-auto">
+                        {(note.lineItems || []).map((li, idx) => (
+                          <li key={idx}>
+                            <span className="font-medium">{li.description}</span>: {li.quantity} × {li.unit_price} = {li.amount}
+                          </li>
+                        ))}
+                      </ul>
+                    </td>
+                    <td className="px-4 py-2 whitespace-nowrap flex gap-1 items-center">
+                      <button
+                        onClick={() => handleEdit(note)}
+                        className={`p-2 rounded-full hover:bg-${ACCENT}-100 text-${ACCENT}-600 hover:text-${ACCENT}-800 ${fadeClass}`}
+                        title="Edit"
+                      >
+                        <Edit2 className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(note.id)}
+                        className={`p-2 rounded-full hover:bg-red-100 text-red-600 hover:text-red-800 ${fadeClass}`}
+                        title="Delete"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {creditNotes.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="text-center py-8 text-gray-400">No credit notes found.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </section>
+          {/* Form */}
+          <section>
+            <form onSubmit={handleSubmit} className="space-y-8">
+              {/* Supplier & Assignment */}
+              <div className={`bg-white rounded-2xl shadow border border-${ACCENT}-200 px-8 py-6 space-y-6`}>
+                <h2 className={`text-lg font-bold flex items-center gap-2 text-${ACCENT}-700 mb-3`}>
+                  <FileText className="h-5 w-5" /> Supplier & Assignment
                 </h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div>
+                    <label className="block mb-1 font-medium">Supplier <span className="text-red-600">*</span></label>
+                    <select
+                      value={formData.supplier_id}
+                      onChange={e => handleInputChange('supplier_id', e.target.value)}
+                      className={`w-full px-4 py-2 border rounded-lg ${inputAccent}`}
+                      required
+                    >
+                      <option value="">Select</option>
+                      {suppliers.map(supplier => (
+                        <option key={supplier.id} value={supplier.id}>{supplier.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block mb-1 font-medium">Supplier Invoice No</label>
+                    <select
+                      value={formData.assignment_id}
+                      onChange={e => handleInputChange('assignment_id', e.target.value)}
+                      className={`w-full px-4 py-2 border rounded-lg ${inputAccent}`}
+                    >
+                      <option value="">Select Invoice</option>
+                      {assignments
+                        .filter(a => !formData.supplier_id || String(a.supplier_id) === String(formData.supplier_id))
+                        .map(a => (
+                          <option key={a.id} value={a.id}>
+                            {a.supplier_invoice_no} ({a.job_number})
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block mb-1 font-medium">Job No</label>
+                    <input
+                      type="text"
+                      className={`w-full px-4 py-2 border rounded-lg ${inputAccent}`}
+                      value={assignment ? assignment.job_number : formData.job_number}
+                      onChange={e => handleInputChange('job_number', e.target.value)}
+                      disabled={!!assignment}
+                    />
+                  </div>
+                </div>
+              </div>
+              {/* Credit Note Info */}
+              <div className={`bg-white rounded-2xl shadow border border-${ACCENT}-200 px-8 py-6 space-y-6`}>
+                <h2 className={`text-lg font-bold flex items-center gap-2 text-${ACCENT}-700 mb-3`}>
+                  <FileText className="h-5 w-5" /> Credit Note Info
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div>
+                    <label className="block mb-1 font-medium">Credit Note No <span className="text-red-600">*</span></label>
+                    <input
+                      type="text"
+                      className={`w-full px-4 py-2 border rounded-lg ${inputAccent}`}
+                      value={formData.credit_note_no}
+                      onChange={e => handleInputChange('credit_note_no', e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block mb-1 font-medium">Date <span className="text-red-600">*</span></label>
+                    <input
+                      type="date"
+                      className={`w-full px-4 py-2 border rounded-lg ${inputAccent}`}
+                      value={formData.credit_note_date}
+                      onChange={e => handleInputChange('credit_note_date', e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block mb-1 font-medium">Port</label>
+                    <select
+                      value={formData.port_id}
+                      onChange={e => handleInputChange('port_id', e.target.value)}
+                      className={`w-full px-4 py-2 border rounded-lg ${inputAccent}`}
+                    >
+                      <option value="">Select Port</option>
+                      {ports.map(port => (
+                        <option key={port.id} value={port.id}>{port.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+              {/* Line Items */}
+              <div className={`bg-white rounded-2xl shadow border border-${ACCENT}-200 px-8 py-6`}>
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className={`text-lg font-bold flex items-center gap-2 text-${ACCENT}-700`}>
+                    <Plus className="h-5 w-5 text-green-600" /> Line Items
+                  </h2>
+                  <button
+                    type="button"
+                    onClick={addLineItem}
+                    className={`bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center shadow-md ${fadeClass}`}
+                    title="Add Line Item"
+                  >
+                    <Plus className="w-5 h-5 mr-1" />
+                    Add Item
+                  </button>
+                </div>
+                <div className="overflow-x-auto rounded-lg border border-gray-100">
+                  <table className="min-w-full border-collapse text-sm">
+                    <thead className={`bg-gray-100`}>
+                      <tr>
+                        <th className="px-4 py-2 text-left">Description</th>
+                        <th className="px-4 py-2 text-left">Quantity</th>
+                        <th className="px-4 py-2 text-left">Unit Price</th>
+                        <th className="px-4 py-2 text-left">Amount</th>
+                        <th className="px-4 py-2 text-left"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {lineItems.map((item, idx) => (
+                        <tr key={item.id} className={idx % 2 ? "bg-gray-50" : ""}>
+                          <td className="px-4 py-2">
+                            <input
+                              ref={idx === lineItems.length - 1 ? lastLineItemRef : null}
+                              type="text"
+                              placeholder="Description"
+                              className={`w-full px-3 py-1 border rounded-md ${inputAccent}`}
+                              value={item.description}
+                              onChange={(e) => handleLineItemChange(item.id, 'description', e.target.value)}
+                              required
+                            />
+                          </td>
+                          <td className="px-4 py-2">
+                            <input
+                              type="number"
+                              placeholder="Quantity"
+                              className={`w-full px-3 py-1 border rounded-md ${inputAccent}`}
+                              value={item.quantity}
+                              onChange={(e) => handleLineItemChange(item.id, 'quantity', e.target.value)}
+                              min="0"
+                              step="0.01"
+                              required
+                            />
+                          </td>
+                          <td className="px-4 py-2">
+                            <input
+                              type="number"
+                              placeholder="Unit Price"
+                              className={`w-full px-3 py-1 border rounded-md ${inputAccent}`}
+                              value={item.unit_price}
+                              onChange={(e) => handleLineItemChange(item.id, 'unit_price', e.target.value)}
+                              min="0"
+                              step="0.01"
+                              required
+                            />
+                          </td>
+                          <td className="px-4 py-2">
+                            <input
+                              type="text"
+                              className="w-full px-3 py-1 border rounded-md bg-gray-50 font-semibold"
+                              value={item.amount}
+                              readOnly
+                            />
+                          </td>
+                          <td className="px-4 py-2">
+                            <button
+                              type="button"
+                              onClick={() => removeLineItem(item.id)}
+                              disabled={lineItems.length <= 1}
+                              className={`p-2 rounded-full transition ${
+                                lineItems.length > 1 
+                                  ? 'text-red-600 hover:bg-red-100' 
+                                  : 'text-gray-400 cursor-not-allowed'
+                              }`}
+                              title={lineItems.length > 1 ? "Remove item" : "Cannot remove last item"}
+                            >
+                              <Trash2 className="w-5 h-5" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                      {/* Totals Row */}
+                      <tr className="bg-gray-50 font-semibold">
+                        <td colSpan={3} className="text-right px-4 py-2">Sub Total</td>
+                        <td className="px-4 py-2">{formData.total_amount}</td>
+                        <td></td>
+                      </tr>
+                      <tr className="bg-gray-50 font-semibold">
+                        <td colSpan={3} className="text-right px-4 py-2">VAT (18%)</td>
+                        <td className="px-4 py-2">{formData.vat_amount}</td>
+                        <td></td>
+                      </tr>
+                      <tr className={`bg-gray-100 font-bold text-${ACCENT}-800 text-lg`}>
+                        <td colSpan={3} className="text-right px-4 py-2">Grand Total</td>
+                        <td className="px-4 py-2">{formData.grand_total}</td>
+                        <td></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              {/* Actions */}
+              <div className="flex justify-end space-x-4">
                 <button
                   type="button"
-                  onClick={addLineItem}
-                  className={`bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center shadow-md ${fadeClass}`}
-                  title="Add Line Item"
+                  onClick={handleReset}
+                  className={`px-6 py-2 bg-gray-400 hover:bg-gray-600 text-white rounded-lg flex items-center transition`}
+                  disabled={isLoading}
                 >
-                  <Plus className="w-5 h-5 mr-1" />
-                  Add Item
+                  <XCircle className="w-5 h-5 mr-1" />
+                  Reset
+                </button>
+                <button
+                  type="submit"
+                  className={`px-6 py-2 bg-${ACCENT}-600 hover:bg-${ACCENT}-700 text-white rounded-lg flex items-center shadow-lg ${fadeClass}`}
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="w-5 h-5 mr-1 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-5 h-5 mr-1" />
+                      {editingId ? "Update Credit Note" : "Save Credit Note"}
+                    </>
+                  )}
                 </button>
               </div>
-              <div className="overflow-x-auto rounded-lg border border-gray-100">
-                <table className="min-w-full border-collapse text-sm">
-                  <thead className={`bg-gray-100`}>
-                    <tr>
-                      <th className="px-4 py-2 text-left">Description</th>
-                      <th className="px-4 py-2 text-left">Quantity</th>
-                      <th className="px-4 py-2 text-left">Unit Price</th>
-                      <th className="px-4 py-2 text-left">Amount</th>
-                      <th className="px-4 py-2 text-left"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {lineItems.map((item, idx) => (
-                      <tr key={item.id} className={idx % 2 ? "bg-gray-50" : ""}>
-                        <td className="px-4 py-2">
-                          <input
-                            ref={idx === lineItems.length - 1 ? lastLineItemRef : null}
-                            type="text"
-                            placeholder="Description"
-                            className={`w-full px-3 py-1 border rounded-md ${inputAccent}`}
-                            value={item.description}
-                            onChange={(e) => handleLineItemChange(item.id, 'description', e.target.value)}
-                            required
-                          />
-                        </td>
-                        <td className="px-4 py-2">
-                          <input
-                            type="number"
-                            placeholder="Quantity"
-                            className={`w-full px-3 py-1 border rounded-md ${inputAccent}`}
-                            value={item.quantity}
-                            onChange={(e) => handleLineItemChange(item.id, 'quantity', e.target.value)}
-                            min="0"
-                            step="0.01"
-                            required
-                          />
-                        </td>
-                        <td className="px-4 py-2">
-                          <input
-                            type="number"
-                            placeholder="Unit Price"
-                            className={`w-full px-3 py-1 border rounded-md ${inputAccent}`}
-                            value={item.unit_price}
-                            onChange={(e) => handleLineItemChange(item.id, 'unit_price', e.target.value)}
-                            min="0"
-                            step="0.01"
-                            required
-                          />
-                        </td>
-                        <td className="px-4 py-2">
-                          <input
-                            type="text"
-                            className="w-full px-3 py-1 border rounded-md bg-gray-50 font-semibold"
-                            value={item.amount}
-                            readOnly
-                          />
-                        </td>
-                        <td className="px-4 py-2">
-                          <button
-                            type="button"
-                            onClick={() => removeLineItem(item.id)}
-                            disabled={lineItems.length <= 1}
-                            className={`p-2 rounded-full transition ${
-                              lineItems.length > 1 
-                                ? 'text-red-600 hover:bg-red-100' 
-                                : 'text-gray-400 cursor-not-allowed'
-                            }`}
-                            title={lineItems.length > 1 ? "Remove item" : "Cannot remove last item"}
-                          >
-                            <Trash2 className="w-5 h-5" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                    {/* Totals Row */}
-                    <tr className="bg-gray-50 font-semibold">
-                      <td colSpan={3} className="text-right px-4 py-2">Sub Total</td>
-                      <td className="px-4 py-2">{formData.total_amount}</td>
-                      <td></td>
-                    </tr>
-                    <tr className="bg-gray-50 font-semibold">
-                      <td colSpan={3} className="text-right px-4 py-2">VAT (18%)</td>
-                      <td className="px-4 py-2">{formData.vat_amount}</td>
-                      <td></td>
-                    </tr>
-                    <tr className={`bg-gray-100 font-bold text-${ACCENT}-800 text-lg`}>
-                      <td colSpan={3} className="text-right px-4 py-2">Grand Total</td>
-                      <td className="px-4 py-2">{formData.grand_total}</td>
-                      <td></td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            {/* Actions */}
-            <div className="flex justify-end space-x-4">
-              <button
-                type="button"
-                onClick={handleReset}
-                className={`px-6 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg flex items-center transition`}
-                disabled={isLoading}
-              >
-                <XCircle className="w-5 h-5 mr-1" />
-                Reset
-              </button>
-              <button
-                type="submit"
-                className={`px-6 py-2 bg-${ACCENT}-600 hover:bg-${ACCENT}-700 text-white rounded-lg flex items-center shadow-lg ${fadeClass}`}
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="w-5 h-5 mr-1 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-5 h-5 mr-1" />
-                    {editingId ? "Update Credit Note" : "Save Credit Note"}
-                  </>
-                )}
-              </button>
-            </div>
-          </form>
-        </section>
-      </main>
+            </form>
+          </section>
+        </main>
+      </div>
     </div>
   );
 };
