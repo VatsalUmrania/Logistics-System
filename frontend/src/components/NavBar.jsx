@@ -231,13 +231,13 @@ const Navbar = () => {
         </form> */}
         {/* Actions */}
         <div className="flex items-center space-x-3">
-          <button className="relative p-2.5 bg-gray-100 hover:bg-indigo-50 rounded-xl transition" aria-label="Mails">
+          {/* <button className="relative p-2.5 bg-gray-100 hover:bg-indigo-50 rounded-xl transition" aria-label="Mails">
             <Mail className="w-5 h-5 text-gray-600" />
             <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full font-bold animate-pulse">3</span>
           </button>
           <button className="p-2.5 bg-gray-100 hover:bg-amber-50 rounded-xl transition" aria-label="Notifications">
             <Bell className="w-5 h-5 text-gray-600" />
-          </button>
+          </button> */}
           {/* User */}
           <div className="relative" ref={userDropdownRef}>
             <button
