@@ -1,26 +1,26 @@
-// src/routes/masterDataRoutes.jsx
-import React from "react";
+import React, { lazy, Suspense } from "react";
 import { Route } from "react-router-dom";
 
-import PollDetails from "../pages/masterdata/PollDetial";
-import VesselDetailsPage from "../pages/masterdata/Vessel";
-import UserManagementPage from "../pages/masterdata/User";
-import CommodityManagementPage from "../pages/masterdata/Commodity";
-import BankInformationPage from "../pages/masterdata/Bank";
-import ClientManagementPage from "../pages/masterdata/Clients";
-import CategoriesManagementPage from "../pages/masterdata/Categories";
-import ContainerDetailsPage from "../pages/masterdata/Container";
+// Lazy load each page component
+const PollDetails = lazy(() => import("../pages/masterdata/PollDetial"));
+const VesselDetailsPage = lazy(() => import("../pages/masterdata/Vessel"));
+const UserManagementPage = lazy(() => import("../pages/masterdata/User"));
+const CommodityManagementPage = lazy(() => import("../pages/masterdata/Commodity"));
+const BankInformationPage = lazy(() => import("../pages/masterdata/Bank"));
+const ClientManagementPage = lazy(() => import("../pages/masterdata/Clients"));
+const CategoriesManagementPage = lazy(() => import("../pages/masterdata/Categories"));
+const ContainerDetailsPage = lazy(() => import("../pages/masterdata/Container"));
 
 const masterDataRoutes = (
   <>
-    <Route path="/poll" element={<PollDetails />} />
-    <Route path="/vessel" element={<VesselDetailsPage />} />
-    <Route path="/user" element={<UserManagementPage />} />
-    <Route path="/commodity" element={<CommodityManagementPage />} />
-    <Route path="/bank" element={<BankInformationPage />} />
-    <Route path="/clients" element={<ClientManagementPage />} />
-    <Route path="/category" element={<CategoriesManagementPage />} />
-    <Route path="/container" element={<ContainerDetailsPage />} />
+    <Route path="/poll" element={<Suspense fallback={<div>Loading...</div>}><PollDetails /></Suspense>} />
+    <Route path="/vessel" element={<Suspense fallback={<div>Loading...</div>}><VesselDetailsPage /></Suspense>} />
+    <Route path="/user" element={<Suspense fallback={<div>Loading...</div>}><UserManagementPage /></Suspense>} />
+    <Route path="/commodity" element={<Suspense fallback={<div>Loading...</div>}><CommodityManagementPage /></Suspense>} />
+    <Route path="/bank" element={<Suspense fallback={<div>Loading...</div>}><BankInformationPage /></Suspense>} />
+    <Route path="/clients" element={<Suspense fallback={<div>Loading...</div>}><ClientManagementPage /></Suspense>} />
+    <Route path="/category" element={<Suspense fallback={<div>Loading...</div>}><CategoriesManagementPage /></Suspense>} />
+    <Route path="/container" element={<Suspense fallback={<div>Loading...</div>}><ContainerDetailsPage /></Suspense>} />
   </>
 );
 

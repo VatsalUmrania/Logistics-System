@@ -39,7 +39,21 @@ const clearanceMenu = [
   { label: 'Receipt Cancelation', key: 'receipt_cancelation', href: "recipt-cancel" },
   { label: 'Delivery Note', key: 'delivery_note', href: "/delivery-note" },
 ];
-
+// const clearanceMenu = [
+//   { label: 'Add Clearance Operation', key: 'add_clearance_op', href: "/add_clearance_op" },
+//   { label: 'Edit Clearance Operation', key: 'edit_clearance_op', href: "/edit_clearance_op" },
+//   { label: 'Assign Expense', key: 'assign_expense', href:"/assign-expenses" },
+//   { label: 'Invoice Search', key: 'invoice', href: "/invoice-search" },
+//   { label: 'Invoice Creditnote', key: 'invoice_creditnote', href: "/invoice_creditnote" },
+//   { label: 'Creditnote Search', key: 'creditnote_search', href:"/credit-note-search" },
+//   { label: 'Invoice Creditnote Edit', key: 'invoice_creditnote_edit', href: "/credit-note-management" },
+//   { label: 'Job Other Charges', key: 'job_other_charges', href: "/job_other_charges" },
+//   { label: 'Receipt Cancelation', key: 'receipt_cancelation', href: "/receipt_cancelation" },
+//   { label: 'Delivery Note', key: 'delivery_note' ,href:"/delivery-note" },
+//   { label: 'Delivery Note Edit', key: 'delivery_note_edit', href:"/delivery_note_edit" },
+//   { label: 'Delivery Note Search', key: 'delivery_note_search', href: "/delivery_note_search" },
+//   { label: 'Expense Posting', key: 'expense_posting', href: "/expense_posting" },
+// ];
 const reportsMenu = [
   { label: 'Search Invoice (Date, Invoice No, Name)', key: 'search_invoice', href: "/invoice-search" },
   { label: 'Search Invoice By Date', key: 'search_invoice_date', href: "/invoice-search-by-date" },
