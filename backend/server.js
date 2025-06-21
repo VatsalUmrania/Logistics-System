@@ -32,7 +32,8 @@ app.use(express.json());
 // Routes
 app.use('/api', require('./modules/masterdata/masterDataRoutes'));
 app.use('/api', require('./modules/suppliers/index'));
-// app.use('/api', require('./modules/clearance/index'));
+app.use('/api', require('./modules/clerances/index'));
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);

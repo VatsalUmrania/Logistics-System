@@ -40,8 +40,6 @@ const clearanceMenu = [
   { label: 'Delivery Note', key: 'delivery_note', href: "/delivery-note" },
 ];
 // const clearanceMenu = [
-//   { label: 'Add Clearance Operation', key: 'add_clearance_op', href: "/add_clearance_op" },
-//   { label: 'Edit Clearance Operation', key: 'edit_clearance_op', href: "/edit_clearance_op" },
 //   { label: 'Assign Expense', key: 'assign_expense', href:"/assign-expenses" },
 //   { label: 'Invoice Search', key: 'invoice', href: "/invoice-search" },
 //   { label: 'Invoice Creditnote', key: 'invoice_creditnote', href: "/invoice_creditnote" },
