@@ -1,61 +1,85 @@
 import React from 'react';
+import { 
+  FaFacebook, FaTwitter, FaLinkedin, FaEnvelope, FaPhone, FaMapMarkerAlt, FaGithub 
+} from 'react-icons/fa';
 
 const Footer = () => {
   return (
-    <footer className="w-full bg-gradient-to-b from-blue-50 to-blue-100 py-8 mt-auto border-t border-blue-200">
-      <div className="container mx-auto px-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+    <footer className="w-full bg-gradient-to-b from-blue-50 to-blue-100 py-12 border-t border-blue-200">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
           {/* Company Info */}
           <div className="flex flex-col space-y-4">
-            <h3 className="text-xl font-bold mb-2 text-blue-600">Logistics Management</h3>
+            <h3 className="text-xl font-bold text-blue-600">Logistics Management</h3>
             <p className="text-gray-600">
               Streamlining your logistics operations with modern solutions.
             </p>
             <div className="flex space-x-4">
-              <a href="#" className="text-blue-600 hover:text-blue-700 transition-colors">
-                <i className="fab fa-facebook"></i>
+              <a href="#" aria-label="Facebook" className="text-blue-600 hover:text-blue-700 transition-colors">
+                <FaFacebook size={20} />
               </a>
-              <a href="#" className="text-blue-600 hover:text-blue-700 transition-colors">
-                <i className="fab fa-twitter"></i>
+              <a href="#" aria-label="Twitter" className="text-blue-600 hover:text-blue-700 transition-colors">
+                <FaTwitter size={20} />
               </a>
-              <a href="#" className="text-blue-600 hover:text-blue-700 transition-colors">
-                <i className="fab fa-linkedin"></i>
+              <a href="#" aria-label="LinkedIn" className="text-blue-600 hover:text-blue-700 transition-colors">
+                <FaLinkedin size={20} />
               </a>
             </div>
           </div>
 
           {/* Quick Links */}
           <div className="flex flex-col space-y-4">
-            <h3 className="text-xl font-bold mb-2 text-blue-600">Quick Links</h3>
+            <h3 className="text-xl font-bold text-blue-600">Quick Links</h3>
             <a href="#" className="text-gray-600 hover:text-blue-600 transition-colors">Home</a>
             <a href="#" className="text-gray-600 hover:text-blue-600 transition-colors">Services</a>
-            <a href="#" className="text-gray-600 hover:text-blue-600 transition-colors">About Us</a>
+            <a href="#" className="text-gray-600 hover:text-blue-600 transition-colors">About</a>
             <a href="#" className="text-gray-600 hover:text-blue-600 transition-colors">Contact</a>
           </div>
 
-          {/* Contact Info */}
+          {/* Resources */}
           <div className="flex flex-col space-y-4">
-            <h3 className="text-xl font-bold mb-2 text-blue-600">Contact Us</h3>
-            <p className="text-gray-600 flex items-center">
-              <i className="fas fa-envelope mr-2 text-blue-600"></i>
-              info@logistics.com
-            </p>
-            <p className="text-gray-600 flex items-center">
-              <i className="fas fa-phone mr-2 text-blue-600"></i>
-              +1 (123) 456-7890
-            </p>
-            <p className="text-gray-600 flex items-center">
-              <i className="fas fa-map-marker-alt mr-2 text-blue-600"></i>
-              123 Logistics Street
-            </p>
+            <h3 className="text-xl font-bold text-blue-600">Resources</h3>
+            <a href="#" className="text-gray-600 hover:text-blue-600 transition-colors">Blog</a>
+            <a href="#" className="text-gray-600 hover:text-blue-600 transition-colors">Help Center</a>
+            <a href="#" className="text-gray-600 hover:text-blue-600 transition-colors">Careers</a>
+            <a href="#" className="text-gray-600 hover:text-blue-600 transition-colors">Privacy Policy</a>
+          </div>
+
+          {/* Developers */}
+          <div className="flex flex-col space-y-4">
+            <h3 className="text-xl font-bold text-blue-600">Developers</h3>
+            <div className="flex flex-col space-y-2">
+              <a href="https://github.com/developer1" className="flex items-center text-gray-600 hover:text-blue-600 transition-colors" target="_blank" rel="noopener noreferrer">
+                <FaGithub className="mr-2 text-blue-600" />
+                <span>Developer 1</span>
+              </a>
+              <a href="https://github.com/developer2" className="flex items-center text-gray-600 hover:text-blue-600 transition-colors" target="_blank" rel="noopener noreferrer">
+                <FaGithub className="mr-2 text-blue-600" />
+                <span>Developer 2</span>
+              </a>
+              <a href="https://github.com/developer3" className="flex items-center text-gray-600 hover:text-blue-600 transition-colors" target="_blank" rel="noopener noreferrer">
+                <FaGithub className="mr-2 text-blue-600" />
+                <span>Developer 3</span>
+              </a>
+              <a href="https://github.com/developer4" className="flex items-center text-gray-600 hover:text-blue-600 transition-colors" target="_blank" rel="noopener noreferrer">
+                <FaGithub className="mr-2 text-blue-600" />
+                <span>Developer 4</span>
+              </a>
+            </div>
           </div>
         </div>
 
         {/* Bottom Bar */}
-        <div className="border-t border-blue-200 mt-8 pt-8 text-center">
-          <p className="text-gray-600">
-            © {new Date().getFullYear()} Logistics Management System. All rights reserved.
-          </p>
+        <div className="border-t border-blue-200 mt-12 pt-8">
+          <div className="flex flex-col md:flex-row justify-between items-center text-center md:text-left gap-4">
+            <p className="text-gray-600">
+              © {new Date().getFullYear()} Logistics Management System. All rights reserved.
+            </p>
+            <div className="flex space-x-6">
+              <a href="#" className="text-gray-600 hover:text-blue-600 transition-colors text-sm">Terms of Service</a>
+              <a href="#" className="text-gray-600 hover:text-blue-600 transition-colors text-sm">Privacy Policy</a>
+            </div>
+          </div>
         </div>
       </div>
     </footer>
