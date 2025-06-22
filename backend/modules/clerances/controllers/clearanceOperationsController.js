@@ -1,4 +1,5 @@
 // controllers/operationsController.js
+
 const Operations = require('../models//clearanceOperations');
 
 exports.create = async (req, res) => {
@@ -70,5 +71,16 @@ exports.updateStatus = async (req, res) => {
     res.json(updatedOperation);
   } catch (error) {
     res.status(400).json({ message: error.message });
+  }
+};
+
+exports.getAllJobNos = async (req, res) => {
+  try {
+    const jobs = await Operations.getAllJobNo();
+    res.status(200).json({ success: true, data: jobs });
+  } catch (error) {
+    console.error('Error fetching job numbers:', error.message); // add .message
+    console.error(error.stack); // full stack trace
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };

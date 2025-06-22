@@ -1,63 +1,105 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  ClipboardList, 
-  Plus, 
-  Pencil, 
-  Trash2, 
-  ChevronDown, 
-  Search, 
-  ChevronLeft, 
-  ChevronRight, 
-  X 
+  ClipboardList, Plus, Pencil, Trash2, ChevronDown, Search, 
+  ChevronLeft, ChevronRight, X, Settings 
 } from 'lucide-react';
+import Select from 'react-select';
 
 const AssignExpenses = () => {
+  // State management
+  const [clients, setClients] = useState([]);
+  const [operations, setOperations] = useState([]);
+  const [expenseItems, setExpenseItems] = useState([]);
+  const [expenses, setExpenses] = useState([]);
   const [searchForm, setSearchForm] = useState({
     operationNo: '',
     clientName: ''
   });
-
   const [expenseForm, setExpenseForm] = useState({
-    item: '',
-    actualAmount: '',
-    vatPercentage: 0,
-    vatAmount: 0,
-    amount: '',
-    dateOfPayment: ''
+    operation_no: '',
+    client_name: '',
+    expense_item: '',
+    actual_amount: '',
+    vat_percent: 0,
+    vat_amount: 0,
+    total_amount: '',
+    date_of_payment: ''
   });
-
-  const [expenses, setExpenses] = useState([
-    {
-      id: 1,
-      item: 'Container Claims (مطالبة الحويات)',
-      actualAmount: 90.85,
-      vatPercentage: 0,
-      vatAmount: 0.00,
-      amount: 90.85,
-      dateOfPayment: '2025-02-05'
-    }
-  ]);
-
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [sortField, setSortField] = useState('item');
+  const [sortField, setSortField] = useState('expense_item');
   const [sortDirection, setSortDirection] = useState('asc');
   const [currentPage, setCurrentPage] = useState(1);
+  const [isManagingItems, setIsManagingItems] = useState(false);
+  const [newItemName, setNewItemName] = useState('');
+  const [error, setError] = useState('');
   const itemsPerPage = 5;
 
-  const expenseItems = [
-    'Container Claims (مطالبة الحويات)',
-    'Transportation Costs',
-    'Storage Fees',
-    'Handling Charges',
-    'Documentation Fees',
-    'Customs Clearance',
-    'Port Charges',
-    'Insurance Premium',
-    'Demurrage Charges',
-    'Other Expenses'
-  ];
+  // Authentication helper
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      throw new Error('Authentication token missing');
+    }
+    return {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    };
+  };
 
+  // Fetch all required data from backend
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Fetch clients
+        const clientsRes = await fetch(
+          'http://localhost:5000/api/clients', 
+          getAuthHeaders()
+        );
+        const clientsData = await clientsRes.json();
+        setClients(clientsData);
+
+        // Fetch expense items
+        const itemsRes = await fetch(
+          'http://localhost:5000/api/expense-item', 
+          getAuthHeaders()
+        );
+        const itemsData = await itemsRes.json();
+        setExpenseItems(itemsData.map(item => item.name));
+
+        // Fetch expenses
+        const expensesRes = await fetch(
+          'http://localhost:5000/api/expense', // Added http://
+          getAuthHeaders()
+        );
+        const expensesData = await expensesRes.json();
+        setExpenses(expensesData);
+
+        // Fetch job numbers from new endpoint
+        try {
+          const jobRes = await fetch(
+            'http://localhost:5000/api/clearance-operations/job-numbers', 
+            getAuthHeaders()
+          );
+          const jobData = await jobRes.json();
+          if (jobData.success) {
+            setOperations(jobData.data.map(item => item.job_no));
+          }
+        } catch (jobError) {
+          console.log('Job numbers endpoint not available', jobError);
+        }
+      } catch (error) {
+        setError(error.message);
+        console.error('Error fetching data:', error);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // Form handlers
   const handleSearchChange = (field, value) => {
     setSearchForm(prev => ({ ...prev, [field]: value }));
   };
@@ -66,69 +108,203 @@ const AssignExpenses = () => {
     setExpenseForm(prev => {
       const updated = { ...prev, [field]: value };
       
-      if (field === 'actualAmount' || field === 'vatPercentage') {
-        const actualAmount = parseFloat(updated.actualAmount) || 0;
-        const vatPercentage = parseFloat(updated.vatPercentage) || 0;
-        const vatAmount = (actualAmount * vatPercentage) / 100;
+      if (field === 'actual_amount' || field === 'vat_percent') {
+        const actualAmount = parseFloat(updated.actual_amount) || 0;
+        const vatPercent = parseFloat(updated.vat_percent) || 0;
+        const vatAmount = (actualAmount * vatPercent) / 100;
         
-        updated.vatAmount = vatAmount;
-        updated.amount = (actualAmount + vatAmount).toFixed(2);
+        updated.vat_amount = vatAmount;
+        updated.total_amount = (actualAmount + vatAmount).toFixed(2);
       }
       
       return updated;
     });
   };
 
-  const addExpense = () => {
-    if (!expenseForm.item || !expenseForm.actualAmount) {
+  // CRUD Operations
+  const createExpense = async (expenseData) => {
+    try {
+      const response = await fetch('http://localhost:5000/api/expense', {
+        method: 'POST',
+        ...getAuthHeaders(),
+        body: JSON.stringify(expenseData)
+      });
+      return await response.json();
+    } catch (error) {
+      setError(error.message);
+      return null;
+    }
+  };
+
+  const updateExpense = async (id, expenseData) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/expense/${id}`, {
+        method: 'PUT',
+        ...getAuthHeaders(),
+        body: JSON.stringify(expenseData)
+      });
+      return await response.json();
+    } catch (error) {
+      setError(error.message);
+      return null;
+    }
+  };
+
+  const deleteExpense = async (id) => {
+    try {
+      await fetch(`http://localhost:5000/api/expense/${id}`, {
+        method: 'DELETE',
+        ...getAuthHeaders()
+      });
+      return true;
+    } catch (error) {
+      setError(error.message);
+      return false;
+    }
+  };
+
+  // Add/Edit Expense Handler
+  const handleAddExpense = async () => {
+    if (!expenseForm.expense_item || !expenseForm.actual_amount) {
       alert('Please select an expense item and enter the actual amount.');
       return;
     }
 
-    const newExpense = {
-      id: Date.now(),
-      item: expenseForm.item,
-      actualAmount: parseFloat(expenseForm.actualAmount),
-      vatPercentage: parseFloat(expenseForm.vatPercentage) || 0,
-      vatAmount: parseFloat(expenseForm.vatAmount) || 0,
-      amount: parseFloat(expenseForm.amount) || parseFloat(expenseForm.actualAmount),
-      dateOfPayment: expenseForm.dateOfPayment
+    const expenseData = {
+      operation_no: expenseForm.operation_no,
+      client_name: expenseForm.client_name,
+      expense_item: expenseForm.expense_item,
+      actual_amount: parseFloat(expenseForm.actual_amount),
+      vat_percent: parseFloat(expenseForm.vat_percent) || 0,
+      vat_amount: parseFloat(expenseForm.vat_amount) || 0,
+      date_of_payment: expenseForm.date_of_payment
     };
 
-    setExpenses(prev => [...prev, newExpense]);
-    
-    setExpenseForm({
-      item: '',
-      actualAmount: '',
-      vatPercentage: 0,
-      vatAmount: 0,
-      amount: '',
-      dateOfPayment: ''
-    });
-    
-    setIsAdding(false);
-    setEditingId(null);
+    try {
+      let result;
+      if (editingId) {
+        result = await updateExpense(editingId, expenseData);
+      } else {
+        result = await createExpense(expenseData);
+      }
+
+      if (result) {
+        // Refresh expenses
+        const expensesRes = await fetch(
+          'http://localhost:5000/api/expense', // Added http://
+          getAuthHeaders()
+        );
+        const expensesData = await expensesRes.json();
+        setExpenses(expensesData);
+        
+        // Reset form
+        setExpenseForm({
+          operation_no: '',
+          client_name: '',
+          expense_item: '',
+          actual_amount: '',
+          vat_percent: 0,
+          vat_amount: 0,
+          total_amount: '',
+          date_of_payment: ''
+        });
+        
+        setIsAdding(false);
+        setEditingId(null);
+      }
+    } catch (error) {
+      setError(error.message);
+    }
   };
 
+  // Edit Handler
   const handleEdit = (expense) => {
     setExpenseForm({
-      item: expense.item,
-      actualAmount: expense.actualAmount.toString(),
-      vatPercentage: expense.vatPercentage,
-      vatAmount: expense.vatAmount,
-      amount: expense.amount.toString(),
-      dateOfPayment: expense.dateOfPayment
+      operation_no: expense.operation_no,
+      client_name: expense.client_name,
+      expense_item: expense.expense_item,
+      actual_amount: expense.actual_amount.toString(),
+      vat_percent: expense.vat_percent,
+      vat_amount: expense.vat_amount,
+      total_amount: expense.total_amount.toString(),
+      date_of_payment: expense.date_of_payment
     });
     setEditingId(expense.id);
     setIsAdding(true);
   };
 
-  const removeExpense = (id) => {
-    setExpenses(prev => prev.filter(expense => expense.id !== id));
+  // Delete Handler
+  const handleDelete = async (id) => {
+    if (window.confirm('Are you sure you want to delete this expense?')) {
+      const success = await deleteExpense(id);
+      if (success) {
+        // Refresh expenses
+        const expensesRes = await fetch(
+          'http://localhost:5000/api/expense', 
+          getAuthHeaders()
+        );
+        const expensesData = await expensesRes.json();
+        setExpenses(expensesData);
+      }
+    }
   };
 
+  // Expense Items Management
+  const addExpenseItem = async () => {
+    if (newItemName.trim() && !expenseItems.includes(newItemName)) {
+      try {
+        // Send new item to backend
+        await fetch('http://localhost:5000/api/expense-item', {
+          method: 'POST',
+          ...getAuthHeaders(),
+          body: JSON.stringify({ name: newItemName })
+        });
+        
+        // Refresh expense items
+        const itemsRes = await fetch(
+          'http://localhost:5000/api/expense-item', 
+          getAuthHeaders()
+        );
+        const itemsData = await itemsRes.json();
+        setExpenseItems(itemsData.map(item => item.name));
+        setNewItemName('');
+      } catch (error) {
+        setError(error.message);
+      }
+    }
+  };
+
+  const removeExpenseItem = async (item) => {
+    if (window.confirm(`Are you sure you want to delete "${item}"?`)) {
+      try {
+        // Find item ID
+        const itemsRes = await fetch(
+          'http://localhost:5000/api/expense-item', 
+          getAuthHeaders()
+        );
+        const itemsData = await itemsRes.json();
+        const itemToDelete = itemsData.find(i => i.name === item);
+        
+        if (itemToDelete) {
+          // Delete from backend
+          await fetch(
+            `http://localhost:5000/api/expense-item/${itemToDelete.id}`, 
+            { method: 'DELETE', ...getAuthHeaders() }
+          );
+          
+          // Refresh expense items
+          const updatedItems = itemsData.filter(i => i.id !== itemToDelete.id);
+          setExpenseItems(updatedItems.map(i => i.name));
+        }
+      } catch (error) {
+        setError(error.message);
+      }
+    }
+  };
+
+  // Helper functions
   const getTotalAmount = () => {
-    return expenses.reduce((sum, expense) => sum + expense.amount, 0).toFixed(2);
+    return expenses.reduce((sum, expense) => sum + parseFloat(expense.total_amount), 0).toFixed(2);
   };
 
   const handleSearch = () => {
@@ -143,6 +319,7 @@ const AssignExpenses = () => {
   });
 
   // Pagination
+  
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentExpenses = sortedExpenses.slice(indexOfFirstItem, indexOfLastItem);
@@ -156,6 +333,22 @@ const AssignExpenses = () => {
       setSortDirection('asc');
     }
   };
+
+  // Prepare options for searchable dropdowns
+  const clientOptions = clients.map(client => ({
+    value: client.name,
+    label: client.name
+  }));
+
+  const operationOptions = operations.map(op => ({
+    value: op,
+    label: op
+  }));
+
+  const expenseItemOptions = expenseItems.map(item => ({
+    value: item,
+    label: item
+  }));
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-8">
@@ -176,12 +369,14 @@ const AssignExpenses = () => {
                 setIsAdding(!isAdding);
                 setEditingId(null);
                 setExpenseForm({
-                  item: '',
-                  actualAmount: '',
-                  vatPercentage: 0,
-                  vatAmount: 0,
-                  amount: '',
-                  dateOfPayment: ''
+                  operation_no: '',
+                  client_name: '',
+                  expense_item: '',
+                  actual_amount: '',
+                  vat_percent: 0,
+                  vat_amount: 0,
+                  total_amount: '',
+                  date_of_payment: ''
                 });
               }}
               className={`px-5 py-2 text-white rounded-lg font-medium transition-all flex items-center shadow-md
@@ -192,8 +387,23 @@ const AssignExpenses = () => {
               {isAdding ? <X className="w-5 h-5 mr-2" /> : <Plus className="w-5 h-5 mr-2" />}
               {isAdding ? 'Close' : 'Add Expense'}
             </button>
+            
+            <button
+              onClick={() => setIsManagingItems(true)}
+              className="px-5 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium flex items-center"
+            >
+              <Settings className="w-5 h-5 mr-2" />
+              Manage Items
+            </button>
           </div>
         </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            {error}
+          </div>
+        )}
 
         {/* Search Section */}
         <div className="bg-white rounded-xl shadow-lg overflow-hidden mb-8">
@@ -206,50 +416,105 @@ const AssignExpenses = () => {
           
           <div className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Operation No <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    placeholder="Enter Operation No"
-                    value={searchForm.operationNo}
-                    onChange={(e) => handleSearchChange('operationNo', e.target.value)}
-                    className="w-full pl-3 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  />
-                  <button 
-                    onClick={handleSearch} 
-                    className="absolute inset-y-0 right-0 px-3 flex items-center"
-                  >
-                    <Search className="w-5 h-5 text-indigo-600" />
-                  </button>
-                </div>
-              </div>
-              
+              {/* Client Name Dropdown */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Client Name <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
-                  <input
-                    type="text"
-                    placeholder="Client name"
-                    value={searchForm.clientName}
-                    onChange={(e) => handleSearchChange('clientName', e.target.value)}
-                    className="w-full pl-3 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  <Select
+                    options={clientOptions}
+                    value={clientOptions.find(option => option.value === searchForm.clientName)}
+                    onChange={(selectedOption) => handleSearchChange('clientName', selectedOption?.value || '')}
+                    placeholder="Select Client"
+                    isSearchable
+                    className="w-full"
                   />
-                  <button 
-                    onClick={handleSearch} 
-                    className="absolute inset-y-0 right-0 px-3 flex items-center"
-                  >
-                    <Search className="w-5 h-5 text-indigo-600" />
-                  </button>
+                </div>
+              </div>
+              
+              {/* Operation No Dropdown */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Operation No <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <Select
+                    options={operationOptions}
+                    value={operationOptions.find(option => option.value === searchForm.operationNo)}
+                    onChange={(selectedOption) => handleSearchChange('operationNo', selectedOption?.value || '')}
+                    placeholder="Select Operation"
+                    isSearchable
+                    className="w-full"
+                  />
                 </div>
               </div>
             </div>
           </div>
         </div>
+
+        {/* Expense Items Management Modal */}
+        {isManagingItems && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-xl shadow-lg w-full max-w-md">
+              <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6">
+                <h2 className="text-xl font-bold text-white flex items-center">
+                  <Settings className="w-5 h-5 mr-2" />
+                  MANAGE EXPENSE ITEMS
+                </h2>
+              </div>
+              
+              <div className="p-6">
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Add New Expense Item
+                  </label>
+                  <div className="flex">
+                    <input
+                      type="text"
+                      value={newItemName}
+                      onChange={(e) => setNewItemName(e.target.value)}
+                      className="flex-grow px-4 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-indigo-500"
+                      placeholder="Enter new item name"
+                    />
+                    <button
+                      onClick={addExpenseItem}
+                      className="bg-indigo-600 text-white px-4 py-2 rounded-r-lg hover:bg-indigo-700"
+                    >
+                      Add
+                    </button>
+                  </div>
+                </div>
+                
+                <div>
+                  <h3 className="text-lg font-medium text-gray-800 mb-3">Current Expense Items</h3>
+                  <ul className="border border-gray-200 rounded-lg divide-y divide-gray-200 max-h-60 overflow-y-auto">
+                    {expenseItems.map((item, index) => (
+                      <li key={index} className="flex justify-between items-center p-3 hover:bg-gray-50">
+                        <span>{item}</span>
+                        <button
+                          onClick={() => removeExpenseItem(item)}
+                          className="text-red-600 hover:text-red-800"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                
+                <div className="mt-6 flex justify-end">
+                  <button
+                    onClick={() => setIsManagingItems(false)}
+                    className="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Add/Edit Expense Form */}
         {isAdding && (
@@ -266,20 +531,57 @@ const AssignExpenses = () => {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Expense Item <span className="text-red-500">*</span>
+                      Operation No <span className="text-red-500">*</span>
                     </label>
-                    <select
-                      value={expenseForm.item}
-                      onChange={(e) => handleExpenseChange('item', e.target.value)}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    >
-                      <option value="">Select Expense Item</option>
-                      {expenseItems.map((item, index) => (
-                        <option key={index} value={item}>{item}</option>
-                      ))}
-                    </select>
+                    <Select
+                      options={operationOptions}
+                      value={operationOptions.find(option => option.value === expenseForm.operation_no)}
+                      onChange={(selectedOption) => handleExpenseChange('operation_no', selectedOption?.value || '')}
+                      placeholder="Select Operation"
+                      isSearchable
+                      className="w-full"
+                    />
                   </div>
                   
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Client Name <span className="text-red-500">*</span>
+                    </label>
+                    <Select
+                      options={clientOptions}
+                      value={clientOptions.find(option => option.value === expenseForm.client_name)}
+                      onChange={(selectedOption) => handleExpenseChange('client_name', selectedOption?.value || '')}
+                      placeholder="Select Client"
+                      isSearchable
+                      className="w-full"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Expense Item <span className="text-red-500">*</span>
+                    </label>
+                    <div className="flex">
+                      <Select
+                        options={expenseItemOptions}
+                        value={expenseItemOptions.find(option => option.value === expenseForm.expense_item)}
+                        onChange={(selectedOption) => handleExpenseChange('expense_item', selectedOption?.value || '')}
+                        placeholder="Select Expense Item"
+                        isSearchable
+                        className="flex-grow"
+                      />
+                      <button
+                        onClick={() => setIsManagingItems(true)}
+                        className="ml-2 px-3 bg-gray-200 hover:bg-gray-300 rounded-r-lg"
+                        title="Manage Items"
+                      >
+                        <Settings className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Actual Amount <span className="text-red-500">*</span>
@@ -287,8 +589,8 @@ const AssignExpenses = () => {
                     <input
                       type="number"
                       step="0.01"
-                      value={expenseForm.actualAmount}
-                      onChange={(e) => handleExpenseChange('actualAmount', e.target.value)}
+                      value={expenseForm.actual_amount}
+                      onChange={(e) => handleExpenseChange('actual_amount', e.target.value)}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                       placeholder="0.00"
                     />
@@ -301,15 +603,13 @@ const AssignExpenses = () => {
                     <input
                       type="number"
                       step="0.01"
-                      value={expenseForm.vatPercentage}
-                      onChange={(e) => handleExpenseChange('vatPercentage', e.target.value)}
+                      value={expenseForm.vat_percent}
+                      onChange={(e) => handleExpenseChange('vat_percent', e.target.value)}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                       placeholder="0"
                     />
                   </div>
-                </div>
-
-                <div className="space-y-4">
+                  
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       VAT Amount
@@ -317,7 +617,7 @@ const AssignExpenses = () => {
                     <input
                       type="number"
                       step="0.01"
-                      value={expenseForm.vatAmount.toFixed(2)}
+                      value={(parseFloat(expenseForm?.vat_amount) || 0).toFixed(2)}
                       readOnly
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-gray-50"
                       placeholder="0.00"
@@ -331,7 +631,7 @@ const AssignExpenses = () => {
                     <input
                       type="number"
                       step="0.01"
-                      value={expenseForm.amount}
+                      value={expenseForm.total_amount}
                       readOnly
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-gray-50"
                       placeholder="0.00"
@@ -344,8 +644,8 @@ const AssignExpenses = () => {
                     </label>
                     <input
                       type="date"
-                      value={expenseForm.dateOfPayment}
-                      onChange={(e) => handleExpenseChange('dateOfPayment', e.target.value)}
+                      value={expenseForm.date_of_payment}
+                      onChange={(e) => handleExpenseChange('date_of_payment', e.target.value)}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                     />
                   </div>
@@ -354,7 +654,7 @@ const AssignExpenses = () => {
 
               <div className="mt-6 flex justify-end">
                 <button
-                  onClick={addExpense}
+                  onClick={handleAddExpense}
                   className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition"
                 >
                   {editingId ? 'Update Expense' : 'Add Expense'}
@@ -370,28 +670,26 @@ const AssignExpenses = () => {
             <thead className="bg-indigo-600 text-white text-sm font-semibold">
               <tr>
                 {[
-                  { label: 'Expense Item', key: 'item' },
-                  { label: 'Actual Amount', key: 'actualAmount' },
-                  { label: 'VAT(%)', key: 'vatPercentage' },
-                  { label: 'VAT Amount', key: 'vatAmount' },
-                  { label: 'Amount', key: 'amount' },
-                  { label: 'Date of Payment', key: 'dateOfPayment' },
+                  { label: 'Operation No', key: 'operation_no' },
+                  { label: 'Client Name', key: 'client_name' },
+                  { label: 'Expense Item', key: 'expense_item' },
+                  { label: 'Actual Amount', key: 'actual_amount' },
+                  { label: 'VAT(%)', key: 'vat_percent' },
+                  { label: 'VAT Amount', key: 'vat_amount' },
+                  { label: 'Total Amount', key: 'total_amount' },
+                  { label: 'Date of Payment', key: 'date_of_payment' },
                   { label: 'Actions', key: null },
                 ].map(({ label, key }) => (
                   <th
                     key={label}
-                    className={`px-4 py-3 text-left cursor-pointer select-none ${
-                      key && 'hover:bg-indigo-700'
-                    }`}
+                    className={`px-4 py-3 text-left cursor-pointer select-none ${key && 'hover:bg-indigo-700'}`}
                     onClick={() => key && handleSort(key)}
                   >
                     <div className="flex items-center">
                       {label}
                       {key && sortField === key && (
                         <ChevronDown
-                          className={`w-4 h-4 ml-1 transition-transform ${
-                            sortDirection === 'asc' ? 'rotate-180' : ''
-                          }`}
+                          className={`w-4 h-4 ml-1 transition-transform ${sortDirection === 'asc' ? 'rotate-180' : ''}`}
                         />
                       )}
                     </div>
@@ -399,11 +697,11 @@ const AssignExpenses = () => {
                 ))}
               </tr>
             </thead>
-
+            
             <tbody>
               {currentExpenses.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-8 text-gray-500">
+                  <td colSpan={9} className="text-center py-8 text-gray-500">
                     No expense records found.
                   </td>
                 </tr>
@@ -413,12 +711,16 @@ const AssignExpenses = () => {
                     key={expense.id}
                     className="border-b border-gray-200 hover:bg-gray-50 transition"
                   >
-                    <td className="px-4 py-3">{expense.item}</td>
-                    <td className="px-4 py-3">{expense.actualAmount.toFixed(2)}</td>
-                    <td className="px-4 py-3">{expense.vatPercentage}</td>
-                    <td className="px-4 py-3">{expense.vatAmount.toFixed(2)}</td>
-                    <td className="px-4 py-3 text-green-600 font-medium">{expense.amount.toFixed(2)}</td>
-                    <td className="px-4 py-3">{expense.dateOfPayment || '-'}</td>
+                    <td className="px-4 py-3">{expense.operation_no}</td>
+                    <td className="px-4 py-3">{expense.client_name}</td>
+                    <td className="px-4 py-3">{expense.expense_item}</td>
+                    <td className="px-4 py-3">{parseFloat(expense.actual_amount).toFixed(2)}</td>
+                    <td className="px-4 py-3">{expense.vat_percent}</td>
+                    <td className="px-4 py-3">{parseFloat(expense.vat_amount).toFixed(2)}</td>
+                    <td className="px-4 py-3 text-green-600 font-medium">{parseFloat(expense.total_amount).toFixed(2)}</td>
+                    <td className="px-4 py-3">
+                      {new Date(expense.date_of_payment).toLocaleDateString()}
+                    </td>
                     <td className="px-4 py-3 flex space-x-3">
                       <button
                         onClick={() => handleEdit(expense)}
@@ -428,7 +730,7 @@ const AssignExpenses = () => {
                         <Pencil className="w-5 h-5" />
                       </button>
                       <button
-                        onClick={() => removeExpense(expense.id)}
+                        onClick={() => handleDelete(expense.id)}
                         title="Delete"
                         className="text-red-600 hover:text-red-800"
                       >

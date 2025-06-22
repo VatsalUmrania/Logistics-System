@@ -158,6 +158,15 @@ WHERE id = ?
     } catch (err) {
       throw err;
     }
+  },
+
+  getAllJobNo: async() =>{
+    try {
+      const [rows] = await db.query('SELECT job_no FROM clearance_operations');
+      return rows; 
+    } catch (err) {
+      throw err;
+    }
   }
 };
 
