@@ -136,6 +136,28 @@ WHERE id = ?
     } catch (err) {
       throw err;
     }
+  },
+  updateStatus: async (id, status) => {
+    try {
+      // Validate status input
+      if (!['Active', 'Inactive'].includes(status)) {
+        throw new Error('Invalid status value');
+      }
+  
+      const [result] = await db.query(
+        'UPDATE clearance_operations SET status = ? WHERE id = ?',
+        [status, id]
+      );
+  
+      // Check if any rows were affected
+      if (result.affectedRows === 0) {
+        throw new Error('Operation not found');
+      }
+  
+      return result;
+    } catch (err) {
+      throw err;
+    }
   }
 };
 

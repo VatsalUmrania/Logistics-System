@@ -9,4 +9,6 @@ router.post('/', operationsController.create);
 router.put('/:id', operationsController.update);
 router.delete('/:id', operationsController.delete);
 
+router.patch('/:id/status', operationsController.updateStatus);
+
 module.exports = router;

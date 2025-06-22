@@ -46,3 +46,29 @@ exports.delete = async (req, res) => {
     res.status(500).json({ error: 'Error deleting operation', details: err.message });
   }
 };
+
+exports.updateStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    
+    // Validate status
+    if (!['Active', 'Inactive'].includes(status)) {
+      return res.status(400).json({ message: 'Invalid status value' });
+    }
+
+    // Update status using MySQL model
+    const result = await Operations.updateStatus(id, status);
+
+    // Check if operation was found and updated
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Operation not found' });
+    }
+
+    // Fetch and return updated operation
+    const updatedOperation = await Operations.getById(id);
+    res.json(updatedOperation);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
