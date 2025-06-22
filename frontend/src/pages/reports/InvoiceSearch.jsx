@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   FileText,
@@ -27,6 +26,7 @@ const InvoiceSearch = () => {
   const [searchFields, setSearchFields] = useState({
     supplier: '',
     invoiceNo: '',
+    jobNumber: '',
     dateFrom: '',
     dateTo: ''
   });
@@ -57,7 +57,7 @@ const InvoiceSearch = () => {
     return supplier ? supplier.name : supplierId || '-';
   };
 
-  // Filtering (including date interval)
+  // Filtering (including date interval and job number)
   const filteredInvoices = invoices.filter(inv => {
     const supplierName = getSupplierName(inv.supplier_id).toLowerCase();
     const supplierMatches = searchFields.supplier
@@ -65,6 +65,9 @@ const InvoiceSearch = () => {
       : true;
     const invoiceNoMatches = searchFields.invoiceNo
       ? ((inv.invoice_no || inv.invoiceNo || '') + '').toLowerCase().includes(searchFields.invoiceNo.toLowerCase())
+      : true;
+    const jobNumberMatches = searchFields.jobNumber
+      ? ((inv.job_number || '') + '').toLowerCase().includes(searchFields.jobNumber.toLowerCase())
       : true;
     // Support both 'date' and 'invoice_date'
     const dateVal = (inv.date || inv.invoice_date || '').slice(0, 10);
@@ -78,7 +81,7 @@ const InvoiceSearch = () => {
     } else if (to) {
       dateMatches = dateVal <= to;
     }
-    return supplierMatches && invoiceNoMatches && dateMatches;
+    return supplierMatches && invoiceNoMatches && jobNumberMatches && dateMatches;
   });
 
   // Sorting
@@ -124,8 +127,8 @@ const InvoiceSearch = () => {
         </div>
 
         {/* Filters Section */}
-        <div className="bg-white/70 backdrop-blur rounded-2xl shadow-lg px-8 py-8 mb-10 flex flex-col md:flex-row md:items-end gap-8 md:gap-4">
-          <div className="flex-1">
+        <div className="bg-white/70 backdrop-blur rounded-2xl shadow-lg px-8 py-8 mb-10 flex flex-col md:flex-row md:flex-wrap md:items-end gap-4">
+          <div className="flex-1 min-w-[200px]">
             <label className="block font-semibold text-gray-700 mb-2">Supplier Name</label>
             <div className="relative">
               <Search className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
@@ -141,7 +144,7 @@ const InvoiceSearch = () => {
               />
             </div>
           </div>
-          <div className="flex-1">
+          <div className="flex-1 min-w-[200px]">
             <label className="block font-semibold text-gray-700 mb-2">Invoice No</label>
             <div className="relative">
               <FileText className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
@@ -157,7 +160,23 @@ const InvoiceSearch = () => {
               />
             </div>
           </div>
-          <div className="flex-1">
+          <div className="flex-1 min-w-[200px]">
+            <label className="block font-semibold text-gray-700 mb-2">Job Number</label>
+            <div className="relative">
+              <FileText className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Job Number"
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 bg-white"
+                value={searchFields.jobNumber}
+                onChange={e => {
+                  setSearchFields(f => ({ ...f, jobNumber: e.target.value }));
+                  setCurrentPage(1);
+                }}
+              />
+            </div>
+          </div>
+          <div className="flex-1 min-w-[200px]">
             <label className="block font-semibold text-gray-700 mb-2 flex items-center gap-2">
               <Calendar className="w-5 h-5 text-blue-500" />
               Invoice Date From
@@ -172,7 +191,7 @@ const InvoiceSearch = () => {
               }}
             />
           </div>
-          <div className="flex-1">
+          <div className="flex-1 min-w-[200px]">
             <label className="block font-semibold text-gray-700 mb-2 flex items-center gap-2">
               <Calendar className="w-5 h-5 text-purple-500" />
               Invoice Date To
@@ -197,6 +216,7 @@ const InvoiceSearch = () => {
                 {[
                   { label: 'SL', key: 'sl', noSort: true },
                   { label: 'Supplier', key: 'supplier' },
+                  { label: 'Job Number', key: 'job_number' },
                   { label: 'Invoice No', key: 'invoiceNo' },
                   { label: 'Date', key: 'date' },
                 ].map(({ label, key, noSort }) => (
@@ -232,13 +252,13 @@ const InvoiceSearch = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={4} className="text-center py-12 text-xl text-gray-500">
+                  <td colSpan={5} className="text-center py-12 text-xl text-gray-500">
                     Loading...
                   </td>
                 </tr>
               ) : currentInvoices.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="text-center py-12 text-lg text-gray-500">
+                  <td colSpan={5} className="text-center py-12 text-lg text-gray-500">
                     No invoices found.
                   </td>
                 </tr>
@@ -250,6 +270,7 @@ const InvoiceSearch = () => {
                   >
                     <td className="px-6 py-4 text-center text-gray-700 font-bold">{index + 1 + indexOfFirstItem}</td>
                     <td className="px-6 py-4 text-gray-800 font-medium">{getSupplierName(inv.supplier_id)}</td>
+                    <td className="px-6 py-4 text-gray-700">{inv.job_number}</td>
                     <td className="px-6 py-4 text-gray-700">{inv.invoice_no || inv.invoiceNo}</td>
                     <td className="px-6 py-4 text-gray-700">
                       {(inv.date || inv.invoice_date || '').slice(0, 10)}

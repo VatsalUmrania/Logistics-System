@@ -6,5 +6,6 @@ router.use('/bills', require('./routes/billsRoutes'));
 router.use('/expense', require('./routes/expenseRoutes'));
 router.use('/expense-item', require('./routes/expenseItemRoutes'));
 router.use('/credit-note', require('./routes/creditNoteRoutes'));
+router.use('/profit-report',require('./routes/profitReportRoutes'));
 
 module.exports = router;

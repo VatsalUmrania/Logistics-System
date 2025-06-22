@@ -53,11 +53,11 @@ const clearanceMenu = [
 //   { label: 'Expense Posting', key: 'expense_posting', href: "/expense_posting" },
 // ];
 const reportsMenu = [
-  { label: 'Search Invoice (Date, Invoice No, Name)', key: 'search_invoice', href: "/invoice-search" },
-  { label: 'Search Invoice By Date', key: 'search_invoice_date', href: "/invoice-search-by-date" },
-  { label: 'Search By Invoice No', key: 'search_by_invoice_no', href: "/invoice-search" },
+  { label: 'Search Invoice (Date, Invoice & Job No, Name)', key: 'search_invoice', href: "/invoice-search" },
+  { label: 'Search Invoice By Date', key: 'search_invoice_date' },
+  { label: 'Search By Invoice No', key: 'search_by_invoice_no' },
   { label: 'Invoice Search By Bayan No', key: 'invoice_search_bayan', href: "/bayanno" },
-  { label: 'Invoice Search By Job No', key: 'invoice_search_job', href: "jobno" },
+  { label: 'Invoice Search By Job No', key: 'invoice_search_job' },
   { label: 'Customer Statement Report', key: 'customer_statement_report', href: "/customer-statement" },
   { label: 'Payment Report', key: 'payment_report', href: "/payment-report" },
   { label: 'Client Searching', key: 'client_searching', href: "/client-search" },
