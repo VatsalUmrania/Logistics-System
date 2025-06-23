@@ -1,5 +1,6 @@
 import { Search, Eye, Calendar, FileText, DollarSign, Hash, User, Trash2, Edit, Plus, X, ArrowUp, ArrowDown } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
 const API_URL = 'http://localhost:5000/api';
 
@@ -29,7 +30,10 @@ const SupplierInvoiceEdit = () => {
   const [invoices, setInvoices] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [currentInvoice, setCurrentInvoice] = useState(null);
+  const [currentInvoice, setCurrentInvoice] = useState({
+    job_number:'',
+    invoice_no:''
+  });
   const [isViewMode, setIsViewMode] = useState(false);
   const [vatInputMode, setVatInputMode] = useState('value');
   const [currentPage, setCurrentPage] = useState(1);
@@ -44,7 +48,39 @@ const SupplierInvoiceEdit = () => {
     fetchSuppliers();
     // eslint-disable-next-line
   }, []);
-
+  useEffect(() => {
+    const  fetchNextJobNumber = async() => {
+      try {
+        const response = await axios.get('http://localhost:5000/api/invoices/next-job-number', {
+          headers: getAuthHeaders()
+        });
+        setCurrentInvoice(prev => ({
+          ...prev,
+          job_number: response.data.job_number,
+          
+        }));
+        console.log(currentInvoice);
+      } catch (error) {
+        console.error('Failed to load next job number', error);
+      }
+    }
+    const  fetchNextInvoiceNumber = async() => {
+      try {
+        const response = await axios.get('http://localhost:5000/api/invoices/next-invoice-number', {
+          headers: getAuthHeaders()
+        });
+        setCurrentInvoice(prev => ({
+          ...prev,
+          invoice_no: response.data.invoice_no,
+          
+        }));
+      } catch (error) {
+        console.error('Failed to load next job number', error);
+      }
+    }
+    fetchNextJobNumber();
+    fetchNextInvoiceNumber();
+  }, []);
   const fetchInvoices = async (params = {}) => {
     setIsLoading(prev => ({ ...prev, table: true }));
     try {
@@ -87,9 +123,10 @@ const SupplierInvoiceEdit = () => {
   };
 
   const handleCreate = () => {
+
     setCurrentInvoice({
-      job_number: '',
-      invoice_no: '',
+      job_number:  currentInvoice.job_number || '',
+      invoice_no: currentInvoice.invoice_no || '',
       invoice_date: new Date().toISOString().split('T')[0],
       bill_amount_without_vat: '',
       vat_amount: '',
@@ -188,7 +225,8 @@ const SupplierInvoiceEdit = () => {
         await fetch(`${API_URL}/invoices/${currentInvoice.id}`, {
           method: 'PUT',
           headers: getAuthHeaders(),
-          body: JSON.stringify(invoiceData)
+          body: JSON.stringify(invoiceData),
+          
         });
       } else {
         await fetch(`${API_URL}/invoices`, {
@@ -199,6 +237,7 @@ const SupplierInvoiceEdit = () => {
       }
       setIsModalOpen(false);
       fetchInvoices();
+      window.location.reload();
     } catch (error) {}
   };
 
@@ -544,7 +583,7 @@ const SupplierInvoiceEdit = () => {
                         name="job_number"
                         value={currentInvoice.job_number}
                         onChange={handleChange}
-                        required
+                        required readOnly
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
@@ -557,7 +596,7 @@ const SupplierInvoiceEdit = () => {
                         name="invoice_no"
                         value={currentInvoice.invoice_no}
                         onChange={handleChange}
-                        required
+                        required readOnly
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>

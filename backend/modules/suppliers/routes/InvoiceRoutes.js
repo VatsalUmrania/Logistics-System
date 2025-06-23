@@ -49,6 +49,134 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Route to fetch all unique job numbers
+router.get('/job-numbers', async (req, res) => {
+  try {
+    const sql = `
+      SELECT DISTINCT job_number 
+      FROM invoices 
+      WHERE job_number IS NOT NULL AND job_number != ''
+      ORDER BY job_number ASC
+    `;
+    const [rows] = await db.query(sql);
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/last-job-number', async (req, res) => {
+  try {
+    const sql = `
+      SELECT job_number 
+      FROM invoices 
+      WHERE job_number IS NOT NULL AND job_number != ''
+      ORDER BY invoice_date DESC, id DESC 
+      LIMIT 1
+    `;
+    const [rows] = await db.query(sql);
+    
+    if (rows.length > 0) {
+      res.json({ job_number: rows[0].job_number });
+    } else {
+      res.json({ job_number: null });
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/next-job-number', async (req, res) => {
+  try {
+    // Fetch last job number
+    const sql = `
+      SELECT job_number 
+      FROM invoices 
+      WHERE job_number IS NOT NULL AND job_number != ''
+      ORDER BY invoice_date DESC, id DESC 
+      LIMIT 1
+    `;
+    const [rows] = await db.query(sql);
+
+    if (rows.length === 0) {
+      // If no job numbers yet, start from JOB-0001 (example)
+      return res.json({ job_number: 'JOB-0001' });
+    }
+
+    const lastJobNumber = rows[0].job_number; // e.g., "JOB-1013"
+
+    // Extract prefix (non-digit part) and number
+    const prefixMatch = lastJobNumber.match(/^\D+/);
+    const numberMatch = lastJobNumber.match(/\d+$/);
+
+    if (!prefixMatch || !numberMatch) {
+      return res.status(400).json({ error: 'Invalid job number format in DB' });
+    }
+
+    const prefix = prefixMatch[0]; // "JOB-"
+    const number = parseInt(numberMatch[0], 10); // 1013
+
+    // Increment number by 1
+    const nextNumber = number + 1;
+
+    // Optional: zero-pad the number to keep fixed length, e.g., 4 digits
+    const numberLength = numberMatch[0].length; // e.g., 4 if "1013"
+    const nextNumberStr = String(nextNumber).padStart(numberLength, '0');
+
+    const nextJobNumber = `${prefix}${nextNumberStr}`;
+
+    res.json({ job_number: nextJobNumber });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/next-invoice-number', async (req, res) => {
+  try {
+    // Get the last invoice number based on invoice_date and id
+    const sql = `
+      SELECT invoice_no
+      FROM invoices
+      WHERE invoice_no IS NOT NULL AND invoice_no != ''
+      ORDER BY invoice_date DESC, id DESC
+      LIMIT 1
+    `;
+    const [rows] = await db.query(sql);
+
+    if (rows.length === 0) {
+      // If no invoices exist, start with INV-0001
+      return res.json({ invoice_no: 'INV-0001' });
+    }
+
+    const lastInvoiceNo = rows[0].invoice_no; // e.g. "INV-0013"
+
+    // Extract prefix and number
+    const prefixMatch = lastInvoiceNo.match(/^\D+/);
+    const numberMatch = lastInvoiceNo.match(/\d+$/);
+
+    if (!prefixMatch || !numberMatch) {
+      return res.status(400).json({ error: 'Invalid invoice number format in DB' });
+    }
+
+    const prefix = prefixMatch[0]; // "INV-"
+    const number = parseInt(numberMatch[0], 10); // 13
+
+    // Increment the numeric part by 1
+    const nextNumber = number + 1;
+
+    // Zero pad to keep same length
+    const numberLength = numberMatch[0].length;
+    const nextNumberStr = String(nextNumber).padStart(numberLength, '0');
+
+    const nextInvoiceNo = `${prefix}${nextNumberStr}`;
+
+    res.json({ invoice_no: nextInvoiceNo });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
 // GET a single invoice (with its supplier)
 router.get('/:id', async (req, res) => {
   try {
