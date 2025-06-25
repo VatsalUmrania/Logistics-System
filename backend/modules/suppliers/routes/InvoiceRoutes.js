@@ -65,6 +65,21 @@ router.get('/job-numbers', async (req, res) => {
   }
 });
 
+router.get('/invoice-numbers', async (req, res) => {
+  try {
+    const sql = `
+      SELECT DISTINCT invoice_no 
+      FROM invoices 
+      WHERE invoice_no IS NOT NULL AND job_number != ''
+      ORDER BY invoice_no ASC
+    `;
+    const [rows] = await db.query(sql);
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.get('/last-job-number', async (req, res) => {
   try {
     const sql = `

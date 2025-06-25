@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { X, AlertTriangle, FileX, ArrowLeft, CheckCircle } from 'lucide-react';
+import {
+  X, AlertTriangle, FileX, CheckCircle
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const ReceiptCancellation = () => {
@@ -13,7 +15,7 @@ const ReceiptCancellation = () => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleCancel = async () => {
+  const handleCancel = () => {
     if (!formData.receiptNo.trim()) {
       alert('Please enter a job number');
       return;
@@ -22,14 +24,12 @@ const ReceiptCancellation = () => {
       alert('Please enter a reason for cancellation');
       return;
     }
-
     setShowConfirmation(true);
   };
 
   const confirmCancellation = async () => {
     setIsLoading(true);
     try {
-      console.log('Cancelling receipt:', formData);
       await new Promise(resolve => setTimeout(resolve, 1500));
       setShowConfirmation(false);
       setShowSuccess(true);
@@ -38,7 +38,6 @@ const ReceiptCancellation = () => {
         setFormData({ receiptNo: '', reason: '' });
       }, 2000);
     } catch (error) {
-      console.error('Cancellation failed:', error);
       alert('Failed to cancel receipt');
     } finally {
       setIsLoading(false);
@@ -50,34 +49,46 @@ const ReceiptCancellation = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* Main Content */}
-      <div className="max-w-5xl mx-auto align-middle justify-center py-20">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8 px-2">
+      <div className="max-w-4xl mx-auto">
+        {/* Page Header */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-800 flex items-center">
+              <FileX className="w-8 h-8 mr-3 text-red-600" />
+              Receipt Cancellation
+            </h1>
+            <p className="text-gray-600 mt-2">
+              Cancel a receipt by providing the job number and a valid reason.
+            </p>
+          </div>
+        </div>
 
-        {/* Form Container */}
+        {/* Main Card */}
         <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
-          {/* Form Header */}
+          {/* Card Header */}
           <div className="bg-gradient-to-r from-red-500 to-red-600 text-white px-8 py-6">
             <div className="flex items-center gap-3">
               <div className="bg-white/10 p-2 rounded-lg">
                 <X size={20} className="text-white" />
               </div>
-              <div>
-                <h2 className="text-xl font-semibold">Cancellation Details</h2>
-              </div>
+              <h2 className="text-xl font-semibold">Cancellation Details</h2>
             </div>
           </div>
 
-          {/* Form Content */}
+          {/* Card Body */}
           <div className="p-8">
-            <div className="space-y-8">
-              {/* Form Fields */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Job Number Input */}
+            <form
+              onSubmit={e => { e.preventDefault(); handleCancel(); }}
+              className="space-y-8"
+              autoComplete="off"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Job Number */}
                 <div className="space-y-3">
                   <label htmlFor="receiptNo" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
                     <FileX size={16} className="text-red-600" />
-                    Job Number *
+                    Job Number <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -85,20 +96,19 @@ const ReceiptCancellation = () => {
                     name="receiptNo"
                     value={formData.receiptNo}
                     onChange={handleInputChange}
-                    className="w-full h-14 border-2 border-gray-200 rounded-xl px-4 text-sm bg-white transition-all duration-200 text-slate-800 focus:outline-none focus:border-red-500 focus:ring-4 focus:ring-red-100 hover:border-gray-300 shadow-sm"
+                    className="w-full h-14 border-2 border-gray-200 rounded-xl px-4 text-sm bg-white text-slate-800 focus:outline-none focus:border-red-500 focus:ring-4 focus:ring-red-100 hover:border-gray-300 shadow-sm transition"
                     placeholder="Enter job number (e.g., JOB-2024-001)"
                   />
                   <p className="text-xs text-gray-500 flex items-center gap-1">
-                    <span className="w-1 h-1 bg-gray-400 rounded-full"></span>
+                    <span className="w-1 h-1 bg-gray-400 rounded-full" />
                     Enter the job number associated with the receipt
                   </p>
                 </div>
-                
-                {/* Reason Input */}
+                {/* Reason */}
                 <div className="space-y-3">
-                  <label htmlFor="reason" className="text-sm font-semibold text-black-700 flex items-center gap-2">
+                  <label htmlFor="reason" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
                     <AlertTriangle size={16} className="text-yellow-600" />
-                    Cancellation Reason *
+                    Cancellation Reason <span className="text-red-500">*</span>
                   </label>
                   <textarea
                     id="reason"
@@ -106,11 +116,11 @@ const ReceiptCancellation = () => {
                     value={formData.reason}
                     onChange={handleInputChange}
                     rows={4}
-                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm bg-white transition-all duration-200 text-slate-800 focus:outline-none focus:border-red-500 focus:ring-4 focus:ring-red-100 hover:border-gray-300 resize-none shadow-sm"
+                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm bg-white text-slate-800 focus:outline-none focus:border-red-500 focus:ring-4 focus:ring-red-100 hover:border-gray-300 resize-none shadow-sm transition"
                     placeholder="Provide a detailed reason for cancellation (e.g., duplicate entry, customer request, error in processing...)"
                   />
                   <p className="text-xs text-gray-500 flex items-center gap-1">
-                    <span className="w-1 h-1 bg-gray-400 rounded-full"></span>
+                    <span className="w-1 h-1 bg-gray-400 rounded-full" />
                     This reason will be permanently recorded in the system
                   </p>
                 </div>
@@ -141,24 +151,25 @@ const ReceiptCancellation = () => {
               )}
 
               {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row justify-center gap-4 pt-6 border-t ">
-                <button 
-                  className="bg-gray-500 text-white border-none rounded-xl cursor-pointer flex items-center justify-center gap-2 text-sm font-semibold transition-all duration-300 px-8 py-4 min-w-[160px] hover:bg-gray-600 hover:shadow-lg hover:scale-105"
+              <div className="flex flex-col sm:flex-row justify-center gap-4 pt-6 border-t">
+                <button
+                  type="button"
+                  className="bg-gray-500 text-white rounded-xl flex items-center justify-center gap-2 text-sm font-semibold transition px-8 py-4 min-w-[160px] hover:bg-gray-600 hover:shadow-lg hover:scale-105"
                   onClick={handleClearForm}
                   disabled={isLoading}
                 >
                   Clear Form
                 </button>
-                <button 
-                  className="bg-gradient-to-r from-red-600 to-red-600 text-white border-none rounded-xl cursor-pointer flex items-center justify-center gap-2 text-sm font-semibold transition-all duration-300 px-8 py-4 min-w-[160px] hover:from-red-700 hover:to-red-800 hover:shadow-lg hover:scale-105 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
-                  onClick={handleCancel}
+                <button
+                  type="submit"
+                  className="bg-gradient-to-r from-red-600 to-red-600 text-white rounded-xl flex items-center justify-center gap-2 text-sm font-semibold transition px-8 py-4 min-w-[160px] hover:from-red-700 hover:to-red-800 hover:shadow-lg hover:scale-105 disabled:opacity-60 disabled:cursor-not-allowed"
                   disabled={isLoading || !formData.receiptNo.trim() || !formData.reason.trim()}
                 >
                   <X size={18} />
                   Cancel Receipt
                 </button>
               </div>
-            </div>
+            </form>
           </div>
         </div>
       </div>
@@ -189,23 +200,21 @@ const ReceiptCancellation = () => {
                   </div>
                 </div>
               </div>
-              
               <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
                 <p className="text-sm text-red-700 font-medium">
                   ⚠️ This action cannot be undone and will be permanently recorded in the system.
                 </p>
               </div>
-
               <div className="flex gap-3">
-                <button 
-                  className="flex-1 bg-gray-500 text-white border-none rounded-xl cursor-pointer flex items-center justify-center gap-2 text-sm font-semibold transition-all duration-200 px-4 py-3 hover:bg-gray-600"
+                <button
+                  className="flex-1 bg-gray-500 text-white rounded-xl flex items-center justify-center gap-2 text-sm font-semibold transition px-4 py-3 hover:bg-gray-600"
                   onClick={() => setShowConfirmation(false)}
                   disabled={isLoading}
                 >
                   Keep Receipt
                 </button>
-                <button 
-                  className="flex-1 bg-gradient-to-r from-red-600 to-red-700 text-white border-none rounded-xl cursor-pointer flex items-center justify-center gap-2 text-sm font-semibold transition-all duration-200 px-4 py-3 hover:from-red-700 hover:to-red-800 disabled:opacity-60 disabled:cursor-not-allowed"
+                <button
+                  className="flex-1 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl flex items-center justify-center gap-2 text-sm font-semibold transition px-4 py-3 hover:from-red-700 hover:to-red-800 disabled:opacity-60 disabled:cursor-not-allowed"
                   onClick={confirmCancellation}
                   disabled={isLoading}
                 >
