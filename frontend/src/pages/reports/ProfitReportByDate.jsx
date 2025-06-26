@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   FileBarChart2, Search, Calendar, Printer, Plus, Pencil, Trash2, X,
-  ArrowUp, ArrowDown, Loader, Check, AlertCircle as Alert
+  ArrowUp, ArrowDown, Loader, Check, AlertCircle as Alert, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import Select from 'react-select';
 
@@ -10,6 +10,9 @@ const ProfitReportByDate = () => {
   const [startDate, setStartDate] = useState('2025-01-01');
   const [endDate, setEndDate] = useState('2025-06-01');
   const [profitReports, setProfitReports] = useState([]);
+  const [suppliers, setSuppliers] = useState([]);
+  const [clients, setClients] = useState([]);
+  const [jobNumbers, setJobNumbers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -24,12 +27,13 @@ const ProfitReportByDate = () => {
     report_date: '',
     job_number: '',
     supplier_id: '',
+    client_id: '',
     revenue: '',
     cost: '',
     profit: ''
   });
 
-  // Custom styles for react-select dropdowns (matching AssignExpenses)
+  // Custom styles for react-select dropdowns
   const selectStyles = {
     control: (base) => ({
       ...base,
@@ -45,6 +49,9 @@ const ProfitReportByDate = () => {
   };
 
   const API_URL = 'http://localhost:5000/api/profit-report';
+  const API_SUPPLIERS = 'http://localhost:5000/api/suppliers';
+  const API_CLIENTS = 'http://localhost:5000/api/clients';
+  const API_JOB_NUMBERS = 'http://localhost:5000/api/invoices/job-numbers';
 
   // Auth header utility
   const getAuthHeaders = () => {
@@ -67,6 +74,76 @@ const ProfitReportByDate = () => {
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   }
 
+  // Helper function to get supplier name by ID
+  const getSupplierName = (supplierId) => {
+    const supplier = suppliers.find(s => s.id === supplierId || s.supplier_id === supplierId);
+    return supplier ? supplier.name : `ID: ${supplierId}`;
+  };
+
+  // Helper function to get client name by ID
+  const getClientName = (clientId) => {
+    const client = clients.find(c => c.id === clientId || c.client_id === clientId);
+    return client ? client.name : `ID: ${clientId}`;
+  };
+
+  // Render sort icon - MISSING FUNCTION ADDED
+  const renderSortIcon = (field) => {
+    if (sortField !== field) return <ArrowUp className="w-3 h-3 text-gray-400 inline" />;
+    return sortDirection === 'asc' ?
+      <ArrowUp className="w-3 h-3 text-indigo-600 inline" /> :
+      <ArrowDown className="w-3 h-3 text-indigo-600 inline" />;
+  };
+
+  // Sort handler
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+    setCurrentPage(1);
+  };
+
+  // Fetch suppliers
+  const fetchSuppliers = async () => {
+    try {
+      const response = await fetch(API_SUPPLIERS, getAuthHeaders());
+      if (!response.ok) throw new Error('Failed to fetch suppliers');
+      const data = await response.json();
+      setSuppliers(Array.isArray(data) ? data : data.data || []);
+    } catch (err) {
+      console.error('Error fetching suppliers:', err);
+      setSuppliers([]);
+    }
+  };
+
+  // Fetch clients
+  const fetchClients = async () => {
+    try {
+      const response = await fetch(API_CLIENTS, getAuthHeaders());
+      if (!response.ok) throw new Error('Failed to fetch clients');
+      const data = await response.json();
+      setClients(Array.isArray(data) ? data : data.data || []);
+    } catch (err) {
+      console.error('Error fetching clients:', err);
+      setClients([]);
+    }
+  };
+
+  // Fetch job numbers
+  const fetchJobNumbers = async () => {
+    try {
+      const response = await fetch(API_JOB_NUMBERS, getAuthHeaders());
+      if (!response.ok) throw new Error('Failed to fetch job numbers');
+      const data = await response.json();
+      setJobNumbers(Array.isArray(data) ? data : data.data || []);
+    } catch (err) {
+      console.error('Error fetching job numbers:', err);
+      setJobNumbers([]);
+    }
+  };
+
   // Fetch reports from backend
   const fetchReports = async () => {
     setIsLoading(true);
@@ -74,18 +151,15 @@ const ProfitReportByDate = () => {
       const response = await fetch(`${API_URL}?start_date=${startDate}&end_date=${endDate}`, getAuthHeaders());
       if (!response.ok) throw new Error('Failed to fetch reports');
       const data = await response.json();
-      setProfitReports(data);
+      setProfitReports(Array.isArray(data) ? data : data.data || []);
       setError('');
     } catch (err) {
       setError('Failed to fetch reports');
+      setProfitReports([]);
     } finally {
       setIsLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchReports();
-  }, []);
 
   // Reset form
   const resetForm = () => {
@@ -93,6 +167,7 @@ const ProfitReportByDate = () => {
       report_date: '',
       job_number: '',
       supplier_id: '',
+      client_id: '',
       revenue: '',
       cost: '',
       profit: ''
@@ -103,9 +178,8 @@ const ProfitReportByDate = () => {
     setSuccessMessage('');
   };
 
-  // Fixed toggle function for Add Report button
+  // Toggle add form
   const handleToggleAddForm = () => {
-    console.log('Button clicked, current state:', isAdding); // Debug log
     if (isAdding) {
       resetForm();
     } else {
@@ -140,10 +214,18 @@ const ProfitReportByDate = () => {
     });
   };
 
+  // Handle select changes
+  const handleSelectChange = (selectedOption, field) => {
+    setForm(prev => ({
+      ...prev,
+      [field]: selectedOption ? selectedOption.value : ''
+    }));
+  };
+
   // Create report
   const handleCreate = async (e) => {
     e.preventDefault();
-    if (!form.report_date || !form.job_number || !form.revenue || !form.cost) {
+    if (!form.report_date || !form.job_number || !form.supplier_id || !form.client_id || !form.revenue || !form.cost) {
       setError('Please fill in all required fields');
       return;
     }
@@ -172,6 +254,7 @@ const ProfitReportByDate = () => {
       report_date: toDateInputValue(report.report_date),
       job_number: report.job_number,
       supplier_id: report.supplier_id,
+      client_id: report.client_id,
       revenue: report.revenue,
       cost: report.cost,
       profit: report.profit
@@ -226,38 +309,32 @@ const ProfitReportByDate = () => {
     window.print();
   };
 
-  // Sort handler
-  const handleSort = (field) => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortDirection('asc');
-    }
-    setCurrentPage(1);
-  };
-
-  // Render sort icon
-  const renderSortIcon = (field) => {
-    if (sortField !== field) return <ArrowUp className="w-3 h-3 text-gray-400 inline" />;
-    return sortDirection === 'asc' ?
-      <ArrowUp className="w-3 h-3 text-indigo-600 inline" /> :
-      <ArrowDown className="w-3 h-3 text-indigo-600 inline" />;
-  };
-
   // Sort reports
   const sortedReports = [...profitReports].sort((a, b) => {
     let valA, valB;
+    
     if (sortField === 'report_date') {
       valA = new Date(a.report_date);
       valB = new Date(b.report_date);
     } else if (sortField === 'revenue' || sortField === 'cost' || sortField === 'profit') {
-      valA = parseFloat(a[sortField]);
-      valB = parseFloat(b[sortField]);
+      valA = parseFloat(a[sortField]) || 0;
+      valB = parseFloat(b[sortField]) || 0;
+    } else if (sortField === 'supplier_name') {
+      valA = getSupplierName(a.supplier_id).toLowerCase();
+      valB = getSupplierName(b.supplier_id).toLowerCase();
+    } else if (sortField === 'client_name') {
+      valA = getClientName(a.client_id).toLowerCase();
+      valB = getClientName(b.client_id).toLowerCase();
     } else {
-      valA = a[sortField] ? a[sortField].toLowerCase() : '';
-      valB = b[sortField] ? b[sortField].toLowerCase() : '';
+      // Safe string conversion for other fields
+      const safeStringA = a[sortField];
+      const safeStringB = b[sortField];
+      
+      // Convert to string safely and handle null/undefined values
+      valA = (safeStringA != null) ? String(safeStringA).toLowerCase() : '';
+      valB = (safeStringB != null) ? String(safeStringB).toLowerCase() : '';
     }
+    
     if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
     if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
     return 0;
@@ -280,6 +357,35 @@ const ProfitReportByDate = () => {
     profit: calculateTotal('profit')
   };
 
+  // Prepare options for dropdowns
+  const supplierOptions = suppliers.map(supplier => ({
+    value: supplier.id || supplier.supplier_id,
+    label: supplier.name
+  }));
+
+  const clientOptions = clients.map(client => ({
+    value: client.id || client.client_id,
+    label: client.name
+  }));
+
+  const jobNumberOptions = jobNumbers.map(job => ({
+    value: job.job_number,
+    label: job.job_number
+  }));
+
+  // Initial data fetch
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      await Promise.all([
+        fetchSuppliers(),
+        fetchClients(),
+        fetchJobNumbers(),
+        fetchReports()
+      ]);
+    };
+    fetchInitialData();
+  }, []);
+
   useEffect(() => {
     setCurrentPage(1);
   }, [profitReports]);
@@ -298,7 +404,7 @@ const ProfitReportByDate = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
-        {/* Header - Matching AssignExpenses */}
+        {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-gray-800 flex items-center">
@@ -346,7 +452,7 @@ const ProfitReportByDate = () => {
           </div>
         )}
 
-        {/* Search Section - Matching AssignExpenses */}
+        {/* Search Section */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-visible mb-6">
           <div className="bg-indigo-50 p-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-indigo-700 flex items-center">
@@ -393,10 +499,15 @@ const ProfitReportByDate = () => {
               <div className="flex items-end">
                 <button
                   onClick={handleSearch}
-                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-5 rounded-lg shadow transition text-sm flex items-center justify-center"
+                  disabled={isLoading}
+                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-5 rounded-lg shadow transition text-sm flex items-center justify-center disabled:opacity-50"
                 >
-                  <Search className="w-4 h-4 mr-2" />
-                  Search Reports
+                  {isLoading ? (
+                    <Loader className="w-4 h-4 animate-spin mr-2" />
+                  ) : (
+                    <Search className="w-4 h-4 mr-2" />
+                  )}
+                  {isLoading ? 'Searching...' : 'Search Reports'}
                 </button>
               </div>
             </div>
@@ -433,28 +544,50 @@ const ProfitReportByDate = () => {
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Job Number <span className="text-red-500">*</span>
                       </label>
-                      <input
-                        type="text"
-                        name="job_number"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
-                        placeholder="Enter job number"
-                        value={form.job_number}
-                        onChange={handleInputChange}
-                        required
+                      <Select
+                        options={jobNumberOptions}
+                        value={jobNumberOptions.find(option => option.value === form.job_number)}
+                        onChange={(selectedOption) => handleSelectChange(selectedOption, 'job_number')}
+                        placeholder="Select job number"
+                        isSearchable
+                        menuPortalTarget={document.body}
+                        menuPosition="fixed"
+                        styles={selectStyles}
+                        className="text-sm"
                       />
                     </div>
                     
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Supplier ID
+                        Supplier <span className="text-red-500">*</span>
                       </label>
-                      <input
-                        type="text"
-                        name="supplier_id"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
-                        placeholder="Enter supplier ID"
-                        value={form.supplier_id}
-                        onChange={handleInputChange}
+                      <Select
+                        options={supplierOptions}
+                        value={supplierOptions.find(option => option.value === form.supplier_id)}
+                        onChange={(selectedOption) => handleSelectChange(selectedOption, 'supplier_id')}
+                        placeholder="Select supplier"
+                        isSearchable
+                        menuPortalTarget={document.body}
+                        menuPosition="fixed"
+                        styles={selectStyles}
+                        className="text-sm"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Client <span className="text-red-500">*</span>
+                      </label>
+                      <Select
+                        options={clientOptions}
+                        value={clientOptions.find(option => option.value === form.client_id)}
+                        onChange={(selectedOption) => handleSelectChange(selectedOption, 'client_id')}
+                        placeholder="Select client"
+                        isSearchable
+                        menuPortalTarget={document.body}
+                        menuPosition="fixed"
+                        styles={selectStyles}
+                        className="text-sm"
                       />
                     </div>
                   </div>
@@ -524,14 +657,24 @@ const ProfitReportByDate = () => {
 
         {/* Report Summary */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
-          <div className="flex justify-between items-center">
-            <h2 className="text-lg font-semibold text-gray-800">
-              Profit Summary ({startDate} to {endDate})
-            </h2>
-            <div className="text-sm font-medium text-gray-700">
-              Net Profit: <span className={`font-bold ${totals.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="text-center">
+              <h3 className="text-sm font-medium text-gray-500">Total Reports</h3>
+              <p className="text-2xl font-bold text-indigo-600">{profitReports.length}</p>
+            </div>
+            <div className="text-center">
+              <h3 className="text-sm font-medium text-gray-500">Total Revenue</h3>
+              <p className="text-2xl font-bold text-green-600">${totals.revenue.toFixed(2)}</p>
+            </div>
+            <div className="text-center">
+              <h3 className="text-sm font-medium text-gray-500">Total Cost</h3>
+              <p className="text-2xl font-bold text-red-600">${totals.cost.toFixed(2)}</p>
+            </div>
+            <div className="text-center">
+              <h3 className="text-sm font-medium text-gray-500">Net Profit</h3>
+              <p className={`text-2xl font-bold ${totals.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                 ${totals.profit.toFixed(2)}
-              </span>
+              </p>
             </div>
           </div>
         </div>
@@ -546,7 +689,8 @@ const ProfitReportByDate = () => {
                     { label: 'ID', key: 'id' },
                     { label: 'Date', key: 'report_date' },
                     { label: 'Job Number', key: 'job_number' },
-                    { label: 'Supplier ID', key: 'supplier_id' },
+                    { label: 'Client Name', key: 'client_name' },
+                    { label: 'Supplier Name', key: 'supplier_name' },
                     { label: 'Revenue', key: 'revenue' },
                     { label: 'Cost', key: 'cost' },
                     { label: 'Profit', key: 'profit' },
@@ -554,10 +698,12 @@ const ProfitReportByDate = () => {
                   ].map(({ label, key }) => (
                     <th
                       key={label}
-                      className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                      className={`px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${
+                        key ? 'cursor-pointer hover:bg-gray-100' : ''
+                      } ${label === 'Actions' ? 'text-center' : ''}`}
                       onClick={() => key && handleSort(key)}
                     >
-                      <div className="flex items-center">
+                      <div className={`flex items-center ${label === 'Actions' ? 'justify-center' : ''}`}>
                         {label}
                         {key && renderSortIcon(key)}
                       </div>
@@ -566,9 +712,18 @@ const ProfitReportByDate = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {currentReports.length === 0 ? (
+                {isLoading ? (
                   <tr>
-                    <td colSpan={8} className="px-4 py-6 text-center text-gray-500">
+                    <td colSpan={9} className="px-4 py-6 text-center text-gray-500">
+                      <div className="flex flex-col items-center justify-center">
+                        <Loader className="w-8 h-8 text-indigo-600 animate-spin mb-2" />
+                        <p>Loading profit reports...</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : currentReports.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} className="px-4 py-6 text-center text-gray-500">
                       <div className="flex flex-col items-center justify-center">
                         <FileBarChart2 className="w-16 h-16 text-gray-300 mb-4" />
                         <h4 className="text-lg font-medium text-gray-500">No profit reports found</h4>
@@ -578,18 +733,21 @@ const ProfitReportByDate = () => {
                   </tr>
                 ) : (
                   currentReports.map((report) => (
-                    <tr key={report.id} className="hover:bg-gray-50 transition">
+                    <tr key={report.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {report.id}
+                        #{report.id}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                         {new Date(report.report_date).toLocaleDateString()}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-indigo-600">
                         {report.job_number}
                       </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 font-medium">
+                        {getClientName(report.client_id)}
+                      </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                        {report.supplier_id || 'N/A'}
+                        {getSupplierName(report.supplier_id)}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-green-600 text-right">
                         ${Number(report.revenue).toFixed(2)}
@@ -602,21 +760,23 @@ const ProfitReportByDate = () => {
                           ${Number(report.profit).toFixed(2)}
                         </span>
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium flex space-x-2">
-                        <button
-                          onClick={() => handleEdit(report)}
-                          className="text-indigo-600 hover:text-indigo-900"
-                          title="Edit"
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(report.id)}
-                          className="text-red-600 hover:text-red-900"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
+                        <div className="flex justify-center space-x-2">
+                          <button
+                            onClick={() => handleEdit(report)}
+                            className="text-indigo-600 hover:text-indigo-900 p-2 rounded-lg hover:bg-indigo-50 transition-colors"
+                            title="Edit"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(report.id)}
+                            className="text-red-600 hover:text-red-900 p-2 rounded-lg hover:bg-red-50 transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -624,8 +784,8 @@ const ProfitReportByDate = () => {
                 
                 {/* Total row */}
                 {currentReports.length > 0 && (
-                  <tr className="bg-gray-100 font-semibold">
-                    <td colSpan="4" className="px-4 py-3 text-right text-sm text-gray-900">
+                  <tr className="bg-indigo-50 font-semibold border-t-2 border-indigo-200">
+                    <td colSpan="5" className="px-4 py-3 text-right text-sm text-gray-900">
                       <strong>TOTALS:</strong>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-green-700 text-right font-bold">
@@ -657,15 +817,20 @@ const ProfitReportByDate = () => {
                 <div className="flex space-x-1">
                   <button
                     onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                    disabled={currentPage === 1}
+                    disabled={currentPage === 1 || isLoading}
                     className="p-2 rounded-md hover:bg-gray-100 disabled:opacity-50"
                     title="Previous"
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </button>
+                  
+                  <span className="px-3 py-2 text-sm font-medium text-gray-700">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  
                   <button
                     onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-                    disabled={currentPage === totalPages}
+                    disabled={currentPage === totalPages || isLoading}
                     className="p-2 rounded-md hover:bg-gray-100 disabled:opacity-50"
                     title="Next"
                   >

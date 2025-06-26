@@ -32,7 +32,7 @@ app.use(express.json());
 app.use('/api', require('./modules/masterdata/masterDataRoutes'));
 app.use('/api', require('./modules/suppliers/index'));
 app.use('/api', require('./modules/clerances/index'));
-
+app.use('/api', require('./modules/accounts/index'))
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);

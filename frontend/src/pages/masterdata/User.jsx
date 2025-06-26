@@ -33,6 +33,9 @@ const nationalities = [
 const UserManagementPage = () => {
   // State management
   const [users, setUsers] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [accessDenied, setAccessDenied] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -44,13 +47,16 @@ const UserManagementPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [passwordMatchError, setPasswordMatchError] = useState(false);
+  const [currentPasswordError, setCurrentPasswordError] = useState(false);
   const itemsPerPage = 10;
 
   const [newUser, setNewUser] = useState({
     employeeName: '',
     username: '',
     email: '',
+    currentPassword: '', // Added for password change verification
     password: '',
     confirmPassword: '',
     nationality: '',
@@ -62,7 +68,7 @@ const UserManagementPage = () => {
     isProtected: 0,
   });
 
-  // Custom styles for react-select dropdowns (matching AssignExpenses)
+  // Custom styles for react-select dropdowns
   const selectStyles = {
     control: (base) => ({
       ...base,
@@ -86,10 +92,47 @@ const UserManagementPage = () => {
     return { 'Authorization': `Bearer ${token}` };
   };
 
-  // Fetch users from backend
-  const fetchUsers = async () => {
+  // Check if current user is admin
+  const checkAdminAccess = async () => {
     try {
       setIsLoading(true);
+      const response = await axios.get('http://localhost:5000/api/users/me', {
+        headers: getAuthHeaders(),
+      });
+      
+      if (response.data.success) {
+        const userData = convertObjectKeys(response.data.data, toCamelCase);
+        setCurrentUser(userData);
+        
+        if (userData.isAdmin === 1) {
+          setIsAdmin(true);
+          setAccessDenied(false);
+          // If user is admin, fetch all users
+          await fetchUsers();
+        } else {
+          setIsAdmin(false);
+          setAccessDenied(true);
+        }
+      } else {
+        setError('Failed to verify user permissions');
+        setAccessDenied(true);
+      }
+    } catch (err) {
+      console.error('Admin check error:', err);
+      if (err.response && err.response.status === 401) {
+        setError('Session expired. Please log in again.');
+      } else {
+        setError('Failed to verify user permissions');
+      }
+      setAccessDenied(true);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch users from backend (only called if user is admin)
+  const fetchUsers = async () => {
+    try {
       const response = await axios.get('http://localhost:5000/api/users/', {
         headers: getAuthHeaders(),
       });
@@ -102,13 +145,11 @@ const UserManagementPage = () => {
       } else {
         setError('Failed to load users');
       }
-    } finally {
-      setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchUsers();
+    checkAdminAccess();
   }, []);
 
   // Reset form
@@ -117,6 +158,7 @@ const UserManagementPage = () => {
       employeeName: '',
       username: '',
       email: '',
+      currentPassword: '',
       password: '',
       confirmPassword: '',
       nationality: '',
@@ -130,15 +172,16 @@ const UserManagementPage = () => {
     setEditingId(null);
     setIsAdding(false);
     setPasswordMatchError(false);
+    setCurrentPasswordError(false);
     setShowPassword(false);
     setShowConfirmPassword(false);
+    setShowCurrentPassword(false);
     setError('');
     setSuccessMessage('');
   };
 
   // Fixed toggle function for Add User button
   const handleToggleAddForm = () => {
-    console.log('Button clicked, current state:', isAdding); // Debug log
     if (isAdding) {
       resetForm();
     } else {
@@ -153,6 +196,8 @@ const UserManagementPage = () => {
   const handleAddUser = async () => {
     setError('');
     setSuccessMessage('');
+    setPasswordMatchError(false);
+    setCurrentPasswordError(false);
     
     if (!newUser.employeeName.trim() || !newUser.username.trim() || !newUser.password) {
       setError('Please fill out all required fields.');
@@ -163,8 +208,16 @@ const UserManagementPage = () => {
       setPasswordMatchError(true);
       return;
     }
+
+    // For editing users, require current password if changing password
+    if (editingId && newUser.password !== '***' && !newUser.currentPassword) {
+      setCurrentPasswordError(true);
+      setError('Please enter your current password to change the password.');
+      return;
+    }
     
     setPasswordMatchError(false);
+    setCurrentPasswordError(false);
 
     try {
       setIsLoading(true);
@@ -172,7 +225,6 @@ const UserManagementPage = () => {
         employee_name: newUser.employeeName || null,
         username: newUser.username || null,
         email: newUser.email || null,
-        password: newUser.password || null,
         nationality: newUser.nationality || null,
         passport_no: newUser.passportIqama || null,
         address: newUser.address || null,
@@ -181,6 +233,14 @@ const UserManagementPage = () => {
         is_admin: newUser.isAdmin ?? 0,
         is_protected: newUser.isProtected ?? 0,
       };
+
+      // Only include password fields if password is being changed
+      if (newUser.password !== '***') {
+        userPayload.password = newUser.password;
+        if (editingId && newUser.currentPassword) {
+          userPayload.currentPassword = newUser.currentPassword;
+        }
+      }
 
       let res;
       if (editingId !== null) {
@@ -201,6 +261,9 @@ const UserManagementPage = () => {
     } catch (err) {
       if (err.response && err.response.status === 401) {
         setError('Session expired. Please log in again.');
+      } else if (err.response && err.response.status === 400 && err.response.data.message.includes('current password')) {
+        setCurrentPasswordError(true);
+        setError('Current password is incorrect.');
       } else {
         setError('Error saving user: ' + (err.response ? err.response.data.message : err.message));
       }
@@ -210,14 +273,14 @@ const UserManagementPage = () => {
     }
   };
 
-  // Edit user - FIXED to show *** for password
   const handleEdit = (user) => {
     setNewUser({
       employeeName: user.employeeName || '',
       username: user.username || '',
       email: user.email || '',
-      password: '***', // Show *** for existing password
-      confirmPassword: '***', // Show *** for confirm password
+      currentPassword: '',
+      password: '***',
+      confirmPassword: '***',
       nationality: user.nationality || '',
       passportIqama: user.passportIqama || '',
       address: user.address || '',
@@ -228,8 +291,9 @@ const UserManagementPage = () => {
     });
     setEditingId(user.id);
     setIsAdding(true);
-    setShowPassword(false); // Hide password by default
+    setShowPassword(false);
     setShowConfirmPassword(false);
+    setShowCurrentPassword(false);
   };
 
   // Delete user
@@ -304,21 +368,79 @@ const UserManagementPage = () => {
     setCurrentPage(1);
   }, [searchTerm, users]);
 
-  if (isLoading && users.length === 0) {
+  // Loading state
+  if (isLoading && !accessDenied) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <Loader className="w-12 h-12 mx-auto text-indigo-600 animate-spin" />
-          <p className="mt-4 text-gray-600">Loading user data...</p>
+          <p className="mt-4 text-gray-600">Verifying permissions...</p>
         </div>
       </div>
     );
   }
 
+  // Access denied screen for non-admin users
+  if (accessDenied || !isAdmin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="max-w-md w-full bg-white rounded-xl shadow-lg border border-gray-200 p-8 text-center">
+          <div className="mb-6">
+            <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Shield className="w-10 h-10 text-red-600" />
+            </div>
+            <h1 className="text-2xl font-bold text-gray-800 mb-2">Access Denied</h1>
+            <p className="text-gray-600">You cannot access this page</p>
+          </div>
+          
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center justify-center mb-2">
+              <Alert className="w-5 h-5 text-red-600 mr-2" />
+              <span className="text-red-800 font-medium">Administrator Access Required</span>
+            </div>
+            <p className="text-red-700 text-sm">
+              This page is restricted to administrators only. Please contact your system administrator if you believe you should have access.
+            </p>
+          </div>
+
+          {currentUser && (
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
+              <h3 className="text-sm font-medium text-gray-700 mb-2">Current User</h3>
+              <div className="text-sm text-gray-600">
+                <p><strong>Name:</strong> {currentUser.employeeName}</p>
+                <p><strong>Username:</strong> {currentUser.username}</p>
+                <p><strong>Role:</strong> {currentUser.isAdmin ? 'Administrator' : 'User'}</p>
+              </div>
+            </div>
+          )}
+
+          <div className="flex flex-col sm:flex-row gap-3">
+            <button
+              onClick={() => window.history.back()}
+              className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+            >
+              Go Back
+            </button>
+            <button
+              onClick={() => {
+                localStorage.removeItem('authToken');
+                window.location.href = '/login';
+              }}
+              className="flex-1 bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+            >
+              Logout
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Main component render (only for admin users)
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
-        {/* Header - Matching AssignExpenses */}
+        {/* Header - Removed "Logged in as" text */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-gray-800 flex items-center">
@@ -328,7 +450,6 @@ const UserManagementPage = () => {
             <p className="text-gray-600 mt-2">Manage system users and their permissions</p>
           </div>
           <div className="mt-4 md:mt-0 flex flex-wrap gap-3">
-            {/* Fixed Add User Button */}
             <button
               type="button"
               onClick={handleToggleAddForm}
@@ -361,7 +482,7 @@ const UserManagementPage = () => {
           </div>
         )}
 
-        {/* Search Section - Matching AssignExpenses */}
+        {/* Search Section */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-visible mb-6">
           <div className="bg-indigo-50 p-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-indigo-700 flex items-center">
@@ -441,6 +562,42 @@ const UserManagementPage = () => {
                       onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
                     />
                   </div>
+
+                  {/* Current Password Field - Only show when editing and changing password */}
+                  {editingId && newUser.password !== '***' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Current Password <span className="text-red-500">*</span>
+                        <span className="text-xs text-gray-500 ml-2">
+                          (Required to change password)
+                        </span>
+                      </label>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <Lock className="w-5 h-5 text-gray-400" />
+                        </div>
+                        <input
+                          type={showCurrentPassword ? "text" : "password"}
+                          className={`w-full pl-10 pr-10 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm ${
+                            currentPasswordError ? 'border-red-500' : 'border-gray-300'
+                          }`}
+                          placeholder="Enter current password"
+                          value={newUser.currentPassword}
+                          onChange={(e) => setNewUser({ ...newUser, currentPassword: e.target.value })}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                          className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                        >
+                          {showCurrentPassword ? <EyeOff className="w-5 h-5 text-gray-400" /> : <Eye className="w-5 h-5 text-gray-400" />}
+                        </button>
+                      </div>
+                      {currentPasswordError && (
+                        <p className="text-red-500 text-xs mt-1">Current password is required to change password</p>
+                      )}
+                    </div>
+                  )}
                   
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -587,7 +744,7 @@ const UserManagementPage = () => {
                       />
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center gap-4 pt-2">
                     <label className="flex items-center space-x-2 select-none cursor-pointer">
                       <Shield className="w-4 h-4 text-indigo-500" />
@@ -645,6 +802,7 @@ const UserManagementPage = () => {
                     { label: 'Employee Name', key: 'employeeName' },
                     { label: 'Username', key: 'username' },
                     { label: 'Email', key: 'email' },
+                    { label: 'Password', key: 'password' }, // Added password column
                     { label: 'Nationality', key: 'nationality' },
                     { label: 'Phone', key: 'phone' },
                     { label: 'Role', key: 'isAdmin' },
@@ -666,7 +824,7 @@ const UserManagementPage = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {currentUsers.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-6 text-center text-gray-500">
+                    <td colSpan={8} className="px-4 py-6 text-center text-gray-500">
                       No user records found
                     </td>
                   </tr>
@@ -690,6 +848,15 @@ const UserManagementPage = () => {
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                         {user.email}
+                      </td>
+                      {/* Password column - show encrypted hash */}
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                        <div className="flex items-center">
+                          <Lock className="w-4 h-4 text-gray-400 mr-2" />
+                          <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">
+                            {user.password ? user.password.substring(0, 20) + '...' : 'N/A'}
+                          </span>
+                        </div>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                         <div className="flex items-center gap-2">

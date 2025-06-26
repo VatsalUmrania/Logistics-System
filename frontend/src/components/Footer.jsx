@@ -77,7 +77,7 @@ const Footer = () => {
                   <Github size={20} className="text-indigo-500" />
                   <span>Aditya Nair</span>
                 </a>
-                <a href="https://github.com/developer3" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-gray-600 hover:text-indigo-700 transition">
+                <a href="https://github.com/407raina" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-gray-600 hover:text-indigo-700 transition">
                   <Github size={20} className="text-indigo-500" />
                   <span>Raina Mendonca</span>
                 </a>

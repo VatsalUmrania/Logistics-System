@@ -21,7 +21,7 @@ const AssignExpenses = () => {
   const [expenseForm, setExpenseForm] = useState({
     operation_no: '',
     client_name: '',
-    expense_item: '',
+    expense_item_id: '',
     actual_amount: '',
     vat_percent: 0,
     vat_amount: 0,
@@ -30,8 +30,8 @@ const AssignExpenses = () => {
   });
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [sortField, setSortField] = useState('expense_item');
-  const [sortDirection, setSortDirection] = useState('asc');
+  const [sortField, setSortField] = useState('created_at');
+  const [sortDirection, setSortDirection] = useState('desc');
   const [currentPage, setCurrentPage] = useState(1);
   const [isManagingItems, setIsManagingItems] = useState(false);
   const [newItemName, setNewItemName] = useState('');
@@ -41,7 +41,12 @@ const AssignExpenses = () => {
   const getAuthHeaders = () => {
     const token = localStorage.getItem('authToken');
     if (!token) {
-      throw new Error('Authentication token missing');
+      console.warn('No authentication token found');
+      return {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      };
     }
     return {
       headers: {
@@ -66,47 +71,63 @@ const AssignExpenses = () => {
     menu: (base) => ({ ...base, zIndex: 9999 })
   };
 
+  // Helper function to get expense item name by ID
+  const getExpenseItemName = (itemId) => {
+    const item = expenseItems.find(item => item.id === itemId);
+    return item ? item.name : `ID: ${itemId}`;
+  };
+
   // Fetch all required data from backend
   useEffect(() => {
     const fetchData = async () => {
       try {
         setIsLoading(true);
+        
         // Fetch clients
         const clientsRes = await fetch(
           'http://localhost:5000/api/clients',
           getAuthHeaders()
         );
-        const clientsData = await clientsRes.json();
-        setClients(clientsData);
+        if (clientsRes.ok) {
+          const clientsData = await clientsRes.json();
+          setClients(Array.isArray(clientsData) ? clientsData : []);
+        }
 
-        // Fetch expense items
+        // Fetch expense items with ID and name structure
         const itemsRes = await fetch(
           'http://localhost:5000/api/expense-item',
           getAuthHeaders()
         );
-        const itemsData = await itemsRes.json();
-        setExpenseItems(itemsData.map(item => item.name));
+        if (itemsRes.ok) {
+          const itemsData = await itemsRes.json();
+          setExpenseItems(Array.isArray(itemsData) ? itemsData : []);
+        }
 
         // Fetch expenses
         const expensesRes = await fetch(
           'http://localhost:5000/api/expense',
           getAuthHeaders()
         );
-        const expensesData = await expensesRes.json();
-        setExpenses(expensesData);
+        if (expensesRes.ok) {
+          const expensesData = await expensesRes.json();
+          setExpenses(Array.isArray(expensesData) ? expensesData : []);
+        }
 
-        // Fetch job numbers from new endpoint
+        // Fetch job numbers from invoices endpoint
         const jobRes = await fetch(
-          'http://localhost:5000/api/clearance-operations/job-numbers',
+          'http://localhost:5000/api/invoices/job-numbers',
           getAuthHeaders()
         );
-        const jobData = await jobRes.json();
-        if (jobData.success) {
-          setOperations(jobData.data.map(item => item.job_no));
+        if (jobRes.ok) {
+          const jobData = await jobRes.json();
+          if (Array.isArray(jobData)) {
+            setOperations(jobData.map(item => item.job_number));
+          }
         }
+        
         setIsLoading(false);
       } catch (error) {
-        setError(error.message);
+        setError('Failed to load data: ' + error.message);
         setIsLoading(false);
         console.error('Error fetching data:', error);
       }
@@ -126,7 +147,7 @@ const AssignExpenses = () => {
         const actualAmount = parseFloat(updated.actual_amount) || 0;
         const vatPercent = parseFloat(updated.vat_percent) || 0;
         const vatAmount = (actualAmount * vatPercent) / 100;
-        updated.vat_amount = vatAmount;
+        updated.vat_amount = vatAmount.toFixed(2);
         updated.total_amount = (actualAmount + vatAmount).toFixed(2);
       }
       return updated;
@@ -141,10 +162,15 @@ const AssignExpenses = () => {
         ...getAuthHeaders(),
         body: JSON.stringify(expenseData)
       });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create expense');
+      }
+      
       return await response.json();
     } catch (error) {
-      setError(error.message);
-      return null;
+      throw error;
     }
   };
 
@@ -155,41 +181,53 @@ const AssignExpenses = () => {
         ...getAuthHeaders(),
         body: JSON.stringify(expenseData)
       });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update expense');
+      }
+      
       return await response.json();
     } catch (error) {
-      setError(error.message);
-      return null;
+      throw error;
     }
   };
 
   const deleteExpense = async (id) => {
     try {
-      await fetch(`http://localhost:5000/api/expense/${id}`, {
+      const response = await fetch(`http://localhost:5000/api/expense/${id}`, {
         method: 'DELETE',
         ...getAuthHeaders()
       });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete expense');
+      }
+      
       return true;
     } catch (error) {
-      setError(error.message);
-      return false;
+      throw error;
     }
   };
 
   // Add/Edit Expense Handler
   const handleAddExpense = async () => {
-    if (!expenseForm.expense_item || !expenseForm.actual_amount) {
-      setError('Please select an expense item and enter the actual amount.');
+    if (!expenseForm.expense_item_id || !expenseForm.actual_amount || !expenseForm.operation_no || !expenseForm.client_name) {
+      setError('Please fill in all required fields: Operation No, Client Name, Expense Item, and Amount.');
       return;
     }
+
     const expenseData = {
       operation_no: expenseForm.operation_no,
       client_name: expenseForm.client_name,
-      expense_item: expenseForm.expense_item,
+      expense_item_id: parseInt(expenseForm.expense_item_id),
       actual_amount: parseFloat(expenseForm.actual_amount),
       vat_percent: parseFloat(expenseForm.vat_percent) || 0,
       vat_amount: parseFloat(expenseForm.vat_amount) || 0,
-      date_of_payment: expenseForm.date_of_payment
+      date_of_payment: expenseForm.date_of_payment || null
     };
+
     try {
       let result;
       let actionMessage;
@@ -200,35 +238,52 @@ const AssignExpenses = () => {
         result = await createExpense(expenseData);
         actionMessage = 'Expense added successfully';
       }
+      
       if (result) {
         // Refresh expenses
-        const expensesRes = await fetch(
-          'http://localhost:5000/api/expense',
-          getAuthHeaders()
-        );
-        const expensesData = await expensesRes.json();
-        setExpenses(expensesData);
+        await fetchExpenses();
         // Reset form
-        setExpenseForm({
-          operation_no: '',
-          client_name: '',
-          expense_item: '',
-          actual_amount: '',
-          vat_percent: 0,
-          vat_amount: 0,
-          total_amount: '',
-          date_of_payment: ''
-        });
-        setIsAdding(false);
-        setEditingId(null);
+        resetForm();
         setSuccessMessage(actionMessage);
         setError('');
-        // Clear success message after 3 seconds
         setTimeout(() => setSuccessMessage(''), 3000);
       }
     } catch (error) {
       setError(error.message);
+      setTimeout(() => setError(''), 5000);
     }
+  };
+
+  // Fetch expenses separately for refresh
+  const fetchExpenses = async () => {
+    try {
+      const expensesRes = await fetch(
+        'http://localhost:5000/api/expense',
+        getAuthHeaders()
+      );
+      if (expensesRes.ok) {
+        const expensesData = await expensesRes.json();
+        setExpenses(Array.isArray(expensesData) ? expensesData : []);
+      }
+    } catch (error) {
+      console.error('Error fetching expenses:', error);
+    }
+  };
+
+  // Reset form
+  const resetForm = () => {
+    setExpenseForm({
+      operation_no: '',
+      client_name: '',
+      expense_item_id: '',
+      actual_amount: '',
+      vat_percent: 0,
+      vat_amount: 0,
+      total_amount: '',
+      date_of_payment: ''
+    });
+    setIsAdding(false);
+    setEditingId(null);
   };
 
   // Edit Handler
@@ -236,12 +291,12 @@ const AssignExpenses = () => {
     setExpenseForm({
       operation_no: expense.operation_no,
       client_name: expense.client_name,
-      expense_item: expense.expense_item,
+      expense_item_id: expense.expense_item_id,
       actual_amount: expense.actual_amount.toString(),
       vat_percent: expense.vat_percent,
       vat_amount: expense.vat_amount,
-      total_amount: expense.total_amount.toString(),
-      date_of_payment: expense.date_of_payment
+      total_amount: expense.total_amount ? expense.total_amount.toString() : '',
+      date_of_payment: expense.date_of_payment ? expense.date_of_payment.split('T')[0] : ''
     });
     setEditingId(expense.id);
     setIsAdding(true);
@@ -250,39 +305,45 @@ const AssignExpenses = () => {
   // Delete Handler
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this expense?')) {
-      const success = await deleteExpense(id);
-      if (success) {
-        // Refresh expenses
-        const expensesRes = await fetch(
-          'http://localhost:5000/api/expense',
-          getAuthHeaders()
-        );
-        const expensesData = await expensesRes.json();
-        setExpenses(expensesData);
+      try {
+        await deleteExpense(id);
+        await fetchExpenses();
         setSuccessMessage('Expense deleted successfully');
         setTimeout(() => setSuccessMessage(''), 3000);
+      } catch (error) {
+        setError(error.message);
+        setTimeout(() => setError(''), 5000);
       }
     }
   };
 
   // Expense Items Management
   const addExpenseItem = async () => {
-    if (newItemName.trim() && !expenseItems.includes(newItemName)) {
+    if (newItemName.trim() && !expenseItems.find(item => item.name === newItemName)) {
       try {
-        // Send new item to backend
-        await fetch('http://localhost:5000/api/expense-item', {
+        const response = await fetch('http://localhost:5000/api/expense-item', {
           method: 'POST',
           ...getAuthHeaders(),
           body: JSON.stringify({ name: newItemName })
         });
-        // Refresh expense items
-        const itemsRes = await fetch(
-          'http://localhost:5000/api/expense-item',
-          getAuthHeaders()
-        );
-        const itemsData = await itemsRes.json();
-        setExpenseItems(itemsData.map(item => item.name));
-        setNewItemName('');
+        
+        if (response.ok) {
+          // Refresh expense items
+          const itemsRes = await fetch(
+            'http://localhost:5000/api/expense-item',
+            getAuthHeaders()
+          );
+          if (itemsRes.ok) {
+            const itemsData = await itemsRes.json();
+            setExpenseItems(Array.isArray(itemsData) ? itemsData : []);
+          }
+          setNewItemName('');
+          setSuccessMessage('Expense item added successfully');
+          setTimeout(() => setSuccessMessage(''), 3000);
+        } else {
+          const errorData = await response.json();
+          setError(errorData.error || 'Failed to add expense item');
+        }
       } catch (error) {
         setError(error.message);
       }
@@ -290,24 +351,28 @@ const AssignExpenses = () => {
   };
 
   const removeExpenseItem = async (item) => {
-    if (window.confirm(`Are you sure you want to delete "${item}"?`)) {
+    if (window.confirm(`Are you sure you want to delete "${item.name}"?`)) {
       try {
-        // Find item ID
-        const itemsRes = await fetch(
-          'http://localhost:5000/api/expense-item',
-          getAuthHeaders()
+        const response = await fetch(
+          `http://localhost:5000/api/expense-item/${item.id}`,
+          { method: 'DELETE', ...getAuthHeaders() }
         );
-        const itemsData = await itemsRes.json();
-        const itemToDelete = itemsData.find(i => i.name === item);
-        if (itemToDelete) {
-          // Delete from backend
-          await fetch(
-            `http://localhost:5000/api/expense-item/${itemToDelete.id}`,
-            { method: 'DELETE', ...getAuthHeaders() }
-          );
+        
+        if (response.ok) {
           // Refresh expense items
-          const updatedItems = itemsData.filter(i => i.id !== itemToDelete.id);
-          setExpenseItems(updatedItems.map(i => i.name));
+          const itemsRes = await fetch(
+            'http://localhost:5000/api/expense-item',
+            getAuthHeaders()
+          );
+          if (itemsRes.ok) {
+            const itemsData = await itemsRes.json();
+            setExpenseItems(Array.isArray(itemsData) ? itemsData : []);
+          }
+          setSuccessMessage('Expense item deleted successfully');
+          setTimeout(() => setSuccessMessage(''), 3000);
+        } else {
+          const errorData = await response.json();
+          setError(errorData.error || 'Failed to delete expense item');
         }
       } catch (error) {
         setError(error.message);
@@ -317,17 +382,33 @@ const AssignExpenses = () => {
 
   // Helper functions
   const getTotalAmount = () => {
-    return expenses.reduce((sum, expense) => sum + parseFloat(expense.total_amount), 0).toFixed(2);
+    return expenses.reduce((sum, expense) => sum + parseFloat(expense.total_amount || expense.actual_amount || 0), 0).toFixed(2);
   };
 
   const handleSearch = () => {
     console.log('Searching with:', searchForm);
+    // Implement search functionality if needed
   };
 
   // Sorting logic
   const sortedExpenses = [...expenses].sort((a, b) => {
-    if (a[sortField] < b[sortField]) return sortDirection === 'asc' ? -1 : 1;
-    if (a[sortField] > b[sortField]) return sortDirection === 'asc' ? 1 : -1;
+    let valA = a[sortField];
+    let valB = b[sortField];
+    
+    // Handle different data types
+    if (sortField === 'actual_amount' || sortField === 'total_amount' || sortField === 'vat_amount') {
+      valA = parseFloat(valA) || 0;
+      valB = parseFloat(valB) || 0;
+    } else if (sortField === 'created_at' || sortField === 'date_of_payment') {
+      valA = new Date(valA);
+      valB = new Date(valB);
+    } else {
+      valA = valA ? valA.toString().toLowerCase() : '';
+      valB = valB ? valB.toString().toLowerCase() : '';
+    }
+    
+    if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
+    if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
     return 0;
   });
 
@@ -344,6 +425,7 @@ const AssignExpenses = () => {
       setSortField(field);
       setSortDirection('asc');
     }
+    setCurrentPage(1);
   };
 
   // Prepare options for searchable dropdowns
@@ -358,9 +440,24 @@ const AssignExpenses = () => {
   }));
 
   const expenseItemOptions = expenseItems.map(item => ({
-    value: item,
-    label: item
+    value: item.id,
+    label: item.name
   }));
+
+  // Clear error and success messages after some time
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(''), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
+
+  useEffect(() => {
+    if (successMessage) {
+      const timer = setTimeout(() => setSuccessMessage(''), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage]);
 
   if (isLoading) {
     return (
@@ -386,29 +483,38 @@ const AssignExpenses = () => {
             <p className="text-gray-600 mt-2">Track and manage operational expenses</p>
           </div>
           <div className="mt-4 md:mt-0 flex flex-wrap gap-3">
-            <button
-              onClick={() => {
-                setIsAdding(!isAdding);
-                setEditingId(null);
-                setExpenseForm({
-                  operation_no: '',
-                  client_name: '',
-                  expense_item: '',
-                  actual_amount: '',
-                  vat_percent: 0,
-                  vat_amount: 0,
-                  total_amount: '',
-                  date_of_payment: ''
-                });
-              }}
-              className={`px-4 py-2 text-white rounded-lg font-medium transition-all flex items-center shadow-md
-                ${isAdding 
-                  ? 'bg-red-600 hover:bg-red-700' 
-                  : 'bg-indigo-600 hover:bg-indigo-700'}`}
-            >
-              {isAdding ? <X className="w-5 h-5 mr-2" /> : <Plus className="w-5 h-5 mr-2" />}
-              {isAdding ? 'Cancel' : 'Add Expense'}
-            </button>
+          <button
+  onClick={() => {
+    if (isAdding) {
+      // If form is open, close it and reset
+      resetForm();
+    } else {
+      // If form is closed, open it and clear any previous data
+      setIsAdding(true);
+      setEditingId(null);
+      setExpenseForm({
+        operation_no: '',
+        client_name: '',
+        expense_item_id: '',
+        actual_amount: '',
+        vat_percent: 0,
+        vat_amount: 0,
+        total_amount: '',
+        date_of_payment: ''
+      });
+      setError('');
+      setSuccessMessage('');
+    }
+  }}
+  className={`px-4 py-2 text-white rounded-lg font-medium transition-all flex items-center shadow-md
+    ${isAdding 
+      ? 'bg-red-600 hover:bg-red-700' 
+      : 'bg-indigo-600 hover:bg-indigo-700'}`}
+>
+  {isAdding ? <X className="w-5 h-5 mr-2" /> : <Plus className="w-5 h-5 mr-2" />}
+  {isAdding ? 'Cancel' : 'Add Expense'}
+</button>
+
             <button
               onClick={() => setIsManagingItems(true)}
               className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium flex items-center"
@@ -437,7 +543,7 @@ const AssignExpenses = () => {
           </div>
         )}
 
-        {/* Search Section - Improved with dropdowns that are always visible */}
+        {/* Search Section */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-visible mb-6">
           <div className="bg-indigo-50 p-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-indigo-700 flex items-center">
@@ -446,11 +552,11 @@ const AssignExpenses = () => {
             </h2>
           </div>
           <div className="p-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Client Name Dropdown */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Client Name <span className="text-red-500">*</span>
+                  Client Name
                 </label>
                 <div className="relative">
                   <Select
@@ -459,6 +565,7 @@ const AssignExpenses = () => {
                     onChange={(selectedOption) => handleSearchChange('clientName', selectedOption?.value || '')}
                     placeholder="Select Client"
                     isSearchable
+                    isClearable
                     menuPortalTarget={document.body}
                     menuPosition="fixed"
                     styles={selectStyles}
@@ -469,7 +576,7 @@ const AssignExpenses = () => {
               {/* Operation No Dropdown */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Operation No <span className="text-red-500">*</span>
+                  Operation No
                 </label>
                 <div className="relative">
                   <Select
@@ -478,12 +585,23 @@ const AssignExpenses = () => {
                     onChange={(selectedOption) => handleSearchChange('operationNo', selectedOption?.value || '')}
                     placeholder="Select Operation"
                     isSearchable
+                    isClearable
                     menuPortalTarget={document.body}
                     menuPosition="fixed"
                     styles={selectStyles}
                     className="w-full text-sm"
                   />
                 </div>
+              </div>
+              {/* Search Button */}
+              <div className="flex items-end">
+                <button
+                  onClick={handleSearch}
+                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-5 rounded-lg shadow transition text-sm flex items-center justify-center"
+                >
+                  <Search className="w-4 h-4 mr-2" />
+                  Search
+                </button>
               </div>
             </div>
           </div>
@@ -492,7 +610,7 @@ const AssignExpenses = () => {
         {/* Expense Items Management Modal */}
         {isManagingItems && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl shadow-lg w-full max-w-md">
+            <div className="bg-white rounded-xl shadow-lg w-full max-w-md max-h-[80vh] overflow-hidden">
               <div className="bg-indigo-600 p-4 rounded-t-xl">
                 <h2 className="text-lg font-bold text-white flex items-center">
                   <Settings className="w-5 h-5 mr-2" />
@@ -511,6 +629,7 @@ const AssignExpenses = () => {
                       onChange={(e) => setNewItemName(e.target.value)}
                       className="flex-grow px-3 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-indigo-500 text-sm"
                       placeholder="Enter category name"
+                      onKeyPress={(e) => e.key === 'Enter' && addExpenseItem()}
                     />
                     <button
                       onClick={addExpenseItem}
@@ -523,9 +642,9 @@ const AssignExpenses = () => {
                 <div>
                   <h3 className="text-md font-medium text-gray-800 mb-3">Current Categories</h3>
                   <ul className="border border-gray-200 rounded-lg divide-y divide-gray-200 max-h-60 overflow-y-auto">
-                    {expenseItems.map((item, index) => (
-                      <li key={index} className="flex justify-between items-center p-3 hover:bg-gray-50">
-                        <span className="text-sm">{item}</span>
+                    {expenseItems.map((item) => (
+                      <li key={item.id} className="flex justify-between items-center p-3 hover:bg-gray-50">
+                        <span className="text-sm">{item.name}</span>
                         <button
                           onClick={() => removeExpenseItem(item)}
                           className="text-red-600 hover:text-red-800"
@@ -600,8 +719,8 @@ const AssignExpenses = () => {
                     <div className="flex">
                       <Select
                         options={expenseItemOptions}
-                        value={expenseItemOptions.find(option => option.value === expenseForm.expense_item)}
-                        onChange={(selectedOption) => handleExpenseChange('expense_item', selectedOption?.value || '')}
+                        value={expenseItemOptions.find(option => option.value === expenseForm.expense_item_id)}
+                        onChange={(selectedOption) => handleExpenseChange('expense_item_id', selectedOption?.value || '')}
                         placeholder="Select Expense Item"
                         isSearchable
                         menuPortalTarget={document.body}
@@ -617,6 +736,17 @@ const AssignExpenses = () => {
                         <Settings className="w-4 h-4" />
                       </button>
                     </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Payment Date
+                    </label>
+                    <input
+                      type="date"
+                      value={expenseForm.date_of_payment}
+                      onChange={(e) => handleExpenseChange('date_of_payment', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                    />
                   </div>
                 </div>
                 <div className="space-y-3">
@@ -635,7 +765,7 @@ const AssignExpenses = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      VAT(%)
+                      VAT (%)
                     </label>
                     <input
                       type="number"
@@ -654,7 +784,7 @@ const AssignExpenses = () => {
                       <input
                         type="number"
                         step="0.01"
-                        value={(parseFloat(expenseForm?.vat_amount) || 0).toFixed(2)}
+                        value={expenseForm.vat_amount}
                         readOnly
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-sm"
                         placeholder="0.00"
@@ -662,7 +792,7 @@ const AssignExpenses = () => {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Total
+                        Total Amount
                       </label>
                       <input
                         type="number"
@@ -673,17 +803,6 @@ const AssignExpenses = () => {
                         placeholder="0.00"
                       />
                     </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Payment Date
-                    </label>
-                    <input
-                      type="date"
-                      value={expenseForm.date_of_payment}
-                      onChange={(e) => handleExpenseChange('date_of_payment', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
-                    />
                   </div>
                 </div>
               </div>
@@ -701,12 +820,20 @@ const AssignExpenses = () => {
 
         {/* Expenses Summary */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
-          <div className="flex justify-between items-center">
-            <h2 className="text-lg font-semibold text-gray-800">
-              Expense Summary
-            </h2>
-            <div className="text-sm font-medium text-gray-700">
-              Total: <span className="text-green-600 font-bold">${getTotalAmount()}</span>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="text-center">
+              <h3 className="text-sm font-medium text-gray-500">Total Expenses</h3>
+              <p className="text-2xl font-bold text-indigo-600">{expenses.length}</p>
+            </div>
+            <div className="text-center">
+              <h3 className="text-sm font-medium text-gray-500">Total Amount</h3>
+              <p className="text-2xl font-bold text-green-600">${getTotalAmount()}</p>
+            </div>
+            <div className="text-center">
+              <h3 className="text-sm font-medium text-gray-500">Average per Expense</h3>
+              <p className="text-2xl font-bold text-blue-600">
+                ${expenses.length > 0 ? (parseFloat(getTotalAmount()) / expenses.length).toFixed(2) : '0.00'}
+              </p>
             </div>
           </div>
         </div>
@@ -720,19 +847,22 @@ const AssignExpenses = () => {
                   {[
                     { label: 'Operation', key: 'operation_no' },
                     { label: 'Client', key: 'client_name' },
-                    { label: 'Category', key: 'expense_item' },
+                    { label: 'Expense Item', key: 'expense_item_name' },
                     { label: 'Amount', key: 'actual_amount' },
-                    { label: 'VAT', key: 'vat_percent' },
+                    { label: 'VAT %', key: 'vat_percent' },
+                    { label: 'VAT Amount', key: 'vat_amount' },
                     { label: 'Total', key: 'total_amount' },
                     { label: 'Date', key: 'date_of_payment' },
                     { label: 'Actions', key: null },
                   ].map(({ label, key }) => (
                     <th
                       key={label}
-                      className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                      className={`px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${
+                        key ? 'cursor-pointer hover:bg-gray-100' : ''
+                      } ${label === 'Actions' ? 'text-center' : ''}`}
                       onClick={() => key && handleSort(key)}
                     >
-                      <div className="flex items-center">
+                      <div className={`flex items-center ${label === 'Actions' ? 'justify-center' : ''}`}>
                         {label}
                         {key && sortField === key && (
                           <ChevronDown
@@ -747,49 +877,58 @@ const AssignExpenses = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {currentExpenses.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-4 py-6 text-center text-gray-500">
-                      No expense records found
+                    <td colSpan={9} className="px-4 py-6 text-center text-gray-500">
+                      <div className="flex flex-col items-center justify-center">
+                        <ClipboardList className="w-16 h-16 text-gray-300 mb-4" />
+                        <h4 className="text-lg font-medium text-gray-500">No expense records found</h4>
+                        <p className="text-gray-400 mt-2">Add your first expense to get started</p>
+                      </div>
                     </td>
                   </tr>
                 ) : (
                   currentExpenses.map((expense) => (
                     <tr key={expense.id} className="hover:bg-gray-50 transition">
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-indigo-600">
                         {expense.operation_no}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                         {expense.client_name}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                        {expense.expense_item}
+                        {expense.expense_item_name || getExpenseItemName(expense.expense_item_id)}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-right">
+                        ${parseFloat(expense.actual_amount || 0).toFixed(2)}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
+                        {parseFloat(expense.vat_percent || 0).toFixed(1)}%
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-right">
+                        ${parseFloat(expense.vat_amount || 0).toFixed(2)}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-green-600 text-right">
+                        ${parseFloat(expense.total_amount || expense.actual_amount || 0).toFixed(2)}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                        {parseFloat(expense.actual_amount).toFixed(2)}
+                        {expense.date_of_payment ? new Date(expense.date_of_payment).toLocaleDateString() : '-'}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                        {expense.vat_percent}%
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-green-600">
-                        {parseFloat(expense.total_amount).toFixed(2)}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                        {new Date(expense.date_of_payment).toLocaleDateString()}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium flex space-x-2">
-                        <button
-                          onClick={() => handleEdit(expense)}
-                          className="text-indigo-600 hover:text-indigo-900"
-                          title="Edit"
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(expense.id)}
-                          className="text-red-600 hover:text-red-900"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
+                        <div className="flex justify-center space-x-2">
+                          <button
+                            onClick={() => handleEdit(expense)}
+                            className="text-indigo-600 hover:text-indigo-900 p-2 rounded-lg hover:bg-indigo-50 transition-colors"
+                            title="Edit"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(expense.id)}
+                            className="text-red-600 hover:text-red-900 p-2 rounded-lg hover:bg-red-50 transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -797,36 +936,44 @@ const AssignExpenses = () => {
               </tbody>
             </table>
           </div>
+          
           {/* Pagination */}
-          <div className="flex flex-col md:flex-row justify-between items-center px-4 py-3 border-t border-gray-200 bg-gray-50">
-            <div className="text-sm text-gray-700 mb-2 md:mb-0">
-              Showing {indexOfFirstItem + 1} to{' '}
-              {Math.min(indexOfLastItem, sortedExpenses.length)} of {sortedExpenses.length} expenses
-            </div>
-            <div className="flex items-center">
-              <div className="flex space-x-1">
-                <button
-                  onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                  disabled={currentPage === 1}
-                  className="p-2 rounded-md hover:bg-gray-100 disabled:opacity-50"
-                  title="Previous"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-                  disabled={currentPage === totalPages || totalPages === 0}
-                  className="p-2 rounded-md hover:bg-gray-100 disabled:opacity-50"
-                  title="Next"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
+          {totalPages > 1 && (
+            <div className="flex flex-col md:flex-row justify-between items-center px-4 py-3 border-t border-gray-200 bg-gray-50">
+              <div className="text-sm text-gray-700 mb-2 md:mb-0">
+                Showing {indexOfFirstItem + 1} to{' '}
+                {Math.min(indexOfLastItem, sortedExpenses.length)} of {sortedExpenses.length} expenses
+              </div>
+              <div className="flex items-center">
+                <div className="flex space-x-1">
+                  <button
+                    onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                    disabled={currentPage === 1}
+                    className="p-2 rounded-md hover:bg-gray-100 disabled:opacity-50"
+                    title="Previous"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  
+                  <span className="px-3 py-2 text-sm font-medium text-gray-700">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  
+                  <button
+                    onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+                    disabled={currentPage === totalPages || totalPages === 0}
+                    className="p-2 rounded-md hover:bg-gray-100 disabled:opacity-50"
+                    title="Next"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+              <div className="hidden md:block text-sm font-medium text-gray-700">
+                Total: <span className="text-green-600 font-bold">${getTotalAmount()}</span>
               </div>
             </div>
-            <div className="hidden md:block text-sm font-medium text-gray-700">
-              Total: <span className="text-green-600 font-bold">${getTotalAmount()}</span>
-            </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

@@ -80,7 +80,9 @@ const containersAPI = {
 const commoditiesAPI = {
   getAll: () => axios.get(`${API_URL}/commodities`, getAuthHeaders()),
 };
-
+const JobAPI = {
+  getAll: () => axios.get(`${API_URL}/commodities`, getAuthHeaders()),
+};
 // Custom styles for react-select dropdowns (matching AssignExpenses)
 const selectStyles = {
   control: (base) => ({
