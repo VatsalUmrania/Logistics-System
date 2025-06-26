@@ -79,6 +79,6 @@ This project is licensed under the MIT License
 
 ## 📫 Contact
 
-Vatsal Umrania - [Your contact information]
+Vatsal Umrania - vbumrania@gmail.com
 
 Project Link: [https://github.com/VatsalUmrania/Logistics-System](https://github.com/VatsalUmrania/Logistics-System)
