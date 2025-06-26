@@ -1,8 +1,0 @@
-{
-    "name": "logistics-management-system",
-    "private": true,
-    "scripts": {
-  "dev": "concurrently \"cd frontend && npm run dev\" \"cd backend && npm run dev\""
-}
-  }
-  
