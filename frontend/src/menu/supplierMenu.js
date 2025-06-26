@@ -5,7 +5,7 @@ const supplierMenu = [
     { label: 'Supplier Invoice Edit', key: 'supplier_invoice_edit', href: "/supplier-invoice-edit" },
     { label: 'Assign Supplier', key: 'supplier_assign', href: "/supplier-assign" },
     { label: 'Supplier Creditnote', key: 'supplier_creditnote', href: "/supplier-creditnote" },
-    { label: 'Supplier Invoice Cancel', key: 'supplier_invoice_cancel', href: "/supplier-invoicecancel" },
+    { label: 'Supplier Invoice Cancel', key: 'supplier_invoice_cancel' },
     { label: 'Supplier Statement Report', key: 'supplier_statement_report', href: "/supplier-statement" },
     { label: 'Purchase Search By Supplier', key: 'purchase_search_supplier', href: "/purchase-search" },
   ];

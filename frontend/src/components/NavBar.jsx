@@ -42,9 +42,9 @@ const UserDropdown = ({ user, isAdmin, onLogout }) => (
       </div>
     </div>
     <div className="py-1">
-      <a href="#" className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"><User className="w-4 h-4 mr-3 text-gray-500" />My Profile</a>
-      <a href="#" className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"><Settings className="w-4 h-4 mr-3 text-gray-500" />Settings</a>
-      <a href="#" className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"><HelpCircle className="w-4 h-4 mr-3 text-gray-500" />Help Center</a>
+      <a href="/myprofile" className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"><User className="w-4 h-4 mr-3 text-gray-500" />My Profile</a>
+      {/* <a href="#" className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"><Settings className="w-4 h-4 mr-3 text-gray-500" />Settings</a>
+      <a href="#" className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"><HelpCircle className="w-4 h-4 mr-3 text-gray-500" />Help Center</a> */}
     </div>
     <div className="py-1 border-t border-gray-100">
       <button onClick={onLogout} className="flex items-center w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors">
@@ -107,6 +107,7 @@ const Navbar = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const location = useLocation();
   const userDropdownRef = useRef(null);
+  const dropdownTimeoutRef = useRef(null); // For hover delay
 
   // Fetch user info
   useEffect(() => {
@@ -155,7 +156,7 @@ const Navbar = () => {
   const handleLogout = () => {
     localStorage.removeItem('authToken');
     localStorage.removeItem('username');
-    window.location.href = '/';
+    window.location.href = '/logout';
   };
 
   // Nav item active check
@@ -167,13 +168,33 @@ const Navbar = () => {
     return false;
   };
 
+  // Handle dropdown hover events
+  const handleMouseEnter = (itemId) => {
+    clearTimeout(dropdownTimeoutRef.current);
+    setActiveDropdown(itemId);
+  };
+
+  const handleMouseLeave = () => {
+    dropdownTimeoutRef.current = setTimeout(() => {
+      setActiveDropdown(null);
+    }, 300); // 300ms delay before closing
+  };
+
+  // Cancel timeout when component unmounts
+  useEffect(() => {
+    return () => {
+      if (dropdownTimeoutRef.current) {
+        clearTimeout(dropdownTimeoutRef.current);
+      }
+    };
+  }, []);
+
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-indigo-100 shadow-md">
       {/* Accent Bar */}
-      <div className="h-1 bg-gradient-to-r from-indigo-500 via-teal-400 to-indigo-500" />
       <div className="flex items-center justify-between max-w-7xl mx-auto px-4 py-3">
         {/* Logo section */}
-        <Link to="/" className="flex items-center space-x-3">
+        <Link to="/home" className="flex items-center space-x-3">
           <img src={logo} alt="logo" className="w-11 h-11 rounded-full shadow" />
           <div>
             <h1 className="text-2xl font-black bg-gradient-to-r from-indigo-700 via-indigo-500 to-indigo-700 bg-clip-text text-transparent">LOGISTICS</h1>
@@ -212,23 +233,40 @@ const Navbar = () => {
           </button>
         </div>
       </div>
+      
       {/* Desktop Navigation */}
       <nav className="hidden lg:flex items-center justify-center border-t border-gray-100 bg-white">
         <div className="flex items-stretch -mb-px">
           {navItems.map((item) => (
-            <div key={item.id} className="relative group">
-              <button
-                onClick={() => item.hasDropdown && setActiveDropdown(activeDropdown === item.id ? null : item.id)}
-                className={`flex items-center space-x-1 px-5 py-4 border-b-2 border-transparent transition-all duration-300 ${isNavItemActive(item) ? 'border-indigo-600 text-indigo-600 font-medium' : 'text-gray-700 hover:text-gray-900 hover:border-gray-300'} ${item.color}`}
+            <div 
+              key={item.id} 
+              className="relative group"
+              onMouseEnter={() => item.hasDropdown && handleMouseEnter(item.id)}
+              onMouseLeave={handleMouseLeave}
+            >
+              <div
+                className={`flex items-center space-x-1 px-5 py-4 border-b-2 border-transparent transition-all duration-300 cursor-pointer ${
+                  isNavItemActive(item) 
+                    ? 'border-indigo-600 text-indigo-600 font-medium' 
+                    : 'text-gray-700 hover:text-gray-900 hover:border-gray-300'
+                } ${item.color}`}
               >
                 <item.icon className="w-5 h-5" />
                 <span>{item.text}</span>
                 {item.hasDropdown && (
-                  <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-300 ${activeDropdown === item.id ? "rotate-180" : ""}`} />
+                  <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-300 ${
+                    activeDropdown === item.id ? "rotate-180" : ""
+                  }`} />
                 )}
-              </button>
+              </div>
               {item.hasDropdown && activeDropdown === item.id && (
-                <DropdownMenu dropdownItems={item.dropdownItems} />
+                <div 
+                  className="absolute left-0 top-full" 
+                  onMouseEnter={() => handleMouseEnter(item.id)}
+                  onMouseLeave={handleMouseLeave}
+                >
+                  <DropdownMenu dropdownItems={item.dropdownItems} />
+                </div>
               )}
             </div>
           ))}
@@ -244,6 +282,7 @@ const Navbar = () => {
           setIsMobileMenuOpen={setIsMobileMenuOpen}
         />
       )}
+      <div className="h-1 bg-gradient-to-r from-indigo-500 via-teal-400 to-indigo-500" />
     </header>
   );
 };

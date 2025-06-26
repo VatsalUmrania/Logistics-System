@@ -1,163 +1,12 @@
-// import React, { useState } from 'react';
-// import './acc.css';
-
-// const AccountHead = () => {
-//   const [accountType, setAccountType] = useState('');
-//   const [accountHead, setAccountHead] = useState('');
-//   const [accounts, setAccounts] = useState([
-//     { id: 1, accountType: 'Asset', accountHead: 'Current Asset' },
-//     { id: 2, accountType: 'Asset', accountHead: 'Loans And Advance(Asset)' },
-//     { id: 3, accountType: 'Asset', accountHead: 'Account Receivable' },
-//     { id: 4, accountType: 'Liability', accountHead: 'Account Payable' },
-//     { id: 5, accountType: 'Asset', accountHead: 'cash in hand' },
-//     { id: 6, accountType: 'Liability', accountHead: 'current liability' },
-//     { id: 7, accountType: 'Liability', accountHead: 'capital Account' },
-//     { id: 8, accountType: 'Asset', accountHead: 'Bank Account' },
-//     { id: 9, accountType: 'Asset', accountHead: 'fixed asset' },
-//     { id: 10, accountType: 'Asset', accountHead: 'investment' },
-//     { id: 11, accountType: 'Liability', accountHead: 'loans(liability)' },
-//     { id: 12, accountType: 'Asset', accountHead: 'misc. expense(asset)' },
-//     { id: 13, accountType: 'Liability', accountHead: 'provisions' },
-//   ]);
-
-//   const handleAdd = () => {
-//     if (accountType && accountHead) {
-//       const newAccount = {
-//         id: accounts.length + 1,
-//         accountType,
-//         accountHead
-//       };
-//       setAccounts([...accounts, newAccount]);
-//       setAccountType('');
-//       setAccountHead('');
-//     }
-//   };
-
-//   return (
-//     <div className="p-4 bg-gray-100 min-h-screen">
-//       {/* Page Title */}
-//       <h2 className="text-3xl font-medium text-white bg-gray-700 mb-4 text-center py-4 tracking-wide">
-//         Account Head
-//       </h2>
-      
-//       <div className="flex gap-4 items-start max-w-7xl mx-auto">
-//         {/* Left Form Section */}
-//         <div className="flex-none w-80 bg-gray-200 rounded-lg shadow-md border border-gray-300">
-//           {/* Form Header */}
-//           <div className="bg-gray-600 text-white px-5 py-6 rounded-t-lg border-b border-gray-700">
-//             <h3 className="text-lg font-medium tracking-wide m-0">Add Account Head</h3>
-//           </div>
-          
-//           {/* Form Body */}
-//           <div className="p-6">
-//             {/* Account Type Field */}
-//             <div className="mb-5">
-//               <label className="block mb-2 font-medium text-gray-700 text-sm uppercase tracking-wide">
-//                 Account Type
-//               </label>
-//               <select 
-//                 value={accountType} 
-//                 onChange={(e) => setAccountType(e.target.value)}
-//                 className="w-full p-3 border-2 border-gray-300 rounded-md text-base bg-white transition-all duration-200 ease-in-out focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-//               >
-//                 <option value="">--Select--</option>
-//                 <option value="Asset">Asset</option>
-//                 <option value="Liability">Liability</option>
-//               </select>
-//             </div>
-            
-//             {/* Account Head Field */}
-//             <div className="mb-5">
-//               <label className="block mb-2 font-medium text-gray-700 text-sm uppercase tracking-wide">
-//                 Account Head
-//               </label>
-//               <input 
-//                 type="text" 
-//                 value={accountHead}
-//                 onChange={(e) => setAccountHead(e.target.value)}
-//                 className="w-full p-3 border-2 border-gray-300 rounded-md text-base bg-white transition-all duration-200 ease-in-out focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-//                 placeholder="Enter account head name"
-//               />
-//             </div>
-            
-//             {/* Add Button */}
-//             <button 
-//               className="w-full bg-blue-500 text-white border-none py-3 px-6 rounded-md cursor-pointer text-base font-medium flex items-center justify-center gap-2 transition-all duration-200 ease-in-out hover:bg-blue-600 hover:-translate-y-0.5 hover:shadow-lg uppercase tracking-wide mt-3"
-//               onClick={handleAdd}
-//             >
-//               <span className="text-lg font-medium">+</span> Add
-//             </button>
-//           </div>
-//         </div>
-
-//         {/* Right Table Section */}
-//         <div className="flex-1 bg-white rounded-lg shadow-md border border-gray-300 min-w-0">
-//           {/* Table Header */}
-//           <div className="bg-blue-500 text-white px-5 py-4 rounded-t-lg border-b border-blue-600">
-//             <h3 className="text-lg font-medium tracking-wide m-0">Account Head List</h3>
-//           </div>
-          
-//           {/* Table Container */}
-//           <div className="overflow-x-auto max-h-96 overflow-y-auto">
-//             <table className="w-full border-collapse text-sm">
-//               <thead>
-//                 <tr>
-//                   <th className="bg-gray-50 border-b-2 border-gray-300 border-r border-gray-300 py-3 px-4 text-left font-medium text-gray-700 sticky top-0 uppercase tracking-wide text-sm whitespace-nowrap">
-//                     SL NO
-//                   </th>
-//                   <th className="bg-gray-50 border-b-2 border-gray-300 border-r border-gray-300 py-3 px-4 text-left font-medium text-gray-700 sticky top-0 uppercase tracking-wide text-sm whitespace-nowrap">
-//                     Account Type
-//                   </th>
-//                   <th className="bg-gray-50 border-b-2 border-gray-300 border-r border-gray-300 py-3 px-4 text-left font-medium text-gray-700 sticky top-0 uppercase tracking-wide text-sm whitespace-nowrap">
-//                     Account Head
-//                   </th>
-//                   <th className="bg-gray-50 border-b-2 border-gray-300 py-3 px-4 text-left font-medium text-gray-700 sticky top-0 uppercase tracking-wide text-sm whitespace-nowrap">
-//                     Action
-//                   </th>
-//                 </tr>
-//               </thead>
-//               <tbody>
-//                 {accounts.map((account, index) => (
-//                   <tr 
-//                     key={account.id} 
-//                     className={`${index % 2 === 1 ? 'bg-gray-50' : 'bg-white'} hover:bg-gray-200 hover:scale-105 transition-all duration-100 ease-in-out`}
-//                   >
-//                     <td className="border-b border-gray-300 border-r border-gray-300 py-3 px-4 align-middle text-gray-600 text-sm font-normal">
-//                       {index + 1}
-//                     </td>
-//                     <td className="border-b border-gray-300 border-r border-gray-300 py-3 px-4 align-middle text-gray-600 text-sm font-normal">
-//                       {account.accountType}
-//                     </td>
-//                     <td className="border-b border-gray-300 border-r border-gray-300 py-3 px-4 align-middle text-gray-600 text-sm font-normal">
-//                       {account.accountHead}
-//                     </td>
-//                     <td className="border-b border-gray-300 py-3 px-4 align-middle text-gray-600 text-sm font-normal">
-//                       <button className="bg-transparent border border-gray-500 text-gray-500 py-2 px-4 rounded cursor-pointer text-xs font-medium transition-all duration-200 ease-in-out hover:bg-gray-500 hover:text-white hover:-translate-y-0.5 hover:shadow-md uppercase tracking-wide">
-//                         Update
-//                       </button>
-//                     </td>
-//                   </tr>
-//                 ))}
-//               </tbody>
-//             </table>
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default AccountHead;
-
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { 
+  ClipboardList, Plus, Pencil, Trash2, Search, ChevronLeft, ChevronRight, X, 
+  ArrowUp, ArrowDown, Loader, Check, AlertCircle as Alert
+} from 'lucide-react';
+import Select from 'react-select';
 
 const AccountHead = () => {
-  // Form state and current list of account heads.
-  const [accountType, setAccountType] = useState('');
-  const [accountHead, setAccountHead] = useState('');
-  const [editingId, setEditingId] = useState(null);
-
+  // State management
   const [accounts, setAccounts] = useState([
     { id: 1, accountType: 'Asset', accountHead: 'Current Asset' },
     { id: 2, accountType: 'Asset', accountHead: 'Loans And Advance (Asset)' },
@@ -173,183 +22,438 @@ const AccountHead = () => {
     { id: 12, accountType: 'Asset', accountHead: 'Misc. Expense (Asset)' },
     { id: 13, accountType: 'Liability', accountHead: 'Provisions' },
   ]);
+  
+  const [formData, setFormData] = useState({
+    accountType: '',
+    accountHead: ''
+  });
+  const [editingId, setEditingId] = useState(null);
+  const [isAdding, setIsAdding] = useState(false);
+  const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortField, setSortField] = useState('accountHead');
+  const [sortDirection, setSortDirection] = useState('asc');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
-  // Handles both add and update submission.
-  const handleSubmit = () => {
-    if (!accountType.trim() || !accountHead.trim()) return;
+  // Custom styles for react-select dropdowns (matching AssignExpenses)
+  const selectStyles = {
+    control: (base) => ({
+      ...base,
+      minHeight: '42px',
+      borderRadius: '8px',
+      borderColor: '#d1d5db',
+      '&:hover': {
+        borderColor: '#9ca3af'
+      }
+    }),
+    menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+    menu: (base) => ({ ...base, zIndex: 9999 })
+  };
 
-    if (editingId) {
-      const updated = accounts.map((acc) =>
-        acc.id === editingId ? { ...acc, accountType, accountHead } : acc
-      );
-      setAccounts(updated);
+  // Account type options
+  const accountTypeOptions = [
+    { value: 'Asset', label: 'Asset' },
+    { value: 'Liability', label: 'Liability' },
+    { value: 'Equity', label: 'Equity' },
+    { value: 'Revenue', label: 'Revenue' },
+    { value: 'Expense', label: 'Expense' }
+  ];
+
+  // Reset form
+  const resetForm = () => {
+    setFormData({
+      accountType: '',
+      accountHead: ''
+    });
+    setEditingId(null);
+    setIsAdding(false);
+    setError('');
+    setSuccessMessage('');
+  };
+
+  // Fixed toggle function for Add Account button
+  const handleToggleAddForm = () => {
+    console.log('Button clicked, current state:', isAdding); // Debug log
+    if (isAdding) {
+      resetForm();
     } else {
-      const newId = accounts.length ? Math.max(...accounts.map((a) => a.id)) + 1 : 1;
-      setAccounts([...accounts, { id: newId, accountType, accountHead }]);
+      setIsAdding(true);
+      setEditingId(null);
+      setError('');
+      setSuccessMessage('');
     }
-    resetForm();
   };
 
-  // Populate form for editing mode.
-  const handleEdit = (acc) => {
-    setAccountType(acc.accountType);
-    setAccountHead(acc.accountHead);
-    setEditingId(acc.id);
+  // Handle form input changes
+  const handleInputChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  // Delete an account after confirmation.
+  // Add or update account
+  const handleSubmit = () => {
+    if (!formData.accountType.trim() || !formData.accountHead.trim()) {
+      setError('Please fill in all required fields');
+      return;
+    }
+
+    // Check for duplicate account head
+    const isDuplicate = accounts.some(acc => 
+      acc.accountHead.toLowerCase() === formData.accountHead.toLowerCase() && 
+      acc.id !== editingId
+    );
+    
+    if (isDuplicate) {
+      setError('Account head already exists');
+      return;
+    }
+
+    try {
+      if (editingId) {
+        // Update existing account
+        const updatedAccounts = accounts.map(acc =>
+          acc.id === editingId 
+            ? { ...acc, accountType: formData.accountType, accountHead: formData.accountHead }
+            : acc
+        );
+        setAccounts(updatedAccounts);
+        setSuccessMessage('Account head updated successfully!');
+      } else {
+        // Add new account
+        const newId = accounts.length ? Math.max(...accounts.map(a => a.id)) + 1 : 1;
+        const newAccount = {
+          id: newId,
+          accountType: formData.accountType,
+          accountHead: formData.accountHead
+        };
+        setAccounts([...accounts, newAccount]);
+        setSuccessMessage('Account head added successfully!');
+      }
+
+      resetForm();
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (error) {
+      setError('Failed to save account head');
+      setTimeout(() => setError(''), 3000);
+    }
+  };
+
+  // Edit account
+  const handleEdit = (account) => {
+    setFormData({
+      accountType: account.accountType,
+      accountHead: account.accountHead
+    });
+    setEditingId(account.id);
+    setIsAdding(true);
+  };
+
+  // Delete account
   const handleDelete = (id) => {
-    if (window.confirm('Are you sure you want to delete this account?')) {
-      setAccounts(accounts.filter((acc) => acc.id !== id));
+    if (window.confirm('Are you sure you want to delete this account head?')) {
+      setAccounts(accounts.filter(acc => acc.id !== id));
       if (editingId === id) {
         resetForm();
       }
+      setSuccessMessage('Account head deleted successfully!');
+      setTimeout(() => setSuccessMessage(''), 3000);
     }
   };
 
-  // Reset the form to clear edit mode.
-  const resetForm = () => {
-    setAccountType('');
-    setAccountHead('');
-    setEditingId(null);
+  // Sort handler
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+    setCurrentPage(1);
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-8">
-      {/* Page Header */}
-      <div className="max-w-7xl mx-auto mb-8">
-        <h1 className="text-3xl font-bold text-gray-800 flex items-center">
-          {/* Retaining same icon style as BankInformation page */}
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="w-8 h-8 mr-3 text-indigo-600"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 6h18M3 14h18M3 18h18" />
-          </svg>
-          ACCOUNT HEAD
-        </h1>
-        <p className="text-gray-600 mt-2">Manage your account head details</p>
-      </div>
+  // Render sort icon
+  const renderSortIcon = (field) => {
+    if (sortField !== field) return <ArrowUp className="w-3 h-3 text-gray-400 inline" />;
+    return sortDirection === 'asc' ?
+      <ArrowUp className="w-3 h-3 text-indigo-600 inline" /> :
+      <ArrowDown className="w-3 h-3 text-indigo-600 inline" />;
+  };
 
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-8">
-        {/* Left Card: Add / Edit Form */}
-        <div className="md:w-80 w-full bg-white rounded-xl shadow-lg border border-gray-200">
-          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-4 rounded-t-xl border-b border-gray-300">
-            <h3 className="text-xl font-bold text-center">
-              {editingId ? 'Edit Account Head' : 'Add Account Head'}
-            </h3>
+  // Filter and sort accounts
+  const filteredAccounts = accounts.filter(account =>
+    account.accountHead.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    account.accountType.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const sortedAccounts = [...filteredAccounts].sort((a, b) => {
+    const aValue = a[sortField] || '';
+    const bValue = b[sortField] || '';
+    if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+    if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  // Pagination
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentAccounts = sortedAccounts.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(sortedAccounts.length / itemsPerPage);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, accounts]);
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-4 md:p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header - Matching AssignExpenses */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800 flex items-center">
+              <ClipboardList className="w-8 h-8 mr-3 text-indigo-600" />
+              Account Head Management
+            </h1>
+            <p className="text-gray-600 mt-2">Manage chart of accounts and account types</p>
           </div>
-          <div className="p-6 space-y-6">
-            <div>
-              <label className="block mb-2 text-sm font-medium text-gray-700 uppercase tracking-wide">
-                Account Type
-              </label>
-              <select
-                value={accountType}
-                onChange={(e) => setAccountType(e.target.value)}
-                className="w-full p-3 border-2 border-gray-300 rounded-md bg-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500"
-              >
-                <option value="">--Select--</option>
-                <option value="Asset">Asset</option>
-                <option value="Liability">Liability</option>
-              </select>
+          <div className="mt-4 md:mt-0 flex flex-wrap gap-3">
+            {/* Fixed Add Account Button */}
+            <button
+              type="button"
+              onClick={handleToggleAddForm}
+              className={`px-4 py-2 text-white rounded-lg font-medium transition-all flex items-center shadow-md
+                ${isAdding 
+                  ? 'bg-red-600 hover:bg-red-700' 
+                  : 'bg-indigo-600 hover:bg-indigo-700'}`}
+            >
+              {isAdding ? <X className="w-5 h-5 mr-2" /> : <Plus className="w-5 h-5 mr-2" />}
+              {isAdding ? 'Cancel' : 'Add Account Head'}
+            </button>
+          </div>
+        </div>
+
+        {/* Status Messages */}
+        {error && (
+          <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded">
+            <div className="flex items-center">
+              <Alert className="w-5 h-5 text-red-500 mr-2" />
+              <p className="text-red-700">{error}</p>
             </div>
-            <div>
-              <label className="block mb-2 text-sm font-medium text-gray-700 uppercase tracking-wide">
-                Account Head
-              </label>
-              <input
-                type="text"
-                value={accountHead}
-                onChange={(e) => setAccountHead(e.target.value)}
-                placeholder="Enter account head name"
-                className="w-full p-3 border-2 border-gray-300 rounded-md bg-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500"
-              />
+          </div>
+        )}
+        {successMessage && (
+          <div className="bg-green-50 border-l-4 border-green-500 p-4 mb-6 rounded">
+            <div className="flex items-center">
+              <Check className="w-5 h-5 text-green-500 mr-2" />
+              <p className="text-green-700">{successMessage}</p>
             </div>
-            <div className="flex gap-4">
-              <button
-                onClick={handleSubmit}
-                className="flex-1 py-3 bg-blue-500 text-white rounded-md font-semibold uppercase tracking-wide shadow-md hover:bg-blue-600 transition-all duration-200"
-              >
-                {editingId ? 'Update' : 'Add'}
-              </button>
-              {editingId && (
-                <button
-                  onClick={resetForm}
-                  className="flex-1 py-3 bg-red-500 text-white rounded-md font-semibold uppercase tracking-wide shadow-md hover:bg-red-600 transition-all duration-200"
-                >
-                  Cancel
-                </button>
-              )}
+          </div>
+        )}
+
+        {/* Search Section - Matching AssignExpenses */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-visible mb-6">
+          <div className="bg-indigo-50 p-4 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-indigo-700 flex items-center">
+              <Search className="w-5 h-5 mr-2" />
+              SEARCH ACCOUNT HEADS
+            </h2>
+          </div>
+          <div className="p-4">
+            <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Search by Account Head or Type
+                </label>
+                <input
+                  type="text"
+                  placeholder="Search account heads..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Right Card: Account Head List */}
-        <div className="flex-1 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-4 border-b border-indigo-700">
-            <h3 className="text-xl font-bold text-center">Account Head List</h3>
+        {/* Add/Edit Account Form */}
+        {isAdding && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
+            <div className="bg-gray-50 p-4 border-b border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-700">
+                {editingId ? 'Edit Account Head' : 'Add New Account Head'}
+              </h2>
+            </div>
+            <div className="p-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Account Type <span className="text-red-500">*</span>
+                    </label>
+                    <Select
+                      options={accountTypeOptions}
+                      value={accountTypeOptions.find(option => option.value === formData.accountType)}
+                      onChange={(selectedOption) => handleInputChange('accountType', selectedOption?.value || '')}
+                      placeholder="Select Account Type"
+                      isSearchable
+                      menuPortalTarget={document.body}
+                      menuPosition="fixed"
+                      styles={selectStyles}
+                      className="w-full text-sm"
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Account Head <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                      placeholder="Enter account head name"
+                      value={formData.accountHead}
+                      onChange={(e) => handleInputChange('accountHead', e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-4 flex justify-end">
+                <button
+                  onClick={handleSubmit}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-5 rounded-lg shadow transition text-sm"
+                >
+                  {editingId ? 'Update Account Head' : 'Add Account Head'}
+                </button>
+              </div>
+            </div>
           </div>
-          <div className="overflow-x-auto max-h-96 overflow-y-auto">
-            <table className="min-w-full border-collapse text-sm">
-              <thead className="bg-gray-50 sticky top-0">
+        )}
+
+        {/* Account Summary */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
+          <div className="flex justify-between items-center">
+            <h2 className="text-lg font-semibold text-gray-800">Account Summary</h2>
+            <div className="text-sm font-medium text-gray-700">
+              Total: <span className="text-green-600 font-bold">{filteredAccounts.length} account heads</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Account Heads Table */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
                 <tr>
-                  <th className="py-3 px-4 border-b border-gray-300 text-left font-medium text-gray-700 uppercase tracking-wide">
-                    SL No
-                  </th>
-                  <th className="py-3 px-4 border-b border-gray-300 text-left font-medium text-gray-700 uppercase tracking-wide">
-                    Account Type
-                  </th>
-                  <th className="py-3 px-4 border-b border-gray-300 text-left font-medium text-gray-700 uppercase tracking-wide">
-                    Account Head
-                  </th>
-                  <th className="py-3 px-4 border-b border-gray-300 text-left font-medium text-gray-700 uppercase tracking-wide">
-                    Action
-                  </th>
+                  {[
+                    { label: 'SL No', key: null },
+                    { label: 'Account Type', key: 'accountType' },
+                    { label: 'Account Head', key: 'accountHead' },
+                    { label: 'Actions', key: null },
+                  ].map(({ label, key }) => (
+                    <th
+                      key={label}
+                      className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                      onClick={() => key && handleSort(key)}
+                    >
+                      <div className="flex items-center">
+                        {label}
+                        {key && renderSortIcon(key)}
+                      </div>
+                    </th>
+                  ))}
                 </tr>
               </thead>
-              <tbody>
-                {accounts.map((acct, index) => (
-                  <tr
-                    key={acct.id}
-                    className={`transition-all duration-150 ease-in-out ${
-                      index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                    } hover:bg-gray-200`}
-                  >
-                    <td className="py-3 px-4 border-b border-gray-300 text-gray-600">{index + 1}</td>
-                    <td className="py-3 px-4 border-b border-gray-300 text-gray-600">{acct.accountType}</td>
-                    <td className="py-3 px-4 border-b border-gray-300 text-gray-600">{acct.accountHead}</td>
-                    <td className="py-3 px-4 border-b border-gray-300 text-gray-600">
-                      <div className="flex gap-3">
-                        <button
-                          onClick={() => handleEdit(acct)}
-                          className="px-3 py-2 bg-green-500 text-white rounded-md text-xs font-semibold uppercase tracking-wide shadow transition-all duration-200 hover:bg-green-600 hover:shadow-lg"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDelete(acct.id)}
-                          className="px-3 py-2 bg-red-500 text-white rounded-md text-xs font-semibold uppercase tracking-wide shadow transition-all duration-200 hover:bg-red-600 hover:shadow-lg"
-                        >
-                          Delete
-                        </button>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {currentAccounts.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="px-4 py-6 text-center text-gray-500">
+                      <div className="flex flex-col items-center justify-center">
+                        <ClipboardList className="w-16 h-16 text-gray-300 mb-4" />
+                        <h4 className="text-lg font-medium text-gray-500">No account heads found</h4>
+                        <p className="text-gray-400 mt-2">Create your first account head to get started</p>
                       </div>
                     </td>
                   </tr>
-                ))}
-                {accounts.length === 0 && (
-                  <tr>
-                    <td colSpan="4" className="py-6 text-center text-gray-500">
-                      No Account Heads Found.
-                    </td>
-                  </tr>
+                ) : (
+                  currentAccounts.map((account, index) => (
+                    <tr key={account.id} className="hover:bg-gray-50 transition">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {indexOfFirstItem + index + 1}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          account.accountType === 'Asset' ? 'bg-green-100 text-green-800' :
+                          account.accountType === 'Liability' ? 'bg-red-100 text-red-800' :
+                          account.accountType === 'Equity' ? 'bg-blue-100 text-blue-800' :
+                          account.accountType === 'Revenue' ? 'bg-purple-100 text-purple-800' :
+                          'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {account.accountType}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {account.accountHead}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium flex space-x-2">
+                        <button
+                          onClick={() => handleEdit(account)}
+                          className="text-indigo-600 hover:text-indigo-900"
+                          title="Edit"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(account.id)}
+                          className="text-red-600 hover:text-red-900"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
                 )}
               </tbody>
             </table>
           </div>
+          
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex flex-col md:flex-row justify-between items-center px-4 py-3 border-t border-gray-200 bg-gray-50">
+              <div className="text-sm text-gray-700 mb-2 md:mb-0">
+                Showing {indexOfFirstItem + 1} to{' '}
+                {Math.min(indexOfLastItem, filteredAccounts.length)} of {filteredAccounts.length} account heads
+              </div>
+              <div className="flex items-center">
+                <div className="flex space-x-1">
+                  <button
+                    onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                    disabled={currentPage === 1}
+                    className="p-2 rounded-md hover:bg-gray-100 disabled:opacity-50"
+                    title="Previous"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                    className="p-2 rounded-md hover:bg-gray-100 disabled:opacity-50"
+                    title="Next"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+              <div className="hidden md:block text-sm font-medium text-gray-700">
+                Total: <span className="text-green-600 font-bold">{filteredAccounts.length} account heads</span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

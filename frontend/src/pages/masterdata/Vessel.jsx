@@ -1,344 +1,427 @@
-import { useState, useEffect } from 'react';
-import {
-  Truck, Plus, Pencil, Trash2, ChevronDown, ChevronUp, Search, ChevronLeft, ChevronRight, X, Check
+import React, { useState, useEffect } from 'react';
+import { 
+  Truck, Plus, Pencil, Trash2, Search, ChevronLeft, ChevronRight, X, 
+  ArrowUp, ArrowDown, Loader, Check, AlertCircle as Alert, Settings
 } from 'lucide-react';
 
-// Helper for API auth header
-const getAuthHeaders = () => {
-  const token = localStorage.getItem('authToken');
-  if (!token) throw new Error('Authentication token missing');
-  return { 'Authorization': `Bearer ${token}` };
-};
-
-const PAGE_SIZE = 5;
-
 const VesselDetailsPage = () => {
+  // State management
   const [vessels, setVessels] = useState([]);
-  const [newVessel, setNewVessel] = useState({ vesselNo: '', vesselName: '' });
-  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [sortField, setSortField] = useState('vesselNo');
+  const [sortField, setSortField] = useState('name');
   const [sortDirection, setSortDirection] = useState('asc');
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [feedback, setFeedback] = useState({ type: '', msg: '' });
+  const itemsPerPage = 10;
 
-  // Fetch vessels
+  const [newVessel, setNewVessel] = useState({
+    vesselNo: '',
+    vesselName: ''
+  });
+
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('authToken');
+    if (!token) throw new Error('Authentication token missing');
+    return { 
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    };
+  };
+
+  // Fetch vessels from backend
   const fetchVessels = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/vessels/', {
-        headers: getAuthHeaders(),
-      });
-      if (!res.ok) throw new Error('Could not fetch vessels');
+      setIsLoading(true);
+      const res = await fetch('http://localhost:5000/api/vessels/', { headers: getAuthHeaders() });
+      if (!res.ok) throw new Error(`Failed to fetch vessels: ${res.status} ${res.statusText}`);
       const data = await res.json();
-      setVessels(
-        data.map(item => ({
-          id: item.id,
-          vesselName: item.name,
-          vesselNo: item.number,
-          status: item.status || 'Active'
-        }))
-      );
+      
+      // Map the backend data to frontend format
+      setVessels(data.map(item => ({
+        id: item.id,
+        vesselName: item.name,
+        vesselNo: item.number,
+        createdAt: item.created_at
+      })));
+      setError('');
     } catch (err) {
-      setFeedback({ type: 'error', msg: 'Failed to load vessels' });
+      setError('Failed to load vessels');
+      console.error('Fetch error:', err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  useEffect(() => { fetchVessels(); }, []);
-
-  // Feedback auto-clear
   useEffect(() => {
-    if (feedback.msg) {
-      const t = setTimeout(() => setFeedback({ type: '', msg: '' }), 1800);
-      return () => clearTimeout(t);
-    }
-  }, [feedback]);
+    fetchVessels();
+  }, []);
 
-  // Form submit
-  const handleSaveVessel = async () => {
+  // Reset form
+  const resetForm = () => {
+    setNewVessel({
+      vesselNo: '',
+      vesselName: ''
+    });
+    setEditingId(null);
+    setIsAdding(false);
+    setError('');
+    setSuccessMessage('');
+  };
+
+  // Fixed toggle function for Add Vessel button
+  const handleToggleAddForm = () => {
+    console.log('Button clicked, current state:', isAdding);
+    if (isAdding) {
+      resetForm();
+    } else {
+      setIsAdding(true);
+      setEditingId(null);
+      setError('');
+      setSuccessMessage('');
+    }
+  };
+
+  // Add or update vessel - FIXED VERSION
+  const handleAddVessel = async () => {
     if (!newVessel.vesselName.trim()) {
-      setFeedback({ type: 'error', msg: 'Vessel name is required.' });
+      setError('Vessel name is required');
       return;
     }
+
     try {
+      const headers = getAuthHeaders();
+      
+      // Send only the fields that exist in your database
+      const vesselData = {
+        name: newVessel.vesselName.trim(),
+        number: newVessel.vesselNo.trim() || null
+      };
+
+      console.log('Sending vessel data:', vesselData); // Debug log
+
+      let res;
       if (editingId) {
-        const res = await fetch(`http://localhost:5000/api/vessels/${editingId}`, {
+        res = await fetch(`http://localhost:5000/api/vessels/${editingId}`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-          body: JSON.stringify({
-            name: newVessel.vesselName,
-            number: newVessel.vesselNo
-          })
+          headers,
+          body: JSON.stringify(vesselData),
         });
-        if (!res.ok) throw new Error();
-        setFeedback({ type: 'success', msg: 'Vessel updated!' });
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.error('Update error response:', errorText);
+          throw new Error(`Failed to update vessel: ${res.status}`);
+        }
+        setSuccessMessage('Vessel updated successfully!');
       } else {
-        const res = await fetch('http://localhost:5000/api/vessels/', {
+        res = await fetch('http://localhost:5000/api/vessels/', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-          body: JSON.stringify({
-            name: newVessel.vesselName,
-            number: newVessel.vesselNo
-          })
+          headers,
+          body: JSON.stringify(vesselData),
         });
-        if (!res.ok) throw new Error();
-        setFeedback({ type: 'success', msg: 'Vessel added!' });
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.error('Create error response:', errorText);
+          throw new Error(`Failed to add vessel: ${res.status}`);
+        }
+        setSuccessMessage('Vessel added successfully!');
       }
-      setNewVessel({ vesselNo: '', vesselName: '' });
-      setEditingId(null);
-      setIsFormOpen(false);
-      fetchVessels();
+
+      await fetchVessels();
+      resetForm();
+      setTimeout(() => setSuccessMessage(''), 3000);
     } catch (err) {
-      setFeedback({ type: 'error', msg: 'Failed to save vessel.' });
+      console.error('Add vessel error:', err);
+      setError(err.message || 'Failed to save vessel');
+      setTimeout(() => setError(''), 3000);
     }
   };
 
-  // Edit
-  const handleEdit = vessel => {
-    setNewVessel({ vesselNo: vessel.vesselNo || '', vesselName: vessel.vesselName || '' });
-    setEditingId(vessel.id);
-    setIsFormOpen(true);
-  };
-
-  // Delete
+  // Delete vessel
   const handleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this vessel?')) return;
+
     try {
       const res = await fetch(`http://localhost:5000/api/vessels/${id}`, {
         method: 'DELETE',
         headers: getAuthHeaders(),
       });
-      if (!res.ok) throw new Error();
-      setFeedback({ type: 'success', msg: 'Vessel deleted!' });
-      fetchVessels();
-    } catch {
-      setFeedback({ type: 'error', msg: 'Failed to delete vessel.' });
+      if (!res.ok) throw new Error('Failed to delete vessel');
+      
+      await fetchVessels();
+      setSuccessMessage('Vessel deleted successfully!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (err) {
+      setError('Failed to delete vessel');
+      setTimeout(() => setError(''), 3000);
     }
   };
 
-  // Status toggle
-  const toggleStatus = async (id) => {
-    try {
-      const vessel = vessels.find(v => v.id === id);
-      const newStatus = vessel.status === 'Active' ? 'Inactive' : 'Active';
-      const res = await fetch(`http://localhost:5000/api/vessels/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-        body: JSON.stringify({
-          name: vessel.vesselName,
-          number: vessel.vesselNo,
-          status: newStatus,
-        })
-      });
-      if (!res.ok) throw new Error();
-      setFeedback({ type: 'success', msg: 'Status updated!' });
-      fetchVessels();
-    } catch {
-      setFeedback({ type: 'error', msg: 'Failed to update status.' });
-    }
+  // Edit vessel
+  const handleEdit = (vessel) => {
+    setNewVessel({
+      vesselNo: vessel.vesselNo || '',
+      vesselName: vessel.vesselName || ''
+    });
+    setEditingId(vessel.id);
+    setIsAdding(true);
   };
 
-  // Sorting and filtering
-  const sortedVessels = [...vessels].sort((a, b) => {
-    const aVal = (a[sortField] || '').toLowerCase();
-    const bVal = (b[sortField] || '').toLowerCase();
-    if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
-    if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
+  // Sort handler
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortDirection(prev => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+    setCurrentPage(1);
+  };
+
+  // Render sort icon
+  const renderSortIcon = (field) => {
+    if (sortField !== field) return <ArrowUp className="w-3 h-3 text-gray-400 inline" />;
+    return sortDirection === 'asc' ?
+      <ArrowUp className="w-3 h-3 text-indigo-600 inline" /> :
+      <ArrowDown className="w-3 h-3 text-indigo-600 inline" />;
+  };
+
+  // Filtered and sorted vessels
+  const filteredVessels = vessels.filter(vessel =>
+    (vessel.vesselName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (vessel.vesselNo || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    vessel.id.toString().includes(searchTerm)
+  );
+
+  const sortedVessels = [...filteredVessels].sort((a, b) => {
+    const aValue = a[sortField] || '';
+    const bValue = b[sortField] || '';
+    if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+    if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
     return 0;
   });
-  const filteredVessels = sortedVessels.filter(v =>
-    (v.vesselName && v.vesselName.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (v.vesselNo && v.vesselNo.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
-  const totalPages = Math.max(1, Math.ceil(filteredVessels.length / PAGE_SIZE));
-  const displayVessels = filteredVessels.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  // Pagination
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentVessels = sortedVessels.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(sortedVessels.length / itemsPerPage);
 
   useEffect(() => {
-    if (currentPage > totalPages) setCurrentPage(1);
-  }, [filteredVessels, totalPages, currentPage]);
+    setCurrentPage(1);
+  }, [searchTerm, vessels]);
 
-  // UI Block
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <Loader className="w-12 h-12 mx-auto text-indigo-600 animate-spin" />
+          <p className="mt-4 text-gray-600">Loading vessel data...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-indigo-50 py-10 px-2 md:px-8">
-      <div className="max-w-4xl mx-auto w-full">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+    <div className="min-h-screen bg-gray-50 p-4 md:p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header - Matching AssignExpenses */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
           <div>
-            <h1 className="text-3xl font-black bg-gradient-to-r from-gray-800 via-gray-900 to-gray-800 bg-clip-text text-transparent flex items-center">
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800 flex items-center">
               <Truck className="w-8 h-8 mr-3 text-indigo-600" />
               Vessel Management
             </h1>
-            <p className="text-gray-600 mt-2">Add, edit, and manage vessels in your system.</p>
+            <p className="text-gray-600 mt-2">Manage and track all vessel information</p>
           </div>
-          <div className="flex space-x-3 mt-4 md:mt-0">
-            <div className="relative">
-              <div className="flex items-center bg-white rounded-lg px-3 py-2 shadow-sm border border-gray-200">
-                <Search className="w-5 h-5 text-gray-400 mr-2" />
-                <input
-                  type="text"
-                  placeholder="Search vessels..."
-                  className="bg-transparent outline-none w-40"
-                  value={searchTerm}
-                  onChange={e => setSearchTerm(e.target.value)}
-                />
-              </div>
-            </div>
+          <div className="mt-4 md:mt-0 flex flex-wrap gap-3">
             <button
-              onClick={() => {
-                setIsFormOpen(!isFormOpen);
-                setEditingId(null);
-                setNewVessel({ vesselNo: '', vesselName: '' });
-              }}
-              className={`px-5 py-2 text-white rounded-lg font-medium transition-all flex items-center shadow-md
-                ${isFormOpen
-                  ? 'bg-red-600 hover:bg-red-700'
-                  : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700'}
-              `}
+              type="button"
+              onClick={handleToggleAddForm}
+              className={`px-4 py-2 text-white rounded-lg font-medium transition-all flex items-center shadow-md
+                ${isAdding 
+                  ? 'bg-red-600 hover:bg-red-700' 
+                  : 'bg-indigo-600 hover:bg-indigo-700'}`}
             >
-              {isFormOpen ? <X className="w-5 h-5 mr-2" /> : <Plus className="w-5 h-5 mr-2" />}
-              {isFormOpen ? 'Close' : 'Add Vessel'}
+              {isAdding ? <X className="w-5 h-5 mr-2" /> : <Plus className="w-5 h-5 mr-2" />}
+              {isAdding ? 'Cancel' : 'Add Vessel'}
             </button>
           </div>
         </div>
 
-        {(feedback.msg) && (
-          <div className={`mb-4 px-4 py-2 rounded border flex items-center font-semibold 
-            ${feedback.type === 'success'
-              ? 'bg-green-100 border-green-200 text-green-700'
-              : 'bg-red-100 border-red-200 text-red-700'
-            }`}>
-            {feedback.type === 'success' ? <Check className="w-5 h-5 mr-2" /> : <X className="w-5 h-5 mr-2" />}
-            {feedback.msg}
+        {/* Status Messages */}
+        {error && (
+          <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded">
+            <div className="flex items-center">
+              <Alert className="w-5 h-5 text-red-500 mr-2" />
+              <p className="text-red-700">{error}</p>
+            </div>
+          </div>
+        )}
+        {successMessage && (
+          <div className="bg-green-50 border-l-4 border-green-500 p-4 mb-6 rounded">
+            <div className="flex items-center">
+              <Check className="w-5 h-5 text-green-500 mr-2" />
+              <p className="text-green-700">{successMessage}</p>
+            </div>
           </div>
         )}
 
-        {/* Form */}
-        {isFormOpen && (
-          <div className="bg-white rounded-xl shadow-lg mb-8 border border-gray-100">
-            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6 flex items-center gap-3">
-              <Plus className="w-5 h-5 text-white" />
-              <span className="text-xl font-bold text-white">
-                {editingId ? 'Edit Vessel' : 'Add Vessel'}
-              </span>
+        {/* Search Section */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-visible mb-6">
+          <div className="bg-indigo-50 p-4 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-indigo-700 flex items-center">
+              <Search className="w-5 h-5 mr-2" />
+              SEARCH VESSELS
+            </h2>
+          </div>
+          <div className="p-4">
+            <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Search by Name, Number, or ID
+                </label>
+                <input
+                  type="text"
+                  placeholder="Search vessels..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
             </div>
-            <div className="p-6">
+          </div>
+        </div>
+
+        {/* Add/Edit Vessel Form */}
+        {isAdding && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
+            <div className="bg-gray-50 p-4 border-b border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-700">
+                {editingId ? 'Edit Vessel' : 'Add New Vessel'}
+              </h2>
+            </div>
+            <div className="p-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Vessel Name <span className="text-red-500">*</span></label>
-                  <input
-                    type="text"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                    placeholder="Enter vessel name"
-                    value={newVessel.vesselName}
-                    onChange={e => setNewVessel({ ...newVessel, vesselName: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Vessel Number</label>
-                  <input
-                    type="text"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                    placeholder="Enter vessel number"
-                    value={newVessel.vesselNo}
-                    onChange={e => setNewVessel({ ...newVessel, vesselNo: e.target.value })}
-                  />
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Vessel Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                      placeholder="Enter vessel name"
+                      value={newVessel.vesselName}
+                      onChange={(e) => setNewVessel({ ...newVessel, vesselName: e.target.value })}
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Vessel Number
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                      placeholder="Enter vessel number"
+                      value={newVessel.vesselNo}
+                      onChange={(e) => setNewVessel({ ...newVessel, vesselNo: e.target.value })}
+                    />
+                  </div>
                 </div>
               </div>
-              <div className="flex space-x-2 pt-6">
+              
+              <div className="mt-4 flex justify-end">
                 <button
-                  onClick={handleSaveVessel}
-                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg font-semibold transition"
+                  onClick={handleAddVessel}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-5 rounded-lg shadow transition text-sm"
                 >
                   {editingId ? 'Update Vessel' : 'Add Vessel'}
                 </button>
-                <button
-                  onClick={() => {
-                    setIsFormOpen(false);
-                    setEditingId(null);
-                    setNewVessel({ vesselNo: '', vesselName: '' });
-                  }}
-                  className="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 rounded-lg font-semibold transition"
-                >
-                  Cancel
-                </button>
               </div>
             </div>
           </div>
         )}
 
-        {/* Table */}
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
-          <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
-            <h3 className="text-lg font-semibold text-gray-800">Vessel List</h3>
-            <div className="text-sm text-gray-500">
-              Showing {filteredVessels.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1}
-              {" - "}
-              {Math.min(currentPage * PAGE_SIZE, filteredVessels.length)} of {filteredVessels.length}
+        {/* Vessel Summary */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
+          <div className="flex justify-between items-center">
+            <h2 className="text-lg font-semibold text-gray-800">Vessel Summary</h2>
+            <div className="text-sm font-medium text-gray-700">
+              Total: <span className="text-green-600 font-bold">{filteredVessels.length} vessels</span>
             </div>
           </div>
+        </div>
+
+        {/* Vessels Table */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-100">
-              <thead className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
                 <tr>
-                  <th
-                    onClick={() => handleSort('vesselNo')}
-                    className="cursor-pointer px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider select-none"
-                  >
-                    Vessel Number
-                    {sortField === 'vesselNo' && (sortDirection === 'asc' ? <ChevronUp className="inline ml-1 w-3 h-3" /> : <ChevronDown className="inline ml-1 w-3 h-3" />)}
-                  </th>
-                  <th
-                    onClick={() => handleSort('vesselName')}
-                    className="cursor-pointer px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider select-none"
-                  >
-                    Vessel Name
-                    {sortField === 'vesselName' && (sortDirection === 'asc' ? <ChevronUp className="inline ml-1 w-3 h-3" /> : <ChevronDown className="inline ml-1 w-3 h-3" />)}
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider select-none">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wider select-none">
-                    Actions
-                  </th>
+                  {[
+                    { label: 'ID', key: 'id' },
+                    { label: 'Vessel Number', key: 'vesselNo' },
+                    { label: 'Vessel Name', key: 'vesselName' },
+                    { label: 'Created', key: 'createdAt' },
+                    { label: 'Actions', key: null },
+                  ].map(({ label, key }) => (
+                    <th
+                      key={label}
+                      className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                      onClick={() => key && handleSort(key)}
+                    >
+                      <div className="flex items-center">
+                        {label}
+                        {key && renderSortIcon(key)}
+                      </div>
+                    </th>
+                  ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
-                {displayVessels.length === 0 ? (
+              <tbody className="bg-white divide-y divide-gray-200">
+                {currentVessels.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="text-center py-10 text-gray-400">
-                      No vessels found.
+                    <td colSpan={5} className="px-4 py-6 text-center text-gray-500">
+                      No vessel records found
                     </td>
                   </tr>
                 ) : (
-                  displayVessels.map((vessel) => (
-                    <tr key={vessel.id} className="hover:bg-indigo-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{vessel.vesselNo || '-'}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{vessel.vesselName || '-'}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <button
-                          onClick={() => toggleStatus(vessel.id)}
-                          className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors duration-150 ${
-                            vessel.status === 'Active'
-                              ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                              : 'bg-red-100 text-red-800 hover:bg-red-200'
-                          }`}
-                        >
-                          {vessel.status}
-                        </button>
+                  currentVessels.map((vessel) => (
+                    <tr key={vessel.id} className="hover:bg-gray-50 transition">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-indigo-600">
+                        #{vessel.id}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium space-x-3">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                        {vessel.vesselNo || 'N/A'}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                        <div className="flex items-center">
+                          <Truck className="w-4 h-4 text-indigo-600 mr-2" />
+                          {vessel.vesselName}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                        {vessel.createdAt ? new Date(vessel.createdAt).toLocaleDateString() : 'N/A'}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium flex space-x-2">
                         <button
                           onClick={() => handleEdit(vessel)}
-                          title="Edit Vessel"
                           className="text-indigo-600 hover:text-indigo-900"
+                          title="Edit"
                         >
-                          <Pencil className="w-5 h-5" />
+                          <Pencil className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDelete(vessel.id)}
-                          title="Delete Vessel"
                           className="text-red-600 hover:text-red-900"
+                          title="Delete"
                         >
-                          <Trash2 className="w-5 h-5" />
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </td>
                     </tr>
@@ -347,31 +430,39 @@ const VesselDetailsPage = () => {
               </tbody>
             </table>
           </div>
-
+          
           {/* Pagination */}
-          <div className="flex justify-between items-center px-6 py-4 bg-gradient-to-r from-gray-50 via-white to-indigo-50 border-t border-gray-100">
-            <button
-              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-              className={`px-3 py-1 rounded-lg border ${currentPage === 1
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-white text-indigo-700 hover:bg-indigo-50'}`}
-            >
-              <ChevronLeft className="w-4 h-4 inline" /> Previous
-            </button>
-            <div className="text-sm text-gray-700 font-medium">
-              Page {currentPage} of {totalPages}
+          {totalPages > 1 && (
+            <div className="flex flex-col md:flex-row justify-between items-center px-4 py-3 border-t border-gray-200 bg-gray-50">
+              <div className="text-sm text-gray-700 mb-2 md:mb-0">
+                Showing {indexOfFirstItem + 1} to{' '}
+                {Math.min(indexOfLastItem, filteredVessels.length)} of {filteredVessels.length} vessels
+              </div>
+              <div className="flex items-center">
+                <div className="flex space-x-1">
+                  <button
+                    onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                    disabled={currentPage === 1}
+                    className="p-2 rounded-md hover:bg-gray-100 disabled:opacity-50"
+                    title="Previous"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                    className="p-2 rounded-md hover:bg-gray-100 disabled:opacity-50"
+                    title="Next"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+              <div className="hidden md:block text-sm font-medium text-gray-700">
+                Total: <span className="text-green-600 font-bold">{filteredVessels.length} vessels</span>
+              </div>
             </div>
-            <button
-              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-              disabled={currentPage === totalPages || totalPages === 0}
-              className={`px-3 py-1 rounded-lg border ${currentPage === totalPages || totalPages === 0
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-white text-indigo-700 hover:bg-indigo-50'}`}
-            >
-              Next <ChevronRight className="w-4 h-4 inline" />
-            </button>
-          </div>
+          )}
         </div>
       </div>
     </div>

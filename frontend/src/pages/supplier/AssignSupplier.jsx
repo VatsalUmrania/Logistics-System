@@ -1096,7 +1096,27 @@ const AddSupplierPage = () => {
       setJobNumbers([]);
     }
   };
-
+  const toggleForm = () => {
+    if (isAddingInvoice) {
+      resetForm();
+      setIsAddingInvoice(false);
+    } else {
+      setIsAddingInvoice(true);
+      setEditingInvoiceId(null);
+      // Initialize a fresh form state
+      setNewInvoice({
+        selectedSupplierId: '',
+        supplierInvoiceNo: '',
+        jobNumber: '',
+        invoiceDate: new Date().toISOString().split('T')[0],
+        vatRate: 0.15,
+        totalAmount: 0,
+        vatAmount: 0,
+        billTotalWithVAT: 0,
+        items: [{ purpose: '', item: '', quantity: 1, amount: 0 }]
+      });
+    }
+  };
   // Show popup for success/error
   const showPopup = (type, message) => {
     if (type === 'success') {
@@ -1416,20 +1436,16 @@ const AddSupplierPage = () => {
             <p className="text-gray-600 mt-2">Manage and track all supplier invoice assignments</p>
           </div>
           <div className="mt-4 md:mt-0 flex flex-wrap gap-3">
-            <button
-              onClick={() => {
-                setIsAddingInvoice(!isAddingInvoice);
-                setEditingInvoiceId(null);
-                resetForm();
-              }}
-              className={`px-4 py-2 text-white rounded-lg font-medium transition-all flex items-center shadow-md
-                ${isAddingInvoice 
-                  ? 'bg-red-600 hover:bg-red-700' 
-                  : 'bg-indigo-600 hover:bg-indigo-700'}`}
-            >
-              {isAddingInvoice ? <X className="w-5 h-5 mr-2" /> : <Plus className="w-5 h-5 mr-2" />}
-              {isAddingInvoice ? 'Cancel' : 'Add Assignment'}
-            </button>
+          <button
+  onClick={toggleForm}
+  className={`px-4 py-2 text-white rounded-lg font-medium transition-all flex items-center shadow-md
+    ${isAddingInvoice 
+      ? 'bg-red-600 hover:bg-red-700' 
+      : 'bg-indigo-600 hover:bg-indigo-700'}`}
+>
+  {isAddingInvoice ? <X className="w-5 h-5 mr-2" /> : <Plus className="w-5 h-5 mr-2" />}
+  {isAddingInvoice ? 'Cancel' : 'Add Assignment'}
+</button>
           </div>
         </div>
 

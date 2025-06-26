@@ -35,7 +35,7 @@ const Footer = () => {
           <div>
             <h3 className="text-xl font-bold text-indigo-700 mb-3">Quick Links</h3>
             <ul className="space-y-2">
-              <li><a href="#" className="text-gray-600 hover:text-indigo-700 transition">Home</a></li>
+              <li><a href="/home" className="text-gray-600 hover:text-indigo-700 transition">Home</a></li>
               <li><a href="#" className="text-gray-600 hover:text-indigo-700 transition">Services</a></li>
               <li><a href="#" className="text-gray-600 hover:text-indigo-700 transition">About</a></li>
               <li><a href="#" className="text-gray-600 hover:text-indigo-700 transition">Contact</a></li>
@@ -69,17 +69,17 @@ const Footer = () => {
             <div>
               <p className="text-sm font-semibold text-gray-700 mb-2">Developers</p>
               <div className="flex flex-col space-y-1">
-                <a href="https://github.com/developer1" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-gray-600 hover:text-indigo-700 transition">
-                  <Github size={16} className="text-indigo-500" />
-                  <span>Developer 1</span>
+                <a href="https://github.com/vatsalumrania" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-gray-600 hover:text-indigo-700 transition">
+                  <Github size={20} className="text-indigo-500" />
+                  <span>Vatsal Umrania</span>
                 </a>
-                <a href="https://github.com/developer2" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-gray-600 hover:text-indigo-700 transition">
-                  <Github size={16} className="text-indigo-500" />
-                  <span>Developer 2</span>
+                <a href="https://github.com/AdityaNair-jpg" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-gray-600 hover:text-indigo-700 transition">
+                  <Github size={20} className="text-indigo-500" />
+                  <span>Aditya Nair</span>
                 </a>
                 <a href="https://github.com/developer3" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-gray-600 hover:text-indigo-700 transition">
-                  <Github size={16} className="text-indigo-500" />
-                  <span>Developer 3</span>
+                  <Github size={20} className="text-indigo-500" />
+                  <span>Raina Mendonca</span>
                 </a>
               </div>
             </div>

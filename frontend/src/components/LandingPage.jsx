@@ -1,462 +1,537 @@
-// import React from "react";
-// import { Link } from "react-router-dom";
-// import logo from '../assets/logo_lms-removebg-preview.jpg';
-
-// const LandingPage = () => {
-//   return (
-//     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
-//       {/* Header - Modern Frosted Glass Effect */}
-//       <header className="fixed w-full backdrop-blur-sm bg-white/75 shadow-sm z-50">
-//         <nav className="container mx-auto px-6 py-4">
-//           <div className="flex items-center justify-between">
-//             <div className="flex items-center space-x-3">
-//               <div className="relative">
-//                 <div className="absolute inset-0 bg-blue-600 rounded-lg transform rotate-6 transition-transform group-hover:rotate-12"></div>
-//                 {/* <svg className="w-10 h-10 text-white relative" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-//                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-//                     d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-//                 </svg> */}
-                
-//               </div>
-//               <img src={logo} alt="logo" className="w-11 h-11" />
-//               <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-//                 Logistics Management System
-//               </span>
-//             </div>
-            
-//             <div className="hidden md:flex items-center space-x-8">
-//               <NavLink href="#features">Features</NavLink>
-//               <NavLink href="#how-it-works">How it Works</NavLink>
-//               <NavLink href="#tech-stack">Tech Stack</NavLink>
-//               <Link
-//   to="/login"
-//   className="px-6 py-2.5 text-blue-600 border-2 border-blue-600/20 rounded-full hover:border-blue-600 transition-colors duration-300"
-// >
-//   Login
-// </Link>
-
-//               <button className="px-6 py-2.5 text-white bg-gradient-to-r from-blue-600 to-cyan-600 rounded-full hover:shadow-lg hover:shadow-blue-600/20 transition-all duration-300">
-//                 Get Started
-//               </button>
-//             </div>
-//           </div>
-//         </nav>
-//       </header>
-
-//       {/* Hero Section - With Animated Elements */}
-//       <section className="pt-32 pb-20 relative overflow-hidden">
-//         <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
-//         <div className="container mx-auto px-6">
-//           <div className="max-w-4xl mx-auto text-center relative">
-//             {/* Decorative Elements */}
-//             <div className="absolute -top-20 -left-20 w-40 h-40 bg-blue-600/10 rounded-full blur-3xl"></div>
-//             <div className="absolute -bottom-20 -right-20 w-40 h-40 bg-cyan-600/10 rounded-full blur-3xl"></div>
-            
-//             <h1 className="text-5xl md:text-7xl font-bold mb-8 bg-gradient-to-r from-gray-900 via-blue-900 to-gray-900 bg-clip-text text-transparent">
-//               Streamline Your 
-//               <span className="block text-blue-600">Logistics Operations</span>
-//             </h1>
-            
-//             <p className="text-xl text-gray-600 mb-12 leading-relaxed">
-//               Revolutionize your supply chain with intelligent automation, real-time tracking, 
-//               and data-driven insights. Experience logistics management reimagined.
-//             </p>
-            
-//             <div className="flex flex-col md:flex-row justify-center items-center space-y-4 md:space-y-0 md:space-x-6">
-//               <button className="w-full md:w-auto px-8 py-4 text-white bg-gradient-to-r from-blue-600 to-cyan-600 rounded-full hover:shadow-lg hover:shadow-blue-600/20 transition-all duration-300 group">
-//                 <span className="flex items-center justify-center space-x-2">
-//                   <span>Start Free Trial</span>
-//                   <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-//                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-//                   </svg>
-//                 </span>
-//               </button>
-              
-//               <button className="w-full md:w-auto px-8 py-4 text-gray-700 bg-white border-2 border-gray-200 rounded-full hover:border-blue-600/20 transition-colors duration-300 flex items-center justify-center space-x-2">
-//                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-//                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-//                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-//                 </svg>
-//                 <span>Watch Demo</span>
-//               </button>
-//             </div>
-
-//             {/* Stats Section */}
-//             <div className="mt-20 grid grid-cols-1 md:grid-cols-3 gap-8">
-//               <StatCard number="99.9%" label="Uptime" />
-//               <StatCard number="50K+" label="Deliveries Tracked" />
-//               <StatCard number="30%" label="Cost Reduction" />
-//             </div>
-//           </div>
-//         </div>
-//       </section>
-
-//       {/* Features Section - Modern Cards with Hover Effects */}
-//       <section id="features" className="py-20 bg-white">
-//         <div className="container mx-auto px-6">
-//           <SectionHeader 
-//             title="Powerful Features"
-//             subtitle="Everything you need to manage your logistics operations efficiently"
-//           />
-          
-//           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mt-16">
-//             <FeatureCard
-//               icon={
-//                 <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-//                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-//                     d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-//                 </svg>
-//               }
-//               title="Inventory Management"
-//               description="Real-time tracking of stock levels with automated reordering and shortage predictions."
-//             />
-//             <FeatureCard
-//               icon={
-//                 <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-//                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-//                     d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-//                 </svg>
-//               }
-//               title="Route Optimization"
-//               description="AI-powered route planning that considers traffic, weather, and vehicle capacity."
-//             />
-//             <FeatureCard
-//               icon={
-//                 <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-//                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-//                     d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-//                 </svg>
-//               }
-//               title="Real-time Security"
-//               description="End-to-end encryption and real-time monitoring of sensitive shipments."
-//             />
-//           </div>
-//         </div>
-//       </section>
-
-//       {/* How It Works - Interactive Timeline */}
-//       <section id="how-it-works" className="py-20 bg-slate-50">
-//         <div className="container mx-auto px-6">
-//           <SectionHeader 
-//             title="How It Works"
-//             subtitle="Get started with LogiFlow in three simple steps"
-//           />
-          
-//           <div className="max-w-4xl mx-auto mt-16">
-//             <div className="space-y-12">
-//               <TimelineItem 
-//                 number="01"
-//                 title="Set Up Your Account"
-//                 description="Quick onboarding process with guided setup and customization options."
-//               />
-//               <TimelineItem 
-//                 number="02"
-//                 title="Import Your Data"
-//                 description="Seamless data migration with support for multiple file formats and APIs."
-//               />
-//               <TimelineItem 
-//                 number="03"
-//                 title="Start Optimizing"
-//                 description="Immediate access to analytics and optimization recommendations."
-//               />
-//             </div>
-//           </div>
-//         </div>
-//       </section>
-
-//       {/* Custom Components */}
-//       {/* You can place these components at the bottom of the file */}
-//     </div>
-//   );
-// };
-
-// // Helper Components
-// const NavLink = ({ href, children }) => (
-//   <a 
-//     href={href} 
-//     className="text-gray-600 hover:text-blue-600 transition-colors duration-300"
-//   >
-//     {children}
-//   </a>
-// );
-
-// const StatCard = ({ number, label }) => (
-//   <div className="p-6 bg-white/50 backdrop-blur-sm rounded-2xl border border-gray-100 hover:border-blue-600/20 transition-colors duration-300">
-//     <div className="text-3xl font-bold text-blue-600 mb-1">{number}</div>
-//     <div className="text-gray-600">{label}</div>
-//   </div>
-// );
-
-// const SectionHeader = ({ title, subtitle }) => (
-//   <div className="text-center max-w-2xl mx-auto">
-//     <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-gray-900 to-gray-800 bg-clip-text text-transparent">
-//       {title}
-//     </h2>
-//     <p className="text-xl text-gray-600">{subtitle}</p>
-//   </div>
-// );
-
-// const FeatureCard = ({ icon, title, description }) => (
-//   <div className="p-6 bg-white rounded-2xl border border-gray-100 hover:border-blue-600/20 shadow-sm hover:shadow-md transition-all duration-300 group">
-//     <div className="w-12 h-12 bg-blue-600/10 rounded-xl flex items-center justify-center text-blue-600 mb-6 group-hover:scale-110 transition-transform">
-//       {icon}
-//     </div>
-//     <h3 className="text-xl font-semibold text-gray-900 mb-3">{title}</h3>
-//     <p className="text-gray-600 leading-relaxed">{description}</p>
-//   </div>
-// );
-
-// const TimelineItem = ({ number, title, description }) => (
-//   <div className="flex items-start space-x-6">
-//     <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-blue-600 to-cyan-600 text-white rounded-full flex items-center justify-center font-bold text-lg">
-//       {number}
-//     </div>
-//     <div className="flex-grow pt-1">
-//       <h3 className="text-xl font-semibold text-gray-900 mb-2">{title}</h3>
-//       <p className="text-gray-600">{description}</p>
-//     </div>
-//   </div>
-// );
-
-// export default LandingPage;
-
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { 
+  Truck, Users, FileText, Database, CreditCard, FileCheck, 
+  ArrowRight, CheckCircle, Star, Shield, Clock, Globe,
+  Menu, X, Phone, Mail, MapPin, ChevronRight, Play,
+  BarChart3, TrendingUp, Award, Zap
+} from 'lucide-react';
 import logo from '../assets/logo_lms-removebg-preview.jpg';
 
 const LandingPage = () => {
-  const [menuOpen, setMenuOpen] = useState(false);
+  const navigate = useNavigate();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [activeFeature, setActiveFeature] = useState(0);
+
+  // Auto-rotate features
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveFeature((prev) => (prev + 1) % features.length);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Navigation handler
+  const handleGetStarted = () => {
+    navigate('/login');
+  };
+
+  const handleLearnMore = () => {
+    document.getElementById('features').scrollIntoView({ behavior: 'smooth' });
+  };
+
+  // Features data
+  const features = [
+    {
+      icon: <Truck className="w-12 h-12 text-indigo-600" />,
+      title: "Supplier Management",
+      description: "Comprehensive supplier relationship management with invoice tracking, payment processing, and performance analytics.",
+      benefits: ["Automated invoicing", "Payment tracking", "Supplier analytics", "Performance monitoring"]
+    },
+    {
+      icon: <Database className="w-12 h-12 text-indigo-600" />,
+      title: "Master Data Management",
+      description: "Centralized data management for banks, clients, commodities, vessels, and containers with real-time synchronization.",
+      benefits: ["Centralized database", "Real-time sync", "Data integrity", "Easy maintenance"]
+    },
+    {
+      icon: <FileCheck className="w-12 h-12 text-indigo-600" />,
+      title: "Custom Clearance",
+      description: "Streamlined clearance operations with automated documentation, job tracking, and expense management.",
+      benefits: ["Automated docs", "Job tracking", "Expense control", "Compliance monitoring"]
+    },
+    {
+      icon: <CreditCard className="w-12 h-12 text-indigo-600" />,
+      title: "Payment Processing",
+      description: "Secure payment management with multi-currency support, automated reconciliation, and detailed reporting.",
+      benefits: ["Multi-currency", "Auto reconciliation", "Secure processing", "Detailed reports"]
+    },
+    {
+      icon: <FileText className="w-12 h-12 text-indigo-600" />,
+      title: "Advanced Reporting",
+      description: "Comprehensive reporting suite with real-time analytics, custom dashboards, and automated insights.",
+      benefits: ["Real-time analytics", "Custom dashboards", "Automated insights", "Export capabilities"]
+    },
+    {
+      icon: <Users className="w-12 h-12 text-indigo-600" />,
+      title: "Account Management",
+      description: "Complete financial management with ledgers, vouchers, balance sheets, and audit trails.",
+      benefits: ["Complete ledgers", "Audit trails", "Balance sheets", "Financial control"]
+    }
+  ];
+
+  // Statistics
+  const stats = [
+    { number: "500+", label: "Active Clients", icon: <Users className="w-8 h-8" /> },
+    { number: "10K+", label: "Operations Completed", icon: <CheckCircle className="w-8 h-8" /> },
+    { number: "99.9%", label: "System Uptime", icon: <Shield className="w-8 h-8" /> },
+    { number: "24/7", label: "Support Available", icon: <Clock className="w-8 h-8" /> }
+  ];
+
+  // Testimonials
+  const testimonials = [
+    {
+      name: "Ahmed Al-Rashid",
+      role: "Operations Manager",
+      company: "Gulf Logistics Co.",
+      content: "This system has revolutionized our logistics operations. The automation features have saved us countless hours and improved our accuracy significantly.",
+      rating: 5
+    },
+    {
+      name: "Sarah Johnson",
+      role: "Finance Director",
+      company: "International Freight Solutions",
+      content: "The financial management and reporting capabilities are outstanding. We now have complete visibility into our operations and costs.",
+      rating: 5
+    },
+    {
+      name: "Mohammed Hassan",
+      role: "CEO",
+      company: "Red Sea Shipping",
+      content: "Implementation was smooth and the support team is exceptional. Our efficiency has increased by 40% since adopting this system.",
+      rating: 5
+    }
+  ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
-      {/* Header - Modern Frosted Glass Effect */}
-      <header className="fixed w-full backdrop-blur-sm bg-white/75 shadow-sm z-50">
-        <nav className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="relative">
-                <div className="absolute inset-0 bg-blue-600 rounded-lg transform rotate-6 transition-transform group-hover:rotate-12"></div>
-              </div>
-              <img src={logo} alt="logo" className="w-10 h-10 sm:w-12 sm:h-12" />
-              <span className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-                Logistics Management System
-              </span>
+    <div className="min-h-screen bg-white">
+      {/* Navigation */}
+      <nav className="fixed top-0 w-full bg-white/95 backdrop-blur-sm border-b border-gray-200 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            {/* Logo */}
+            <div className="flex items-center">
+              <img src={logo} alt="LMS Logo" className="w-8 h-8 mr-3" />
+              <span className="text-xl font-bold text-gray-800">Logistics Management System</span>
             </div>
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-8">
-              <NavLink href="#features">Features</NavLink>
-              <NavLink href="#how-it-works">How it Works</NavLink>
-              <NavLink href="#tech-stack">Tech Stack</NavLink>
-              <Link
-                to="/login"
-                className="px-6 py-2.5 text-blue-600 border-2 border-blue-600/20 rounded-full hover:border-blue-600 transition-colors duration-300"
+              <a href="#features" className="text-gray-600 hover:text-indigo-600 transition-colors">Features</a>
+              <a href="#benefits" className="text-gray-600 hover:text-indigo-600 transition-colors">Benefits</a>
+              <a href="#testimonials" className="text-gray-600 hover:text-indigo-600 transition-colors">Testimonials</a>
+              <a href="#contact" className="text-gray-600 hover:text-indigo-600 transition-colors">Contact</a>
+              <button
+                onClick={handleGetStarted}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
               >
-                Login
-              </Link>
-              <button className="px-6 py-2.5 text-white bg-gradient-to-r from-blue-600 to-cyan-600 rounded-full hover:shadow-lg hover:shadow-blue-600/20 transition-all duration-300">
                 Get Started
               </button>
             </div>
 
-            {/* Mobile Menu Button */}
-            <div className="md:hidden flex items-center">
-              <button onClick={() => setMenuOpen(!menuOpen)} className="text-blue-600 text-2xl">
-                ☰
+            {/* Mobile menu button */}
+            <div className="md:hidden">
+              <button
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="text-gray-600 hover:text-gray-800"
+              >
+                {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
               </button>
             </div>
           </div>
-        </nav>
-      </header>
 
-      {/* Mobile Menu - Slide-in */}
-      {menuOpen && (
-        <div className="md:hidden fixed top-0 left-0 w-full h-full bg-black/50 z-40">
-          <div className="bg-white p-6">
-            <div className="flex justify-end">
-              <button onClick={() => setMenuOpen(false)} className="text-2xl text-blue-600">×</button>
+          {/* Mobile Navigation */}
+          {isMenuOpen && (
+            <div className="md:hidden border-t border-gray-200 py-4">
+              <div className="flex flex-col space-y-4">
+                <a href="#features" className="text-gray-600 hover:text-indigo-600 transition-colors">Features</a>
+                <a href="#benefits" className="text-gray-600 hover:text-indigo-600 transition-colors">Benefits</a>
+                <a href="#testimonials" className="text-gray-600 hover:text-indigo-600 transition-colors">Testimonials</a>
+                <a href="#contact" className="text-gray-600 hover:text-indigo-600 transition-colors">Contact</a>
+                <button
+                  onClick={handleGetStarted}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg font-medium transition-colors w-full"
+                >
+                  Get Started
+                </button>
+              </div>
             </div>
-            <div className="flex flex-col space-y-4 mt-6">
-              <NavLink href="#features">Features</NavLink>
-              <NavLink href="#how-it-works">How it Works</NavLink>
-              <NavLink href="#tech-stack">Tech Stack</NavLink>
-              <Link
-                to="/login"
-                className="px-6 py-2.5 text-blue-600 border-2 border-blue-600/20 rounded-full hover:border-blue-600 transition-colors duration-300"
-              >
-                Login
-              </Link>
-              <button className="px-6 py-2.5 text-white bg-gradient-to-r from-blue-600 to-cyan-600 rounded-full hover:shadow-lg hover:shadow-blue-600/20 transition-all duration-300">
-                Get Started
-              </button>
+          )}
+        </div>
+      </nav>
+
+      {/* Hero Section */}
+      <section className="pt-24 pb-16 bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            {/* Hero Content */}
+            <div>
+              <div className="inline-flex items-center bg-indigo-100 text-indigo-800 px-4 py-2 rounded-full text-sm font-medium mb-6">
+                <Zap className="w-4 h-4 mr-2" />
+                Next-Generation Logistics Platform
+              </div>
+              
+              <h1 className="text-4xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight">
+                Streamline Your
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600"> Logistics</span>
+                <br />Operations
+              </h1>
+              
+              <p className="text-xl text-gray-600 mb-8 leading-relaxed">
+                Comprehensive logistics management system designed to optimize your supply chain, 
+                reduce costs, and improve operational efficiency with cutting-edge technology.
+              </p>
+              
+              <div className="flex flex-col sm:flex-row gap-4">
+                <button
+                  onClick={handleGetStarted}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-lg font-semibold text-lg flex items-center justify-center transition-all transform hover:scale-105 shadow-lg"
+                >
+                  Start Free Trial
+                  <ArrowRight className="w-5 h-5 ml-2" />
+                </button>
+                <button
+                  onClick={handleLearnMore}
+                  className="border-2 border-gray-300 hover:border-indigo-600 text-gray-700 hover:text-indigo-600 px-8 py-4 rounded-lg font-semibold text-lg flex items-center justify-center transition-all"
+                >
+                  <Play className="w-5 h-5 mr-2" />
+                  Watch Demo
+                </button>
+              </div>
+
+              {/* Trust Indicators */}
+              <div className="mt-12 flex items-center space-x-8">
+                <div className="flex items-center">
+                  <Shield className="w-5 h-5 text-green-500 mr-2" />
+                  <span className="text-sm text-gray-600">SOC 2 Compliant</span>
+                </div>
+                <div className="flex items-center">
+                  <Award className="w-5 h-5 text-yellow-500 mr-2" />
+                  <span className="text-sm text-gray-600">Industry Leader</span>
+                </div>
+                <div className="flex items-center">
+                  <Globe className="w-5 h-5 text-blue-500 mr-2" />
+                  <span className="text-sm text-gray-600">Global Support</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Hero Visual */}
+            <div className="relative">
+              <div className="bg-white rounded-2xl shadow-2xl p-8 transform rotate-3 hover:rotate-0 transition-transform duration-500">
+                <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg p-6 mb-6">
+                  <div className="flex items-center justify-between text-white">
+                    <div>
+                      <h3 className="text-lg font-semibold">Dashboard Overview</h3>
+                      <p className="text-indigo-200">Real-time insights</p>
+                    </div>
+                    <BarChart3 className="w-8 h-8" />
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  {stats.slice(0, 3).map((stat, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center">
+                        <div className="text-indigo-600 mr-3">{stat.icon}</div>
+                        <span className="text-gray-700">{stat.label}</span>
+                      </div>
+                      <span className="font-bold text-indigo-600">{stat.number}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Floating Elements */}
+              <div className="absolute -top-4 -right-4 bg-yellow-400 text-yellow-900 px-4 py-2 rounded-full text-sm font-medium animate-bounce">
+                ✨ New Features
+              </div>
+              <div className="absolute -bottom-4 -left-4 bg-green-400 text-green-900 px-4 py-2 rounded-full text-sm font-medium">
+                🚀 Fast Setup
+              </div>
             </div>
           </div>
         </div>
-      )}
+      </section>
 
-      {/* Hero Section */}
-      <section className="pt-32 pb-20 relative overflow-hidden">
-        <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
-        <div className="container mx-auto px-6">
-          <div className="max-w-4xl mx-auto text-center relative">
-            <div className="absolute -top-20 -left-20 w-40 h-40 bg-blue-600/10 rounded-full blur-3xl"></div>
-            <div className="absolute -bottom-20 -right-20 w-40 h-40 bg-cyan-600/10 rounded-full blur-3xl"></div>
-            
-            <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold mb-8 bg-gradient-to-r from-gray-900 via-blue-900 to-gray-900 bg-clip-text text-transparent">
-              Streamline Your 
-              <span className="block text-blue-600">Logistics Operations</span>
-            </h1>
-            
-            <p className="text-lg sm:text-xl md:text-2xl text-gray-600 mb-12 leading-relaxed">
-              Revolutionize your supply chain with intelligent automation, real-time tracking, 
-              and data-driven insights. Experience logistics management reimagined.
-            </p>
-            
-            <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-6">
-              <button className="w-full sm:w-auto px-8 py-4 text-white bg-gradient-to-r from-blue-600 to-cyan-600 rounded-full hover:shadow-lg hover:shadow-blue-600/20 transition-all duration-300 group">
-                <span className="flex items-center justify-center space-x-2">
-                  <span>Start Free Trial</span>
-                  <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                  </svg>
-                </span>
-              </button>
-              
-              <button className="w-full sm:w-auto px-8 py-4 text-gray-700 bg-white border-2 border-gray-200 rounded-full hover:border-blue-600/20 transition-colors duration-300 flex items-center justify-center space-x-2">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span>Watch Demo</span>
-              </button>
-            </div>
+      {/* Stats Section */}
+      <section className="py-16 bg-gray-900">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+            {stats.map((stat, index) => (
+              <div key={index} className="text-center">
+                <div className="flex justify-center mb-4 text-indigo-400">
+                  {stat.icon}
+                </div>
+                <div className="text-3xl lg:text-4xl font-bold text-white mb-2">{stat.number}</div>
+                <div className="text-gray-400">{stat.label}</div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* Features Section */}
       <section id="features" className="py-20 bg-white">
-        <div className="container mx-auto px-6">
-          <SectionHeader 
-            title="Powerful Features"
-            subtitle="Everything you need to manage your logistics operations efficiently"
-          />
-          
-          <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-16">
-            <FeatureCard
-              icon={
-                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                </svg>
-              }
-              title="Real-time Tracking"
-              description="Monitor your shipments in real time with location-based tracking and notifications."
-            />
-            <FeatureCard
-              icon={
-                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                    d="M5 13l4 4L19 7" />
-                </svg>
-              }
-              title="Real-time Security"
-              description="End-to-end encryption and real-time monitoring of sensitive shipments."
-            />
-            <FeatureCard
-              icon={
-                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                    d="M12 9v12m0 0L5 15m7 6l7-6" />
-                </svg>
-              }
-              title="Route Optimization"
-              description="Intelligent route recommendations to minimize costs and delivery times."
-            />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl lg:text-5xl font-bold text-gray-900 mb-6">
+              Powerful Features for
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600"> Modern Logistics</span>
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Everything you need to manage your logistics operations efficiently, from supplier management to financial reporting.
+            </p>
           </div>
-        </div>
-      </section>
 
-      {/* How It Works - Interactive Timeline */}
-      <section id="how-it-works" className="py-20 bg-slate-50">
-        <div className="container mx-auto px-6">
-          <SectionHeader 
-            title="How It Works"
-            subtitle="Get started with LogiFlow in three simple steps"
-          />
-          
-          <div className="max-w-4xl mx-auto mt-16">
-            <div className="space-y-12">
-              <TimelineItem 
-                number="01"
-                title="Set Up Your Account"
-                description="Quick onboarding process with guided setup and customization options."
-              />
-              <TimelineItem 
-                number="02"
-                title="Import Your Data"
-                description="Seamless data migration with support for multiple file formats and APIs."
-              />
-              <TimelineItem 
-                number="03"
-                title="Start Optimizing"
-                description="Immediate access to analytics and optimization recommendations."
-              />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            {/* Feature Display */}
+            <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl p-8">
+              <div className="mb-6">{features[activeFeature].icon}</div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                {features[activeFeature].title}
+              </h3>
+              <p className="text-gray-600 mb-6 leading-relaxed">
+                {features[activeFeature].description}
+              </p>
+              <div className="grid grid-cols-2 gap-4">
+                {features[activeFeature].benefits.map((benefit, index) => (
+                  <div key={index} className="flex items-center">
+                    <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
+                    <span className="text-sm text-gray-700">{benefit}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Feature Navigation */}
+            <div className="space-y-4">
+              {features.map((feature, index) => (
+                <div
+                  key={index}
+                  className={`p-6 rounded-xl cursor-pointer transition-all duration-300 ${
+                    activeFeature === index
+                      ? 'bg-indigo-600 text-white shadow-lg transform scale-105'
+                      : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
+                  }`}
+                  onClick={() => setActiveFeature(index)}
+                >
+                  <div className="flex items-center">
+                    <div className={`mr-4 ${activeFeature === index ? 'text-white' : 'text-indigo-600'}`}>
+                      {feature.icon}
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-lg">{feature.title}</h4>
+                      <p className={`text-sm ${activeFeature === index ? 'text-indigo-100' : 'text-gray-500'}`}>
+                        {feature.description.substring(0, 60)}...
+                      </p>
+                    </div>
+                    <ChevronRight className={`w-5 h-5 ml-auto ${activeFeature === index ? 'text-white' : 'text-gray-400'}`} />
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
       </section>
+
+      {/* Benefits Section */}
+      <section id="benefits" className="py-20 bg-gradient-to-br from-gray-50 to-indigo-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl lg:text-5xl font-bold text-gray-900 mb-6">
+              Why Choose Our Platform?
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Join thousands of logistics professionals who trust our platform to streamline their operations.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[
+              {
+                icon: <TrendingUp className="w-8 h-8 text-green-600" />,
+                title: "Increase Efficiency",
+                description: "Automate routine tasks and reduce manual work by up to 70% with our intelligent automation features.",
+                color: "green"
+              },
+              {
+                icon: <Shield className="w-8 h-8 text-blue-600" />,
+                title: "Enhanced Security",
+                description: "Enterprise-grade security with end-to-end encryption, role-based access, and audit trails.",
+                color: "blue"
+              },
+              {
+                icon: <BarChart3 className="w-8 h-8 text-purple-600" />,
+                title: "Real-time Analytics",
+                description: "Make data-driven decisions with comprehensive dashboards and real-time reporting capabilities.",
+                color: "purple"
+              },
+              {
+                icon: <Globe className="w-8 h-8 text-indigo-600" />,
+                title: "Global Scalability",
+                description: "Scale your operations globally with multi-currency, multi-language, and multi-timezone support.",
+                color: "indigo"
+              },
+              {
+                icon: <Clock className="w-8 h-8 text-orange-600" />,
+                title: "24/7 Support",
+                description: "Round-the-clock technical support and dedicated account management for enterprise clients.",
+                color: "orange"
+              },
+              {
+                icon: <Zap className="w-8 h-8 text-yellow-600" />,
+                title: "Quick Implementation",
+                description: "Get up and running in days, not months, with our streamlined onboarding process.",
+                color: "yellow"
+              }
+            ].map((benefit, index) => (
+              <div key={index} className="bg-white rounded-xl p-8 shadow-lg hover:shadow-xl transition-shadow">
+                <div className={`bg-${benefit.color}-100 w-16 h-16 rounded-lg flex items-center justify-center mb-6`}>
+                  {benefit.icon}
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-4">{benefit.title}</h3>
+                <p className="text-gray-600 leading-relaxed">{benefit.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section id="testimonials" className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl lg:text-5xl font-bold text-gray-900 mb-6">
+              Trusted by Industry Leaders
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              See what our clients say about their experience with our logistics management platform.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {testimonials.map((testimonial, index) => (
+              <div key={index} className="bg-gradient-to-br from-gray-50 to-indigo-50 rounded-xl p-8 shadow-lg">
+                <div className="flex items-center mb-4">
+                  {[...Array(testimonial.rating)].map((_, i) => (
+                    <Star key={i} className="w-5 h-5 text-yellow-400 fill-current" />
+                  ))}
+                </div>
+                <p className="text-gray-700 mb-6 italic leading-relaxed">
+                  "{testimonial.content}"
+                </p>
+                <div className="flex items-center">
+                  <div className="w-12 h-12 bg-indigo-600 rounded-full flex items-center justify-center text-white font-bold mr-4">
+                    {testimonial.name.charAt(0)}
+                  </div>
+                  <div>
+                    <div className="font-semibold text-gray-900">{testimonial.name}</div>
+                    <div className="text-sm text-gray-600">{testimonial.role}</div>
+                    <div className="text-sm text-indigo-600">{testimonial.company}</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-20 bg-gradient-to-r from-indigo-600 to-purple-600">
+        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl lg:text-5xl font-bold text-white mb-6">
+            Ready to Transform Your Logistics?
+          </h2>
+          <p className="text-xl text-indigo-100 mb-8 leading-relaxed">
+            Join thousands of businesses already using our platform to streamline their operations and reduce costs.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <button
+              onClick={handleGetStarted}
+              className="bg-white text-indigo-600 hover:bg-gray-100 px-8 py-4 rounded-lg font-semibold text-lg flex items-center justify-center transition-all transform hover:scale-105 shadow-lg"
+            >
+              Start Your Free Trial
+              <ArrowRight className="w-5 h-5 ml-2" />
+            </button>
+            <button className="border-2 border-white text-white hover:bg-white hover:text-indigo-600 px-8 py-4 rounded-lg font-semibold text-lg transition-all">
+              Schedule Demo
+            </button>
+          </div>
+          <p className="text-indigo-200 text-sm mt-6">
+            No credit card required • 30-day free trial • Cancel anytime
+          </p>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer id="contact" className="bg-gray-900 text-white py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            {/* Company Info */}
+            <div className="col-span-1 md:col-span-2">
+              <div className="flex items-center mb-6">
+                <img src={logo} alt="LMS Logo" className="w-8 h-8 mr-3" />
+                <span className="text-2xl font-bold">Logistics Management System</span>
+              </div>
+              <p className="text-gray-400 mb-6 leading-relaxed">
+                The most comprehensive logistics management platform designed to optimize your supply chain operations and drive business growth.
+              </p>
+              <div className="space-y-3">
+                <div className="flex items-center">
+                  <Phone className="w-5 h-5 mr-3 text-indigo-400" />
+                  <span className="text-gray-300">+966 11 234 5678</span>
+                </div>
+                <div className="flex items-center">
+                  <Mail className="w-5 h-5 mr-3 text-indigo-400" />
+                  <span className="text-gray-300">contact@logiflow.com</span>
+                </div>
+                <div className="flex items-center">
+                  <MapPin className="w-5 h-5 mr-3 text-indigo-400" />
+                  <span className="text-gray-300">Riyadh, Saudi Arabia</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Links */}
+            <div>
+              <h3 className="text-lg font-semibold mb-6">Quick Links</h3>
+              <div className="space-y-3">
+                <a href="#features" className="block text-gray-400 hover:text-white transition-colors">Features</a>
+                <a href="#benefits" className="block text-gray-400 hover:text-white transition-colors">Benefits</a>
+                <a href="#testimonials" className="block text-gray-400 hover:text-white transition-colors">Testimonials</a>
+                <button onClick={handleGetStarted} className="block text-gray-400 hover:text-white transition-colors text-left">
+                  Get Started
+                </button>
+              </div>
+            </div>
+
+            {/* Support */}
+            <div>
+              <h3 className="text-lg font-semibold mb-6">Support</h3>
+              <div className="space-y-3">
+                <a href="#" className="block text-gray-400 hover:text-white transition-colors">Documentation</a>
+                <a href="#" className="block text-gray-400 hover:text-white transition-colors">Help Center</a>
+                <a href="#" className="block text-gray-400 hover:text-white transition-colors">API Reference</a>
+                <a href="#" className="block text-gray-400 hover:text-white transition-colors">Contact Support</a>
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t border-gray-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
+            <p className="text-gray-400 text-sm">
+              © 2025 Logistics Management System. All rights reserved.
+            </p>
+            <div className="flex space-x-6 mt-4 md:mt-0">
+              <a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">Privacy Policy</a>
+              <a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">Terms of Service</a>
+              <a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">Cookie Policy</a>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };
-
-// Helper Components
-
-const NavLink = ({ href, children }) => (
-  <a 
-    href={href} 
-    className="text-gray-600 hover:text-blue-600 transition-colors duration-300"
-  >
-    {children}
-  </a>
-);
-
-const StatCard = ({ number, label }) => (
-  <div className="p-6 bg-white/50 backdrop-blur-sm rounded-2xl border border-gray-100 hover:border-blue-600/20 transition-colors duration-300">
-    <div className="text-3xl font-bold text-blue-600 mb-1">{number}</div>
-    <div className="text-gray-600">{label}</div>
-  </div>
-);
-
-const SectionHeader = ({ title, subtitle }) => (
-  <div className="text-center max-w-2xl mx-auto">
-    <h2 className="text-3xl sm:text-4xl font-bold mb-4 bg-gradient-to-r from-gray-900 to-gray-800 bg-clip-text text-transparent">
-      {title}
-    </h2>
-    <p className="text-lg sm:text-xl text-gray-600">{subtitle}</p>
-  </div>
-);
-
-const FeatureCard = ({ icon, title, description }) => (
-  <div className="p-6 bg-white rounded-2xl border border-gray-100 hover:border-blue-600/20 shadow-sm hover:shadow-md transition-all duration-300 group">
-    <div className="w-12 h-12 bg-blue-600/10 rounded-xl flex items-center justify-center text-blue-600 mb-6 group-hover:scale-110 transition-transform">
-      {icon}
-    </div>
-    <h3 className="text-xl font-semibold text-gray-900 mb-3">{title}</h3>
-    <p className="text-gray-600 leading-relaxed">{description}</p>
-  </div>
-);
-
-const TimelineItem = ({ number, title, description }) => (
-  <div className="flex items-start space-x-6">
-    <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-blue-600 to-cyan-600 text-white rounded-full flex items-center justify-center font-bold text-lg">
-      {number}
-    </div>
-    <div className="flex-grow pt-1">
-      <h3 className="text-xl font-semibold text-gray-900 mb-2">{title}</h3>
-      <p className="text-gray-600">{description}</p>
-    </div>
-  </div>
-);
 
 export default LandingPage;

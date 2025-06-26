@@ -1,23 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import {
-  FileText, Search, Calendar, Download, ChevronLeft, ChevronRight,
+import { 
+  Calculator, Search, Printer, Calendar, ChevronLeft, ChevronRight,
   ArrowUp, ArrowDown, Loader, Check, AlertCircle as Alert
 } from 'lucide-react';
 import Select from 'react-select';
 
-const PaymentReport = () => {
+const LedgerReport = () => {
   // State management
-  const [fromDate, setFromDate] = useState('2025-05-01');
-  const [toDate, setToDate] = useState('2025-06-30');
-  const [clientName, setClientName] = useState('');
-  const [selectAllClients, setSelectAllClients] = useState(false);
-  const [payments, setPayments] = useState([]);
-  const [clients, setClients] = useState([]);
+  const [fromDate, setFromDate] = useState('2025-06-15');
+  const [toDate, setToDate] = useState('2025-06-25');
+  const [accountName, setAccountName] = useState('Container Deposits');
+  const [ledgerEntries, setLedgerEntries] = useState([]);
+  const [accounts, setAccounts] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
-  const [sortField, setSortField] = useState('payment_date');
-  const [sortDirection, setSortDirection] = useState('desc');
+  const [sortField, setSortField] = useState('date');
+  const [sortDirection, setSortDirection] = useState('asc');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -48,25 +47,76 @@ const PaymentReport = () => {
     };
   };
 
-  // Fetch clients on component mount
+  // Mock ledger data based on your image
+  const mockLedgerData = [
+    {
+      id: 1,
+      date: '2025-06-16',
+      description: 'Opening Balance',
+      voucherNo: '',
+      debit: 33000.01,
+      credit: 0
+    },
+    {
+      id: 2,
+      date: '2025-06-16',
+      description: 'CNTR DEPOSITED, 10931/06/2025, 2522706',
+      voucherNo: '1525',
+      debit: 6000.00,
+      credit: 0
+    },
+    {
+      id: 3,
+      date: '2025-06-19',
+      description: 'CNTR DEPOSITED, 10965/06/2025, 060281',
+      voucherNo: '1562',
+      debit: 3000.00,
+      credit: 0
+    },
+    {
+      id: 4,
+      date: '2025-06-19',
+      description: 'CNTR DEPOSITED, 10964/06/2025, 059397',
+      voucherNo: '1562',
+      debit: 3000.00,
+      credit: 0
+    },
+    {
+      id: 5,
+      date: '',
+      description: 'C/D.',
+      voucherNo: '',
+      debit: 0,
+      credit: 45000.01
+    }
+  ];
+
+  // Mock accounts data
+  const mockAccounts = [
+    'Container Deposits',
+    'Cash Account',
+    'Bank Account',
+    'Accounts Receivable',
+    'Accounts Payable',
+    'Office Supplies',
+    'Equipment'
+  ];
+
+  // Initialize data
   useEffect(() => {
-    const fetchClients = async () => {
-      try {
-        const res = await fetch('http://localhost:5000/api/clients/', getAuthHeaders());
-        if (!res.ok) throw new Error('Failed to fetch clients');
-        const data = await res.json();
-        setClients(data);
-      } catch (err) {
-        setError('Failed to load clients');
-      }
-    };
-    fetchClients();
+    setLedgerEntries(mockLedgerData);
+    setAccounts(mockAccounts);
   }, []);
 
-  // Search handler - Fetch payments from API
+  // Search handler
   const handleSearch = async () => {
     if (!fromDate || !toDate) {
       setError('Please select both From and To dates');
+      return;
+    }
+
+    if (!accountName) {
+      setError('Please select an account name');
       return;
     }
 
@@ -74,29 +124,23 @@ const PaymentReport = () => {
     setError('');
     
     try {
-      const res = await fetch('http://localhost:5000/api/supplier-payment/', getAuthHeaders());
-      if (!res.ok) throw new Error('Failed to fetch payments');
-      const data = await res.json();
-
-      // Filter payments based on criteria
-      let filteredPayments = data.filter(payment => {
-        const paymentDate = new Date(payment.payment_date).toISOString().split('T')[0];
-        const dateInRange = paymentDate >= fromDate && paymentDate <= toDate;
-        
-        // For now, we'll show all payments since the API doesn't have client association
-        // In a real scenario, you'd filter by client if the payment data included client info
-        return dateInRange;
-      });
-
-      setPayments(filteredPayments);
-      setSuccessMessage(`Found ${filteredPayments.length} payment record(s)`);
+      // Simulate API call
+      console.log('Generating ledger report for:', { fromDate, toDate, accountName });
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      setLedgerEntries(mockLedgerData);
+      setSuccessMessage(`Ledger report generated successfully for ${accountName}`);
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (error) {
-      setError('Failed to fetch payment data. Please try again.');
-      setPayments([]);
+      setError('Failed to generate ledger report. Please try again.');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Print handler
+  const handlePrint = () => {
+    window.print();
   };
 
   // Sort handler
@@ -118,15 +162,15 @@ const PaymentReport = () => {
       <ArrowDown className="w-3 h-3 text-indigo-600 inline" />;
   };
 
-  // Sort payments
-  const sortedPayments = [...payments].sort((a, b) => {
+  // Sort ledger entries
+  const sortedEntries = [...ledgerEntries].sort((a, b) => {
     let valA, valB;
-    if (sortField === 'payment_date') {
-      valA = new Date(a.payment_date);
-      valB = new Date(b.payment_date);
-    } else if (sortField === 'amount') {
-      valA = parseFloat(a.amount);
-      valB = parseFloat(b.amount);
+    if (sortField === 'date') {
+      valA = new Date(a.date || '1900-01-01');
+      valB = new Date(b.date || '1900-01-01');
+    } else if (sortField === 'debit' || sortField === 'credit') {
+      valA = parseFloat(a[sortField]);
+      valB = parseFloat(b[sortField]);
     } else {
       valA = a[sortField] ? a[sortField].toLowerCase() : '';
       valB = b[sortField] ? b[sortField].toLowerCase() : '';
@@ -139,27 +183,27 @@ const PaymentReport = () => {
   // Pagination
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentPayments = sortedPayments.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(sortedPayments.length / itemsPerPage);
+  const currentEntries = sortedEntries.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(sortedEntries.length / itemsPerPage);
 
-  // Calculate total amount
-  const totalAmount = payments.reduce((sum, payment) => sum + parseFloat(payment.amount), 0);
-
-  // Export handler
-  const handleExport = () => {
-    setSuccessMessage('Payment report exported successfully!');
-    setTimeout(() => setSuccessMessage(''), 3000);
+  // Calculate totals
+  const getTotalDebit = () => {
+    return ledgerEntries.reduce((sum, entry) => sum + parseFloat(entry.debit), 0);
   };
 
-  // Prepare client options for dropdown
-  const clientSelectOptions = clients.map(client => ({
-    value: client.name,
-    label: client.name
+  const getTotalCredit = () => {
+    return ledgerEntries.reduce((sum, entry) => sum + parseFloat(entry.credit), 0);
+  };
+
+  // Prepare account options for dropdown
+  const accountOptions = accounts.map(account => ({
+    value: account,
+    label: account
   }));
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [payments]);
+  }, [ledgerEntries]);
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6">
@@ -168,19 +212,18 @@ const PaymentReport = () => {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-gray-800 flex items-center">
-              <FileText className="w-8 h-8 mr-3 text-indigo-600" />
-              Payment Report
+              <Calculator className="w-8 h-8 mr-3 text-indigo-600" />
+              Ledger Report
             </h1>
-            <p className="text-gray-600 mt-2">Track and manage payment records</p>
+            <p className="text-gray-600 mt-2">Generate detailed account ledger reports</p>
           </div>
           <div className="mt-4 md:mt-0 flex flex-wrap gap-3">
             <button
-              onClick={handleExport}
-              disabled={payments.length === 0}
-              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium flex items-center shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={handlePrint}
+              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium flex items-center shadow-md"
             >
-              <Download className="w-5 h-5 mr-2" />
-              Export to Excel
+              <Printer className="w-5 h-5 mr-2" />
+              Print
             </button>
           </div>
         </div>
@@ -208,14 +251,14 @@ const PaymentReport = () => {
           <div className="bg-indigo-50 p-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-indigo-700 flex items-center">
               <Search className="w-5 h-5 mr-2" />
-              SEARCH PAYMENTS
+              SEARCH
             </h2>
           </div>
           <div className="p-4">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  From Date <span className="text-red-500">*</span>
+                  FROM_DATE <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -232,7 +275,7 @@ const PaymentReport = () => {
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  To Date <span className="text-red-500">*</span>
+                  TO_DATE <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -249,16 +292,14 @@ const PaymentReport = () => {
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Client Name
+                  ACCOUNT NAME <span className="text-red-500">*</span>
                 </label>
                 <Select
-                  options={clientSelectOptions}
-                  value={clientSelectOptions.find(option => option.value === clientName)}
-                  onChange={(selectedOption) => setClientName(selectedOption?.value || '')}
-                  placeholder="Select Client"
+                  options={accountOptions}
+                  value={accountOptions.find(option => option.value === accountName)}
+                  onChange={(selectedOption) => setAccountName(selectedOption?.value || '')}
+                  placeholder="Select Account"
                   isSearchable
-                  isClearable
-                  isDisabled={selectAllClients}
                   menuPortalTarget={document.body}
                   menuPosition="fixed"
                   styles={selectStyles}
@@ -266,26 +307,11 @@ const PaymentReport = () => {
                 />
               </div>
               
-              <div className="flex flex-col justify-end">
-                <div className="flex items-center mb-3">
-                  <input
-                    type="checkbox"
-                    id="selectAll"
-                    className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
-                    checked={selectAllClients}
-                    onChange={(e) => {
-                      setSelectAllClients(e.target.checked);
-                      if (e.target.checked) setClientName('');
-                    }}
-                  />
-                  <label htmlFor="selectAll" className="ml-2 text-sm font-medium text-gray-700">
-                    Select All Clients
-                  </label>
-                </div>
+              <div className="flex items-end">
                 <button
                   onClick={handleSearch}
                   disabled={isLoading}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-5 rounded-lg shadow transition text-sm flex items-center justify-center disabled:opacity-50"
+                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-5 rounded-lg shadow transition text-sm flex items-center justify-center disabled:opacity-50"
                 >
                   {isLoading ? (
                     <Loader className="w-4 h-4 animate-spin mr-2" />
@@ -300,48 +326,37 @@ const PaymentReport = () => {
         </div>
 
         {/* Report Header */}
-        {payments.length > 0 && (
+        {ledgerEntries.length > 0 && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
-            <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
-              <p className="text-lg font-medium text-blue-800">
-                From: {new Date(fromDate).toLocaleDateString('en-GB')} To: {new Date(toDate).toLocaleDateString('en-GB')}
-              </p>
-              <p className="text-lg font-medium text-blue-800 mt-1">
-                CLIENT NAME: {selectAllClients ? "All Clients" : clientName || "All Clients"}
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Payment Summary */}
-        {payments.length > 0 && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-lg font-semibold text-gray-800">Payment Summary</h2>
-              <div className="text-sm font-medium text-gray-700">
-                Total Amount: <span className="text-green-600 font-bold">SAR {totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+            <div className="bg-gray-800 text-white p-3 rounded-lg">
+              <div className="flex justify-between items-center">
+                <span className="font-semibold">
+                  DATE: {fromDate} TO {toDate}
+                </span>
+                <span className="font-semibold">
+                  ACCOUNT NAME: {accountName}
+                </span>
               </div>
             </div>
           </div>
         )}
 
-        {/* Payment Table */}
+        {/* Ledger Table */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+              <thead className="bg-gray-100">
                 <tr>
                   {[
-                    { label: 'ID', key: 'id' },
-                    { label: 'Voucher No', key: 'voucher_no' },
-                    { label: 'Payment Date', key: 'payment_date' },
-                    { label: 'Payment Type', key: 'payment_type_label' },
-                    { label: 'Amount (SAR)', key: 'amount' },
-                    { label: 'Remarks', key: 'remarks' },
+                    { label: 'DATE', key: 'date' },
+                    { label: 'DESCRIPTION', key: 'description' },
+                    { label: 'Voucher No', key: 'voucherNo' },
+                    { label: 'DEBIT', key: 'debit' },
+                    { label: 'CREDIT', key: 'credit' },
                   ].map(({ label, key }) => (
                     <th
                       key={label}
-                      className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                      className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider cursor-pointer border border-gray-300"
                       onClick={() => handleSort(key)}
                     >
                       <div className="flex items-center">
@@ -353,71 +368,71 @@ const PaymentReport = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {currentPayments.length === 0 ? (
+                {currentEntries.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-6 text-center text-gray-500">
+                    <td colSpan={5} className="px-4 py-6 text-center text-gray-500 border border-gray-300">
                       <div className="flex flex-col items-center justify-center">
-                        <FileText className="w-16 h-16 text-gray-300 mb-4" />
-                        <h4 className="text-lg font-medium text-gray-500">No payment data found</h4>
-                        <p className="text-gray-400 mt-2">Try adjusting your search criteria</p>
+                        <Calculator className="w-16 h-16 text-gray-300 mb-4" />
+                        <h4 className="text-lg font-medium text-gray-500">No ledger entries found</h4>
+                        <p className="text-gray-400 mt-2">Adjust your search criteria to view transactions</p>
                       </div>
                     </td>
                   </tr>
                 ) : (
-                  currentPayments.map((payment) => (
-                    <tr key={payment.id} className="hover:bg-gray-50 transition">
-                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {payment.id}
+                  currentEntries.map((entry) => (
+                    <tr key={entry.id} className="hover:bg-gray-50 transition">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 border border-gray-300">
+                        {entry.date ? new Date(entry.date).toLocaleDateString('en-GB') : ''}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                        <span className="bg-indigo-100 text-indigo-800 px-2 py-1 rounded-md text-xs font-medium">
-                          {payment.voucher_no}
-                        </span>
+                      <td className="px-4 py-3 text-sm text-gray-900 border border-gray-300">
+                        {entry.description}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                        {new Date(payment.payment_date).toLocaleDateString('en-GB')}
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 border border-gray-300 text-center">
+                        {entry.voucherNo}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          payment.payment_type_label === 'Cash' ? 'bg-green-100 text-green-800' :
-                          payment.payment_type_label === 'Bank Transfer' ? 'bg-blue-100 text-blue-800' :
-                          'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {payment.payment_type_label}
-                        </span>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 text-right border border-gray-300">
+                        {entry.debit > 0 ? entry.debit.toFixed(2) : ''}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-green-600 text-right">
-                        {parseFloat(payment.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-900 max-w-xs truncate">
-                        {payment.remarks || 'N/A'}
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 text-right border border-gray-300">
+                        {entry.credit > 0 ? entry.credit.toFixed(2) : ''}
                       </td>
                     </tr>
                   ))
                 )}
                 
                 {/* Total row */}
-                {currentPayments.length > 0 && (
+                {currentEntries.length > 0 && (
                   <tr className="bg-gray-100 font-semibold">
-                    <td colSpan="4" className="px-4 py-3 text-right text-sm text-gray-900">
-                      <strong>TOTAL AMOUNT:</strong>
+                    <td colSpan="3" className="px-4 py-3 text-left text-sm text-gray-900 border border-gray-300">
+                      <strong>TOTAL</strong>
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-green-700 text-right font-bold">
-                      SAR {totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-right font-bold border border-gray-300">
+                      {getTotalDebit().toFixed(2)}
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-900"></td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-right font-bold border border-gray-300">
+                      {getTotalCredit().toFixed(2)}
+                    </td>
                   </tr>
                 )}
               </tbody>
             </table>
           </div>
           
+          {/* Balance Footer */}
+          {ledgerEntries.length > 0 && (
+            <div className="bg-gray-50 px-4 py-3 border-t border-gray-300">
+              <div className="text-sm text-gray-700">
+                B/D-{getTotalDebit().toFixed(2)}
+              </div>
+            </div>
+          )}
+          
           {/* Pagination */}
           {totalPages > 1 && (
             <div className="flex flex-col md:flex-row justify-between items-center px-4 py-3 border-t border-gray-200 bg-gray-50">
               <div className="text-sm text-gray-700 mb-2 md:mb-0">
                 Showing {indexOfFirstItem + 1} to{' '}
-                {Math.min(indexOfLastItem, sortedPayments.length)} of {sortedPayments.length} payments
+                {Math.min(indexOfLastItem, sortedEntries.length)} of {sortedEntries.length} entries
               </div>
               <div className="flex items-center">
                 <div className="flex space-x-1">
@@ -440,7 +455,7 @@ const PaymentReport = () => {
                 </div>
               </div>
               <div className="hidden md:block text-sm font-medium text-gray-700">
-                Total: <span className="text-green-600 font-bold">SAR {totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                Balance: <span className="text-blue-600 font-bold">{(getTotalDebit() - getTotalCredit()).toFixed(2)}</span>
               </div>
             </div>
           )}
@@ -450,4 +465,4 @@ const PaymentReport = () => {
   );
 };
 
-export default PaymentReport;
+export default LedgerReport;

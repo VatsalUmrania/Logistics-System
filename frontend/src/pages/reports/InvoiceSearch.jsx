@@ -1,12 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import {
-  FileText,
-  ChevronDown,
-  Search,
-  ChevronLeft,
-  ChevronRight,
-  Calendar,
+  FileText, Search, ChevronLeft, ChevronRight, Calendar,
+  ArrowUp, ArrowDown, Loader, Check, AlertCircle as Alert
 } from 'lucide-react';
+import Select from 'react-select';
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem('authToken');
@@ -21,8 +18,12 @@ const API_URL = 'http://localhost:5000/api/invoices';
 const SUPPLIERS_URL = 'http://localhost:5000/api/suppliers';
 
 const InvoiceSearch = () => {
+  // State management
   const [invoices, setInvoices] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
+  const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
   const [searchFields, setSearchFields] = useState({
     supplier: '',
     invoiceNo: '',
@@ -30,24 +31,50 @@ const InvoiceSearch = () => {
     dateFrom: '',
     dateTo: ''
   });
-
   const [sortField, setSortField] = useState('date');
   const [sortDirection, setSortDirection] = useState('desc');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-  const [loading, setLoading] = useState(false);
+
+  // Custom styles for react-select dropdowns (matching AssignExpenses)
+  const selectStyles = {
+    control: (base) => ({
+      ...base,
+      minHeight: '42px',
+      borderRadius: '8px',
+      borderColor: '#d1d5db',
+      '&:hover': {
+        borderColor: '#9ca3af'
+      }
+    }),
+    menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+    menu: (base) => ({ ...base, zIndex: 9999 })
+  };
 
   // Fetch invoices and suppliers
   useEffect(() => {
     const fetchData = async () => {
-      setLoading(true);
-      const supRes = await fetch(SUPPLIERS_URL, { headers: getAuthHeaders() });
-      const supData = await supRes.json();
-      setSuppliers(Array.isArray(supData) ? supData : supData.data || []);
-      const invRes = await fetch(API_URL, { headers: getAuthHeaders() });
-      const invData = await invRes.json();
-      setInvoices(Array.isArray(invData) ? invData : invData.data || []);
-      setLoading(false);
+      try {
+        setIsLoading(true);
+        
+        // Fetch suppliers
+        const supRes = await fetch(SUPPLIERS_URL, { headers: getAuthHeaders() });
+        if (!supRes.ok) throw new Error('Failed to fetch suppliers');
+        const supData = await supRes.json();
+        setSuppliers(Array.isArray(supData) ? supData : supData.data || []);
+        
+        // Fetch invoices
+        const invRes = await fetch(API_URL, { headers: getAuthHeaders() });
+        if (!invRes.ok) throw new Error('Failed to fetch invoices');
+        const invData = await invRes.json();
+        setInvoices(Array.isArray(invData) ? invData : invData.data || []);
+        
+        setError('');
+      } catch (err) {
+        setError('Failed to load invoice data');
+      } finally {
+        setIsLoading(false);
+      }
     };
     fetchData();
   }, []);
@@ -55,6 +82,12 @@ const InvoiceSearch = () => {
   const getSupplierName = (supplierId) => {
     const supplier = suppliers.find(s => String(s.id) === String(supplierId));
     return supplier ? supplier.name : supplierId || '-';
+  };
+
+  // Search handler
+  const handleSearch = () => {
+    setSuccessMessage(`Found ${filteredInvoices.length} invoice(s) matching your criteria`);
+    setTimeout(() => setSuccessMessage(''), 3000);
   };
 
   // Filtering (including date interval and job number)
@@ -69,6 +102,7 @@ const InvoiceSearch = () => {
     const jobNumberMatches = searchFields.jobNumber
       ? ((inv.job_number || '') + '').toLowerCase().includes(searchFields.jobNumber.toLowerCase())
       : true;
+    
     // Support both 'date' and 'invoice_date'
     const dateVal = (inv.date || inv.invoice_date || '').slice(0, 10);
     const from = searchFields.dateFrom;
@@ -83,6 +117,25 @@ const InvoiceSearch = () => {
     }
     return supplierMatches && invoiceNoMatches && jobNumberMatches && dateMatches;
   });
+
+  // Sort handler
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+    setCurrentPage(1);
+  };
+
+  // Render sort icon
+  const renderSortIcon = (field) => {
+    if (sortField !== field) return <ArrowUp className="w-3 h-3 text-gray-400 inline" />;
+    return sortDirection === 'asc' ?
+      <ArrowUp className="w-3 h-3 text-indigo-600 inline" /> :
+      <ArrowDown className="w-3 h-3 text-indigo-600 inline" />;
+  };
 
   // Sorting
   const sortedInvoices = [...filteredInvoices].sort((a, b) => {
@@ -108,210 +161,273 @@ const InvoiceSearch = () => {
   const currentInvoices = sortedInvoices.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.max(1, Math.ceil(sortedInvoices.length / itemsPerPage));
 
+  // Prepare options for dropdowns
+  const supplierOptions = suppliers.map(supplier => ({
+    value: supplier.name,
+    label: supplier.name
+  }));
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchFields, invoices]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <Loader className="w-12 h-12 mx-auto text-indigo-600 animate-spin" />
+          <p className="mt-4 text-gray-600">Loading invoice data...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white-50 via-gray-50 to-blue-100 p-4 md:p-10">
+    <div className="min-h-screen bg-gray-50 p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
-        {/* Header Section */}
-        <div className="mb-10 flex items-center gap-4">
-          <div className="flex-shrink-0 bg-gradient-to-tr from-indigo-500 to-purple-400 rounded-2xl p-4">
-            <FileText className="w-12 h-12 text-white" />
-          </div>
+        {/* Header - Matching AssignExpenses */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
           <div>
-            <h1 className="text-4xl md:text-5xl font-extrabold text-gray-800 tracking-tight mb-2">
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800 flex items-center">
+              <FileText className="w-8 h-8 mr-3 text-indigo-600" />
               Invoice Search
             </h1>
-            <p className="text-gray-600 text-lg md:text-xl">
-              Quickly find supplier invoices with flexible filters and a beautiful, responsive interface.
-            </p>
+            <p className="text-gray-600 mt-2">Search and filter supplier invoices efficiently</p>
           </div>
         </div>
 
-        {/* Filters Section */}
-        <div className="bg-white/70 backdrop-blur rounded-2xl shadow-lg px-8 py-8 mb-10 flex flex-col md:flex-row md:flex-wrap md:items-end gap-4">
-          <div className="flex-1 min-w-[200px]">
-            <label className="block font-semibold text-gray-700 mb-2">Supplier Name</label>
-            <div className="relative">
-              <Search className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Supplier Name"
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 bg-white"
-                value={searchFields.supplier}
-                onChange={e => {
-                  setSearchFields(f => ({ ...f, supplier: e.target.value }));
-                  setCurrentPage(1);
-                }}
-              />
+        {/* Status Messages */}
+        {error && (
+          <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded">
+            <div className="flex items-center">
+              <Alert className="w-5 h-5 text-red-500 mr-2" />
+              <p className="text-red-700">{error}</p>
             </div>
           </div>
-          <div className="flex-1 min-w-[200px]">
-            <label className="block font-semibold text-gray-700 mb-2">Invoice No</label>
-            <div className="relative">
-              <FileText className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Invoice No"
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 bg-white"
-                value={searchFields.invoiceNo}
-                onChange={e => {
-                  setSearchFields(f => ({ ...f, invoiceNo: e.target.value }));
-                  setCurrentPage(1);
-                }}
-              />
+        )}
+        {successMessage && (
+          <div className="bg-green-50 border-l-4 border-green-500 p-4 mb-6 rounded">
+            <div className="flex items-center">
+              <Check className="w-5 h-5 text-green-500 mr-2" />
+              <p className="text-green-700">{successMessage}</p>
             </div>
           </div>
-          <div className="flex-1 min-w-[200px]">
-            <label className="block font-semibold text-gray-700 mb-2">Job Number</label>
-            <div className="relative">
-              <FileText className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Job Number"
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 bg-white"
-                value={searchFields.jobNumber}
-                onChange={e => {
-                  setSearchFields(f => ({ ...f, jobNumber: e.target.value }));
-                  setCurrentPage(1);
-                }}
-              />
+        )}
+
+        {/* Search Section - Matching AssignExpenses */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-visible mb-6">
+          <div className="bg-indigo-50 p-4 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-indigo-700 flex items-center">
+              <Search className="w-5 h-5 mr-2" />
+              SEARCH INVOICES
+            </h2>
+          </div>
+          <div className="p-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Supplier Name
+                </label>
+                <Select
+                  options={supplierOptions}
+                  value={supplierOptions.find(option => option.value === searchFields.supplier)}
+                  onChange={(selectedOption) => setSearchFields(f => ({ ...f, supplier: selectedOption?.value || '' }))}
+                  placeholder="Select Supplier"
+                  isSearchable
+                  isClearable
+                  menuPortalTarget={document.body}
+                  menuPosition="fixed"
+                  styles={selectStyles}
+                  className="w-full text-sm"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Invoice Number
+                </label>
+                <input
+                  type="text"
+                  placeholder="Enter invoice number..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                  value={searchFields.invoiceNo}
+                  onChange={e => setSearchFields(f => ({ ...f, invoiceNo: e.target.value }))}
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Job Number
+                </label>
+                <input
+                  type="text"
+                  placeholder="Enter job number..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                  value={searchFields.jobNumber}
+                  onChange={e => setSearchFields(f => ({ ...f, jobNumber: e.target.value }))}
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Date From
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Calendar className="w-5 h-5 text-gray-400" />
+                  </div>
+                  <input
+                    type="date"
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                    value={searchFields.dateFrom}
+                    onChange={e => setSearchFields(f => ({ ...f, dateFrom: e.target.value }))}
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Date To
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Calendar className="w-5 h-5 text-gray-400" />
+                  </div>
+                  <input
+                    type="date"
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                    value={searchFields.dateTo}
+                    onChange={e => setSearchFields(f => ({ ...f, dateTo: e.target.value }))}
+                  />
+                </div>
+              </div>
             </div>
-          </div>
-          <div className="flex-1 min-w-[200px]">
-            <label className="block font-semibold text-gray-700 mb-2 flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-blue-500" />
-              Invoice Date From
-            </label>
-            <input
-              type="date"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 bg-white"
-              value={searchFields.dateFrom}
-              onChange={e => {
-                setSearchFields(f => ({ ...f, dateFrom: e.target.value }));
-                setCurrentPage(1);
-              }}
-            />
-          </div>
-          <div className="flex-1 min-w-[200px]">
-            <label className="block font-semibold text-gray-700 mb-2 flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-purple-500" />
-              Invoice Date To
-            </label>
-            <input
-              type="date"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 bg-white"
-              value={searchFields.dateTo}
-              onChange={e => {
-                setSearchFields(f => ({ ...f, dateTo: e.target.value }));
-                setCurrentPage(1);
-              }}
-            />
+            
+            <div className="mt-4 flex justify-end">
+              <button
+                onClick={handleSearch}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-5 rounded-lg shadow transition text-sm flex items-center"
+              >
+                <Search className="w-4 h-4 mr-2" />
+                Search Invoices
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Table Section */}
-        <div className="bg-white/90 backdrop-blur rounded-2xl shadow-2xl overflow-x-auto mb-10">
-          <table className="min-w-full border-collapse text-base">
-            <thead className="bg-gradient-to-tr from-indigo-500 to-purple-400 text-white">
-              <tr>
-                {[
-                  { label: 'SL', key: 'sl', noSort: true },
-                  { label: 'Supplier', key: 'supplier' },
-                  { label: 'Job Number', key: 'job_number' },
-                  { label: 'Invoice No', key: 'invoiceNo' },
-                  { label: 'Date', key: 'date' },
-                ].map(({ label, key, noSort }) => (
-                  <th
-                    key={label}
-                    onClick={() => key && !noSort && setSortField(field => {
-                      if (sortField === key) {
-                        setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-                        return key;
-                      } else {
-                        setSortDirection('asc');
-                        return key;
-                      }
-                    })}
-                    className={`px-6 py-4 text-left cursor-pointer select-none whitespace-nowrap font-semibold tracking-wide ${
-                      key && !noSort ? 'hover:bg-indigo-600/80 transition' : ''
-                    }`}
-                  >
-                    <div className="flex items-center gap-1">
-                      {label}
-                      {key && !noSort && sortField === key && (
-                        <ChevronDown
-                          className={`w-4 h-4 ml-1 transition-transform ${
-                            sortDirection === 'asc' ? 'rotate-180' : ''
-                          }`}
-                        />
-                      )}
-                    </div>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
+        {/* Invoice Summary */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
+          <div className="flex justify-between items-center">
+            <h2 className="text-lg font-semibold text-gray-800">Invoice Summary</h2>
+            <div className="text-sm font-medium text-gray-700">
+              Total: <span className="text-green-600 font-bold">{filteredInvoices.length} invoices</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Invoice Table */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
                 <tr>
-                  <td colSpan={5} className="text-center py-12 text-xl text-gray-500">
-                    Loading...
-                  </td>
+                  {[
+                    { label: 'SL.No', key: null },
+                    { label: 'Supplier', key: 'supplier' },
+                    { label: 'Job Number', key: 'job_number' },
+                    { label: 'Invoice No', key: 'invoiceNo' },
+                    { label: 'Date', key: 'date' },
+                  ].map(({ label, key }) => (
+                    <th
+                      key={label}
+                      className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                      onClick={() => key && handleSort(key)}
+                    >
+                      <div className="flex items-center">
+                        {label}
+                        {key && renderSortIcon(key)}
+                      </div>
+                    </th>
+                  ))}
                 </tr>
-              ) : currentInvoices.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="text-center py-12 text-lg text-gray-500">
-                    No invoices found.
-                  </td>
-                </tr>
-              ) : (
-                currentInvoices.map((inv, index) => (
-                  <tr
-                    key={inv.id}
-                    className="border-b border-gray-200 last:border-0 hover:bg-indigo-50/60 transition"
-                  >
-                    <td className="px-6 py-4 text-center text-gray-700 font-bold">{index + 1 + indexOfFirstItem}</td>
-                    <td className="px-6 py-4 text-gray-800 font-medium">{getSupplierName(inv.supplier_id)}</td>
-                    <td className="px-6 py-4 text-gray-700">{inv.job_number}</td>
-                    <td className="px-6 py-4 text-gray-700">{inv.invoice_no || inv.invoiceNo}</td>
-                    <td className="px-6 py-4 text-gray-700">
-                      {(inv.date || inv.invoice_date || '').slice(0, 10)}
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {currentInvoices.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-6 text-center text-gray-500">
+                      <div className="flex flex-col items-center justify-center">
+                        <FileText className="w-16 h-16 text-gray-300 mb-4" />
+                        <h4 className="text-lg font-medium text-gray-500">No invoices found</h4>
+                        <p className="text-gray-400 mt-2">Try adjusting your search criteria</p>
+                      </div>
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-          {/* Pagination Controls */}
-          <div className="flex flex-col md:flex-row justify-between items-center gap-2 px-6 py-4 border-t border-gray-200 bg-gray-50">
-            <div className="text-sm text-gray-700">
-              Showing <span className="font-semibold">{Math.min(indexOfFirstItem + 1, sortedInvoices.length)}</span> to <span className="font-semibold">{Math.min(indexOfLastItem, sortedInvoices.length)}</span> of <span className="font-semibold">{sortedInvoices.length}</span> results
-            </div>
-            <div className="flex space-x-2">
-              <button
-                onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                disabled={currentPage === 1}
-                className="p-2 rounded-lg hover:bg-indigo-100 disabled:opacity-50 transition"
-                title="Previous"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              <span className="px-2 py-1 text-gray-700 rounded bg-white border border-gray-200 font-semibold">
-                Page {currentPage} of {totalPages}
-              </span>
-              <button
-                onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-                disabled={currentPage === totalPages || totalPages === 0}
-                className="p-2 rounded-lg hover:bg-indigo-100 disabled:opacity-50 transition"
-                title="Next"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </div>
+                ) : (
+                  currentInvoices.map((inv, index) => (
+                    <tr key={inv.id} className="hover:bg-gray-50 transition">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {index + 1 + indexOfFirstItem}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                        <div className="flex items-center">
+                          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center mr-3">
+                            <FileText className="w-5 h-5 text-white" />
+                          </div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {getSupplierName(inv.supplier_id)}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                        {inv.job_number || 'N/A'}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                        <span className="bg-indigo-100 text-indigo-800 px-2 py-1 rounded-md text-xs font-medium">
+                          {inv.invoice_no || inv.invoiceNo || 'N/A'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                        {(inv.date || inv.invoice_date || '').slice(0, 10) || 'N/A'}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
-        </div>
-
-        {/* Footer */}
-        <div className="text-center text-gray-400 text-sm pt-6">
-          &copy; {new Date().getFullYear()} Invoice Search • Powered by your team
+          
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex flex-col md:flex-row justify-between items-center px-4 py-3 border-t border-gray-200 bg-gray-50">
+              <div className="text-sm text-gray-700 mb-2 md:mb-0">
+                Showing {indexOfFirstItem + 1} to{' '}
+                {Math.min(indexOfLastItem, filteredInvoices.length)} of {filteredInvoices.length} invoices
+              </div>
+              <div className="flex items-center">
+                <div className="flex space-x-1">
+                  <button
+                    onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                    disabled={currentPage === 1}
+                    className="p-2 rounded-md hover:bg-gray-100 disabled:opacity-50"
+                    title="Previous"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                    className="p-2 rounded-md hover:bg-gray-100 disabled:opacity-50"
+                    title="Next"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+              <div className="hidden md:block text-sm font-medium text-gray-700">
+                Total: <span className="text-green-600 font-bold">{filteredInvoices.length} invoices</span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

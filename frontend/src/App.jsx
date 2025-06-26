@@ -15,7 +15,8 @@ import accountsRoutes from "./routes/accountsRoutes";
 import noLayoutRoutes from "./routes/noLayoutRoutes";
 import LandingPage from "./components/LandingPage";
 import Footer from "./components/Footer";
-
+import MyProfile from "./components/MyProfile";
+import LogoutPage from "./components/LogOutPage";
 // Layout component that includes Navbar and Footer
 const Layout = () => (
   <>
@@ -35,6 +36,8 @@ const router = createBrowserRouter(
       {/* Routes that require Layout (Navbar, Footer) */}
       <Route element={<Layout />} errorElement={<ErrorPage />}>
         <Route path="/home" element={<HomePage />} />
+        <Route path="/myprofile" element={<MyProfile />} />
+        <Route path="/logout" element={<LogoutPage />} />
         {masterDataRoutes}
         {supplierRoutes}
         {clearanceRoutes}

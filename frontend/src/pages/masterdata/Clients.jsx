@@ -1,722 +1,806 @@
-import { useState, useEffect } from 'react';
-import {
-  User, Globe, MapPin, Mail, Edit, Trash2, ChevronDown,
-  Search, Plus, X, ChevronLeft, ChevronRight
+import React, { useState, useEffect } from 'react';
+import { 
+  Users, Plus, Pencil, Trash2, Search, ChevronLeft, ChevronRight, X, 
+  ArrowUp, ArrowDown, Loader, Check, AlertCircle as Alert, Building2, Phone, Mail, Globe, MapPin
 } from 'lucide-react';
+import Select from 'react-select';
 
 const API_URL = 'http://localhost:5000/api/clients';
 
-const ClientManagementPage = () => {
+const ClientsPage = () => {
+  // State management
   const [clients, setClients] = useState([]);
-  const [newClient, setNewClient] = useState({
-    clientId: '', name: '', industryType: '', phone1: '', phone2: '', phone3: '', creditLimit: '',
-    valNo: '', commercialRegNo: '', cp1: '', notes: '', shipper: '', arName: '', cp1Position: '',
-    agentName: '', address: '', country: '', cp1Email: '', agentEnName: '', city: '', agentArName: ''
-  });
+  const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [sortField, setSortField] = useState('name');
+  const [sortDirection, setSortDirection] = useState('asc');
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
+  const [newClient, setNewClient] = useState({
+    client_id: '',
+    name: '',
+    industry_type: '',
+    phone1: '',
+    phone2: '',
+    phone3: '',
+    credit_limit: '',
+    val_no: '',
+    commercial_reg_no: '',
+    cpi: '',
+    notes: '',
+    shipper: '',
+    ar_name: '',
+    cpi_position: '',
+    agent_name: '',
+    address: '',
+    country: '',
+    cp1_email: '',
+    agent_en_name: '',
+    city: '',
+    agent_ar_name: '',
+    cp1: '',
+    cp1_position: ''
+  });
+
+  // Country options
   const countries = [
-    'United Arab Emirates', 'Saudi Arabia', 'Oman',
-    'Qatar', 'Kuwait', 'Bahrain', 'Egypt', 'Jordan'
+    'United Arab Emirates', 'Saudi Arabia', 'Oman', 'Qatar', 'Kuwait', 
+    'Bahrain', 'Egypt', 'Jordan', 'Holy See (Vatican City State)'
   ];
 
-  // Convert API snake_case object to camelCase
-  const toCamelCaseClient = (obj) => ({
-    clientId: obj.client_id,
-    name: obj.name,
-    industryType: obj.industry_type,
-    phone1: obj.phone1,
-    phone2: obj.phone2,
-    phone3: obj.phone3,
-    creditLimit: obj.credit_limit,
-    valNo: obj.val_no,
-    commercialRegNo: obj.commercial_reg_no,
-    cp1: obj.cp1,
-    notes: obj.notes,
-    shipper: obj.shipper,
-    arName: obj.ar_name,
-    cp1Position: obj.cp1_position,
-    agentName: obj.agent_name,
-    address: obj.address,
-    country: obj.country,
-    cp1Email: obj.cp1_email,
-    agentEnName: obj.agent_en_name,
-    city: obj.city,
-    agentArName: obj.agent_ar_name
-  });
+  // Custom styles for react-select dropdowns (matching AssignExpenses)
+  const selectStyles = {
+    control: (base) => ({
+      ...base,
+      minHeight: '42px',
+      borderRadius: '8px',
+      borderColor: '#d1d5db',
+      '&:hover': {
+        borderColor: '#9ca3af'
+      }
+    }),
+    menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+    menu: (base) => ({ ...base, zIndex: 9999 })
+  };
 
-  // Convert camelCase to snake_case for API
-  const formatToSnakeCaseClient = (client) => ({
-    client_id: client.clientId,
-    name: client.name,
-    industry_type: client.industryType,
-    phone1: client.phone1,
-    phone2: client.phone2,
-    phone3: client.phone3,
-    credit_limit: client.creditLimit,
-    val_no: client.valNo,
-    commercial_reg_no: client.commercialRegNo,
-    cp1: client.cp1,
-    notes: client.notes,
-    shipper: client.shipper,
-    ar_name: client.arName,
-    cp1_position: client.cp1Position,
-    agent_name: client.agentName,
-    address: client.address,
-    country: client.country,
-    cp1_email: client.cp1Email,
-    agent_en_name: client.agentEnName,
-    city: client.city,
-    agent_ar_name: client.agentArName
-  });
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('authToken');
+    if (!token) throw new Error('Authentication token missing');
+    return { 
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    };
+  };
 
+  // Fetch clients from backend
   const fetchClients = async () => {
     try {
-      const token = localStorage.getItem('authToken');
-      if (!token) {
-        console.error('Authentication token missing');
-        return;
-      }
-      const res = await fetch(API_URL, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (!res.ok) throw new Error(`Error fetching clients: ${res.status} ${res.statusText}`);
+      setIsLoading(true);
+      const res = await fetch(API_URL, { headers: getAuthHeaders() });
+      if (!res.ok) throw new Error(`Failed to fetch clients: ${res.status} ${res.statusText}`);
       const data = await res.json();
-      setClients(data.map(toCamelCaseClient));
+      setClients(Array.isArray(data) ? data : data.data || []);
+      setError('');
     } catch (err) {
-      console.error('Failed to fetch clients:', err);
-      alert('Failed to fetch clients. Please check your connection and try again.');
+      setError('Failed to load clients');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  useEffect(() => { fetchClients(); }, []);
+  useEffect(() => {
+    fetchClients();
+  }, []);
 
+  // Reset form
+  const resetForm = () => {
+    setNewClient({
+      client_id: '',
+      name: '',
+      industry_type: '',
+      phone1: '',
+      phone2: '',
+      phone3: '',
+      credit_limit: '',
+      val_no: '',
+      commercial_reg_no: '',
+      cpi: '',
+      notes: '',
+      shipper: '',
+      ar_name: '',
+      cpi_position: '',
+      agent_name: '',
+      address: '',
+      country: '',
+      cp1_email: '',
+      agent_en_name: '',
+      city: '',
+      agent_ar_name: '',
+      cp1: '',
+      cp1_position: ''
+    });
+    setEditingId(null);
+    setIsAdding(false);
+    setError('');
+    setSuccessMessage('');
+  };
+
+  // Fixed toggle function for Add Client button
+  const handleToggleAddForm = () => {
+    console.log('Button clicked, current state:', isAdding); // Debug log
+    if (isAdding) {
+      resetForm();
+    } else {
+      setIsAdding(true);
+      setEditingId(null);
+      setError('');
+      setSuccessMessage('');
+    }
+  };
+
+  // Add or update client handler
   const handleAddClient = async () => {
-    if (!newClient.clientId || !newClient.name) {
-      alert('Client ID and Name are required fields');
+    if (!newClient.name.trim()) {
+      setError('Client name is required');
       return;
     }
+
+    // Email validation if provided
+    if (newClient.cp1_email && !/\S+@\S+\.\S+/.test(newClient.cp1_email)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+
     try {
-      const token = localStorage.getItem('authToken');
-      if (!token) {
-        alert('Authentication token missing. Please login again.');
-        return;
-      }
-      const payload = formatToSnakeCaseClient(newClient);
-      // Convert credit_limit to number if it's not empty
+      const headers = getAuthHeaders();
+      let res;
+
+      // Prepare payload - convert credit_limit to number if provided
+      const payload = { ...newClient };
       if (payload.credit_limit) {
         payload.credit_limit = parseFloat(payload.credit_limit);
         if (isNaN(payload.credit_limit)) {
-          alert('Credit limit must be a valid number');
+          setError('Credit limit must be a valid number');
           return;
         }
       }
-      // Convert empty strings to null for optional fields
-      Object.keys(payload).forEach(key => { if (payload[key] === "") payload[key] = null; });
 
-      let response;
+      // Convert empty strings to null for optional fields
+      Object.keys(payload).forEach(key => {
+        if (payload[key] === '') payload[key] = null;
+      });
+
       if (editingId !== null) {
+        // For update, remove client_id from payload
         const { client_id, ...updatePayload } = payload;
-        response = await fetch(`${API_URL}/${editingId}`, {
+        res = await fetch(`${API_URL}/${editingId}`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          headers,
           body: JSON.stringify(updatePayload),
         });
+        if (!res.ok) throw new Error('Failed to update client');
+        setSuccessMessage('Client updated successfully!');
       } else {
-        response = await fetch(API_URL, {
+        res = await fetch(API_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          headers,
           body: JSON.stringify(payload),
         });
+        if (!res.ok) throw new Error('Failed to add client');
+        setSuccessMessage('Client added successfully!');
       }
-      if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(`Error ${response.status}: ${errorData}`);
-      }
+
       await fetchClients();
-      setIsAdding(false);
-      setNewClient({
-        clientId: '', name: '', industryType: '', phone1: '', phone2: '', phone3: '', creditLimit: '',
-        valNo: '', commercialRegNo: '', cp1: '', notes: '', shipper: '', arName: '', cp1Position: '',
-        agentName: '', address: '', country: '', cp1Email: '', agentEnName: '', city: '', agentArName: ''
-      });
-      setEditingId(null);
-      alert(editingId ? 'Client updated successfully!' : 'Client added successfully!');
+      resetForm();
+      setTimeout(() => setSuccessMessage(''), 3000);
     } catch (err) {
-      console.error('Error saving client:', err);
-      alert(`Error saving client: ${err.message}`);
+      setError(err.message || 'Failed to save client');
+      setTimeout(() => setError(''), 3000);
     }
   };
 
-  const handleDelete = async (clientId) => {
+  // Delete client handler
+  const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this client?')) return;
+
     try {
-      const token = localStorage.getItem('authToken');
-      if (!token) {
-        alert('Authentication token missing. Please login again.');
-        return;
-      }
-      const response = await fetch(`${API_URL}/${clientId}`, {
+      const res = await fetch(`${API_URL}/${id}`, {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
+        headers: getAuthHeaders(),
       });
-      if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(`Error ${response.status}: ${errorData}`);
-      }
+      if (!res.ok) throw new Error('Failed to delete client');
+      
       await fetchClients();
-      alert('Client deleted successfully!');
+      setSuccessMessage('Client deleted successfully!');
+      setTimeout(() => setSuccessMessage(''), 3000);
     } catch (err) {
-      console.error('Failed to delete client:', err);
-      alert(`Failed to delete client: ${err.message}`);
+      setError('Failed to delete client');
+      setTimeout(() => setError(''), 3000);
     }
   };
 
+  // Edit client handler
   const handleEdit = (client) => {
     setNewClient({
-      clientId: client.clientId,
-      name: client.name,
-      industryType: client.industryType || '',
+      client_id: client.client_id || '',
+      name: client.name || '',
+      industry_type: client.industry_type || '',
       phone1: client.phone1 || '',
       phone2: client.phone2 || '',
       phone3: client.phone3 || '',
-      creditLimit: client.creditLimit || '',
-      valNo: client.valNo || '',
-      commercialRegNo: client.commercialRegNo || '',
-      cp1: client.cp1 || '',
+      credit_limit: client.credit_limit || '',
+      val_no: client.val_no || '',
+      commercial_reg_no: client.commercial_reg_no || '',
+      cpi: client.cpi || '',
       notes: client.notes || '',
       shipper: client.shipper || '',
-      arName: client.arName || '',
-      cp1Position: client.cp1Position || '',
-      agentName: client.agentName || '',
+      ar_name: client.ar_name || '',
+      cpi_position: client.cpi_position || '',
+      agent_name: client.agent_name || '',
       address: client.address || '',
       country: client.country || '',
-      cp1Email: client.cp1Email || '',
-      agentEnName: client.agentEnName || '',
+      cp1_email: client.cp1_email || '',
+      agent_en_name: client.agent_en_name || '',
       city: client.city || '',
-      agentArName: client.agentArName || ''
+      agent_ar_name: client.agent_ar_name || '',
+      cp1: client.cp1 || '',
+      cp1_position: client.cp1_position || ''
     });
-    setEditingId(client.clientId);
+    setEditingId(client.client_id);
     setIsAdding(true);
   };
 
-  // Filter and search functionality
-  const filteredClients = clients.filter(client =>
+  // Sort handler
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortDirection(prev => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+    setCurrentPage(1);
+  };
+
+  // Render sort icon
+  const renderSortIcon = (field) => {
+    if (sortField !== field) return <ArrowUp className="w-3 h-3 text-gray-400 inline" />;
+    return sortDirection === 'asc' ?
+      <ArrowUp className="w-3 h-3 text-indigo-600 inline" /> :
+      <ArrowDown className="w-3 h-3 text-indigo-600 inline" />;
+  };
+
+  // Sorted & filtered clients for display
+  const sortedClients = [...clients].sort((a, b) => {
+    const aValue = a[sortField] || '';
+    const bValue = b[sortField] || '';
+    if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+    if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  const filteredClients = sortedClients.filter(client =>
     (client.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (client.clientId || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (client.client_id || '').toString().toLowerCase().includes(searchTerm.toLowerCase()) ||
     (client.city || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (client.country || '').toLowerCase().includes(searchTerm.toLowerCase())
+    (client.country || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (client.industry_type || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Pagination logic
+  // Pagination
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentClients = filteredClients.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(filteredClients.length / itemsPerPage);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, clients]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <Loader className="w-12 h-12 mx-auto text-indigo-600 animate-spin" />
+          <p className="mt-4 text-gray-600">Loading client information...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-purple-50 py-8 px-2 md:px-8">
+    <div className="min-h-screen bg-gray-50 p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+        {/* Header - Matching AssignExpenses */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
           <div>
-            <h1 className="text-3xl font-black bg-gradient-to-r from-gray-800 via-gray-900 to-gray-800 bg-clip-text text-transparent flex items-center">
-              <User className="w-8 h-8 mr-3 text-indigo-600" />
-              CLIENTS MANAGEMENT
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800 flex items-center">
+              <Users className="w-8 h-8 mr-3 text-indigo-600" />
+              Client Management
             </h1>
-            <p className="text-gray-600 mt-2">Manage your client information and relationships</p>
+            <p className="text-gray-600 mt-2">Manage and organize your client database</p>
           </div>
-          <div className="mt-4 md:mt-0 flex space-x-3">
-            <div className="relative">
-              <div className="flex items-center bg-white rounded-lg px-3 py-2 shadow-sm border border-gray-200">
-                <Search className="w-5 h-5 text-gray-400 mr-2" />
+          <div className="mt-4 md:mt-0 flex flex-wrap gap-3">
+            {/* Fixed Add Client Button */}
+            <button
+              type="button"
+              onClick={handleToggleAddForm}
+              className={`px-4 py-2 text-white rounded-lg font-medium transition-all flex items-center shadow-md
+                ${isAdding 
+                  ? 'bg-red-600 hover:bg-red-700' 
+                  : 'bg-indigo-600 hover:bg-indigo-700'}`}
+            >
+              {isAdding ? <X className="w-5 h-5 mr-2" /> : <Plus className="w-5 h-5 mr-2" />}
+              {isAdding ? 'Cancel' : 'Add Client'}
+            </button>
+          </div>
+        </div>
+
+        {/* Status Messages */}
+        {error && (
+          <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded">
+            <div className="flex items-center">
+              <Alert className="w-5 h-5 text-red-500 mr-2" />
+              <p className="text-red-700">{error}</p>
+            </div>
+          </div>
+        )}
+        {successMessage && (
+          <div className="bg-green-50 border-l-4 border-green-500 p-4 mb-6 rounded">
+            <div className="flex items-center">
+              <Check className="w-5 h-5 text-green-500 mr-2" />
+              <p className="text-green-700">{successMessage}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Search Section - Matching AssignExpenses */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-visible mb-6">
+          <div className="bg-indigo-50 p-4 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-indigo-700 flex items-center">
+              <Search className="w-5 h-5 mr-2" />
+              SEARCH CLIENTS
+            </h2>
+          </div>
+          <div className="p-4">
+            <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Search by Name, Client ID, City, Country, or Industry
+                </label>
                 <input
                   type="text"
                   placeholder="Search clients..."
-                  className="bg-transparent outline-none w-40"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
             </div>
-            <button
-              onClick={() => setIsAdding(!isAdding)}
-              className={`px-5 py-2 text-white rounded-lg font-medium transition-all flex items-center shadow-md
-                ${isAdding
-                  ? 'bg-red-600 hover:bg-red-700'
-                  : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700'}
-              `}
-            >
-              {isAdding ? <X className="w-5 h-5 mr-2" /> : <Plus className="w-5 h-5 mr-2" />}
-              {isAdding ? 'Close' : 'Add Client'}
-            </button>
           </div>
         </div>
 
-        {/* Add Client Form */}
+        {/* Add/Edit Client Form */}
         {isAdding && (
-          <div className="bg-white rounded-xl shadow-lg overflow-hidden mb-8 border border-gray-100">
-            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6">
-              <h2 className="text-xl font-bold text-white flex items-center">
-                {editingId ? 'Edit Client Details' : 'Add New Client'}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
+            <div className="bg-gray-50 p-4 border-b border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-700">
+                {editingId ? 'Edit Client' : 'Add New Client'}
               </h2>
             </div>
-            <div className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Column 1 */}
-                <div className="space-y-4">
+            <div className="p-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Left Column */}
+                <div className="space-y-3">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Client ID <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <User className="w-5 h-5 text-gray-400" />
-                      </div>
-                      <input
-                        type="text"
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                        placeholder="Enter client id"
-                        value={newClient.clientId}
-                        onChange={(e) => setNewClient({...newClient, clientId: e.target.value})}
-                      />
-                    </div>
-                  </div>
-                  {/* ...the rest of the left column fields as in your last message... */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Name <span className="text-red-500">*</span>
+                      Client Name <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
                       placeholder="Enter client name"
                       value={newClient.name}
-                      onChange={(e) => setNewClient({...newClient, name: e.target.value})}
+                      onChange={(e) => setNewClient({ ...newClient, name: e.target.value })}
                     />
                   </div>
+                  
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Industry Type
                     </label>
                     <input
                       type="text"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
                       placeholder="Enter industry type"
-                      value={newClient.industryType}
-                      onChange={(e) => setNewClient({...newClient, industryType: e.target.value})}
+                      value={newClient.industry_type}
+                      onChange={(e) => setNewClient({ ...newClient, industry_type: e.target.value })}
                     />
                   </div>
+                  
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Phone Numbers
                     </label>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-1 gap-2">
                       <input
                         type="text"
-                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                        placeholder="Phone 1"
+                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                        placeholder="Primary phone"
                         value={newClient.phone1}
-                        onChange={(e) => setNewClient({...newClient, phone1: e.target.value})}
+                        onChange={(e) => setNewClient({ ...newClient, phone1: e.target.value })}
                       />
                       <input
                         type="text"
-                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                        placeholder="Phone 2"
+                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                        placeholder="Secondary phone"
                         value={newClient.phone2}
-                        onChange={(e) => setNewClient({...newClient, phone2: e.target.value})}
+                        onChange={(e) => setNewClient({ ...newClient, phone2: e.target.value })}
                       />
                       <input
                         type="text"
-                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                        placeholder="Phone 3"
+                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                        placeholder="Third phone"
                         value={newClient.phone3}
-                        onChange={(e) => setNewClient({...newClient, phone3: e.target.value})}
+                        onChange={(e) => setNewClient({ ...newClient, phone3: e.target.value })}
                       />
                     </div>
                   </div>
+                  
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Credit Limit
                     </label>
                     <input
-                      type="text"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      type="number"
+                      step="0.01"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
                       placeholder="Enter credit limit"
-                      value={newClient.creditLimit}
-                      onChange={(e) => setNewClient({...newClient, creditLimit: e.target.value})}
+                      value={newClient.credit_limit}
+                      onChange={(e) => setNewClient({ ...newClient, credit_limit: e.target.value })}
                     />
                   </div>
+                  
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Val No.
+                      VAL Number
                     </label>
                     <input
                       type="text"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                      placeholder="Enter val no"
-                      value={newClient.valNo}
-                      onChange={(e) => setNewClient({...newClient, valNo: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                      placeholder="Enter VAL number"
+                      value={newClient.val_no}
+                      onChange={(e) => setNewClient({ ...newClient, val_no: e.target.value })}
                     />
                   </div>
+                  
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Commercial Reg No.
+                      Commercial Registration No
                     </label>
                     <input
                       type="text"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
                       placeholder="Enter commercial reg no"
-                      value={newClient.commercialRegNo}
-                      onChange={(e) => setNewClient({...newClient, commercialRegNo: e.target.value})}
+                      value={newClient.commercial_reg_no}
+                      onChange={(e) => setNewClient({ ...newClient, commercial_reg_no: e.target.value })}
                     />
                   </div>
+                  
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      C.P1
+                      Contact Person (CPI)
                     </label>
                     <input
                       type="text"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                      placeholder="Enter cp1"
-                      value={newClient.cp1}
-                      onChange={(e) => setNewClient({...newClient, cp1: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                      placeholder="Enter contact person"
+                      value={newClient.cpi}
+                      onChange={(e) => setNewClient({ ...newClient, cpi: e.target.value })}
                     />
                   </div>
+                  
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Notes
-                    </label>
-                    <textarea
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                      placeholder="Enter notes"
-                      rows="2"
-                      value={newClient.notes}
-                      onChange={(e) => setNewClient({...newClient, notes: e.target.value})}
-                    ></textarea>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Shipper
+                      Contact Person Email
                     </label>
                     <input
-                      type="text"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                      placeholder="Enter shipper"
-                      value={newClient.shipper}
-                      onChange={(e) => setNewClient({...newClient, shipper: e.target.value})}
+                      type="email"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                      placeholder="Enter contact email"
+                      value={newClient.cp1_email}
+                      onChange={(e) => setNewClient({ ...newClient, cp1_email: e.target.value })}
                     />
                   </div>
                 </div>
-                {/* Column 2 */}
-                <div className="space-y-4">
+                
+                {/* Right Column */}
+                <div className="space-y-3">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Ar.Name
+                      Arabic Name
                     </label>
                     <input
                       type="text"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                      placeholder="Enter Ar.Name"
-                      value={newClient.arName}
-                      onChange={(e) => setNewClient({...newClient, arName: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                      placeholder="Enter Arabic name"
+                      value={newClient.ar_name}
+                      onChange={(e) => setNewClient({ ...newClient, ar_name: e.target.value })}
                     />
                   </div>
+                  
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      C.P1 Position
+                      Contact Person Position
                     </label>
                     <input
                       type="text"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                      placeholder="Enter cp1 position"
-                      value={newClient.cp1Position}
-                      onChange={(e) => setNewClient({...newClient, cp1Position: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                      placeholder="Enter position"
+                      value={newClient.cpi_position}
+                      onChange={(e) => setNewClient({ ...newClient, cpi_position: e.target.value })}
                     />
                   </div>
+                  
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Agent Name
                     </label>
                     <input
                       type="text"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
                       placeholder="Enter agent name"
-                      value={newClient.agentName}
-                      onChange={(e) => setNewClient({...newClient, agentName: e.target.value})}
+                      value={newClient.agent_name}
+                      onChange={(e) => setNewClient({ ...newClient, agent_name: e.target.value })}
                     />
                   </div>
+                  
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Client Address
+                      Agent English Name
                     </label>
-                    <textarea
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                      placeholder="Enter client address"
-                      rows="2"
-                      value={newClient.address}
-                      onChange={(e) => setNewClient({...newClient, address: e.target.value})}
-                    ></textarea>
+                    <input
+                      type="text"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                      placeholder="Enter agent English name"
+                      value={newClient.agent_en_name}
+                      onChange={(e) => setNewClient({ ...newClient, agent_en_name: e.target.value })}
+                    />
                   </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Agent Arabic Name
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                      placeholder="Enter agent Arabic name"
+                      value={newClient.agent_ar_name}
+                      onChange={(e) => setNewClient({ ...newClient, agent_ar_name: e.target.value })}
+                    />
+                  </div>
+                  
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Country
                     </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Globe className="w-5 h-5 text-gray-400" />
-                      </div>
-                      <select
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent appearance-none bg-white"
-                        value={newClient.country}
-                        onChange={(e) => setNewClient({...newClient, country: e.target.value})}
-                      >
-                        <option value="">Select country</option>
-                        {countries.map(country => (
-                          <option key={country} value={country}>{country}</option>
-                        ))}
-                      </select>
-                      <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                        <ChevronDown className="w-4 h-4 text-gray-400" />
-                      </div>
-                    </div>
+                    <select
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                      value={newClient.country}
+                      onChange={(e) => setNewClient({ ...newClient, country: e.target.value })}
+                    >
+                      <option value="">Select country</option>
+                      {countries.map(country => (
+                        <option key={country} value={country}>{country}</option>
+                      ))}
+                    </select>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      C.P1 Email
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Mail className="w-5 h-5 text-gray-400" />
-                      </div>
-                      <input
-                        type="email"
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                        placeholder="Enter cp1 email"
-                        value={newClient.cp1Email}
-                        onChange={(e) => setNewClient({...newClient, cp1Email: e.target.value})}
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Agent En.Name
-                    </label>
-                    <input
-                      type="text"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                      placeholder="Enter agent English name"
-                      value={newClient.agentEnName}
-                      onChange={(e) => setNewClient({...newClient, agentEnName: e.target.value})}
-                    />
-                  </div>
+                  
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       City
                     </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <MapPin className="w-5 h-5 text-gray-400" />
-                      </div>
-                      <input
-                        type="text"
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                        placeholder="Enter city"
-                        value={newClient.city}
-                        onChange={(e) => setNewClient({...newClient, city: e.target.value})}
-                      />
-                    </div>
+                    <input
+                      type="text"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                      placeholder="Enter city"
+                      value={newClient.city}
+                      onChange={(e) => setNewClient({ ...newClient, city: e.target.value })}
+                    />
                   </div>
+                  
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Agent Ar.Name
+                      Shipper
                     </label>
                     <input
                       type="text"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                      placeholder="Enter agent Arabic name"
-                      value={newClient.agentArName}
-                      onChange={(e) => setNewClient({...newClient, agentArName: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                      placeholder="Enter shipper"
+                      value={newClient.shipper}
+                      onChange={(e) => setNewClient({ ...newClient, shipper: e.target.value })}
                     />
                   </div>
                 </div>
               </div>
-              <div className="flex space-x-3 pt-6">
+              
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Address
+                </label>
+                <textarea
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm resize-none"
+                  placeholder="Enter full address"
+                  rows="3"
+                  value={newClient.address}
+                  onChange={(e) => setNewClient({ ...newClient, address: e.target.value })}
+                />
+              </div>
+              
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Notes
+                </label>
+                <textarea
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm resize-none"
+                  placeholder="Enter additional notes"
+                  rows="3"
+                  value={newClient.notes}
+                  onChange={(e) => setNewClient({ ...newClient, notes: e.target.value })}
+                />
+              </div>
+              
+              <div className="mt-4 flex justify-end">
                 <button
                   onClick={handleAddClient}
-                  className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors flex-1 shadow-md"
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-5 rounded-lg shadow transition text-sm"
                 >
-                  {editingId ? 'Update Client' : 'Save Client Details'}
-                </button>
-                <button
-                  onClick={() => {
-                    setIsAdding(false);
-                    setEditingId(null);
-                    setNewClient({
-                      clientId: '', name: '', industryType: '', phone1: '', phone2: '', phone3: '', creditLimit: '',
-                      valNo: '', commercialRegNo: '', cp1: '', notes: '', shipper: '', arName: '', cp1Position: '',
-                      agentName: '', address: '', country: '', cp1Email: '', agentEnName: '', city: '', agentArName: ''
-                    });
-                  }}
-                  className="px-6 py-2.5 bg-gray-200 text-gray-800 rounded-lg font-medium hover:bg-gray-300 transition flex-1"
-                >
-                  Cancel
+                  {editingId ? 'Update Client' : 'Add Client'}
                 </button>
               </div>
             </div>
           </div>
         )}
 
-        {/* Clients List Table */}
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
-          <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-            <h3 className="text-lg font-semibold text-gray-800">CLIENTS LIST</h3>
-            <div className="text-sm text-gray-500">
-              Showing {Math.min(filteredClients.length, itemsPerPage)} of {filteredClients.length} clients
+        {/* Client Summary */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
+          <div className="flex justify-between items-center">
+            <h2 className="text-lg font-semibold text-gray-800">Client Summary</h2>
+            <div className="text-sm font-medium text-gray-700">
+              Total: <span className="text-green-600 font-bold">{filteredClients.length} clients</span>
             </div>
           </div>
+        </div>
+
+        {/* Clients Table */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gradient-to-r from-indigo-600 to-purple-600">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                    S.No
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                    Client ID
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                    Name
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                    Commercial Reg No.
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                    Val No.
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                    Ar.Name
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                    Country
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                    City
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                    Industry Type
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-semibold text-white uppercase tracking-wider">
-                    Actions
-                  </th>
+                  {[
+                    { label: 'ID', key: 'client_id' },
+                    { label: 'Name', key: 'name' },
+                    { label: 'Industry', key: 'industry_type' },
+                    { label: 'Phone', key: 'phone1' },
+                    { label: 'City', key: 'city' },
+                    { label: 'Country', key: 'country' },
+                    { label: 'Credit Limit', key: 'credit_limit' },
+                    { label: 'Actions', key: null },
+                  ].map(({ label, key }) => (
+                    <th
+                      key={label}
+                      className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                      onClick={() => key && handleSort(key)}
+                    >
+                      <div className="flex items-center">
+                        {label}
+                        {key && renderSortIcon(key)}
+                      </div>
+                    </th>
+                  ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
-                {currentClients.length > 0 ? (
-                  currentClients.map((client, index) => (
-                    <tr key={client.clientId} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
-                          {(currentPage - 1) * itemsPerPage + index + 1}
-                        </div>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {currentClients.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="px-4 py-6 text-center text-gray-500">
+                      No client records found
+                    </td>
+                  </tr>
+                ) : (
+                  currentClients.map((client) => (
+                    <tr key={client.client_id} className="hover:bg-gray-50 transition">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-indigo-600">
+                        {client.client_id}
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm font-medium text-indigo-600">{client.clientId}</div>
-                      </td>
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
                         <div className="flex items-center">
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">{client.name}</div>
-                            <div className="text-xs text-gray-500">{client.industryType}</div>
-                          </div>
+                          <Users className="w-4 h-4 text-indigo-600 mr-2" />
+                          {client.name}
                         </div>
                       </td>
-                      <td className="px-6 py-4"><div className="text-sm text-gray-900">{client.commercialRegNo}</div></td>
-                      <td className="px-6 py-4"><div className="text-sm text-gray-900">{client.valNo}</div></td>
-                      <td className="px-6 py-4"><div className="text-sm text-gray-900">{client.arName}</div></td>
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                        {client.industry_type || 'N/A'}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                         <div className="flex items-center">
-                          <Globe className="w-4 h-4 text-gray-500 mr-1" />
-                          <div className="text-sm text-gray-900">{client.country}</div>
+                          <Phone className="w-4 h-4 text-gray-400 mr-2" />
+                          {client.phone1 || 'N/A'}
                         </div>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                         <div className="flex items-center">
-                          <MapPin className="w-4 h-4 text-gray-500 mr-1" />
-                          <div className="text-sm text-gray-900">{client.city}</div>
+                          <MapPin className="w-4 h-4 text-gray-400 mr-2" />
+                          {client.city || 'N/A'}
                         </div>
                       </td>
-                      <td className="px-6 py-4"><div className="text-sm text-gray-900">{client.industryType}</div></td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button onClick={() => handleEdit(client)} className="text-indigo-600 hover:text-indigo-900 mr-4">
-                          <Edit className="w-5 h-5" />
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                        <div className="flex items-center">
+                          <Globe className="w-4 h-4 text-gray-400 mr-2" />
+                          {client.country || 'N/A'}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-green-600">
+                        {client.credit_limit ? `$${parseFloat(client.credit_limit).toFixed(2)}` : 'N/A'}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium flex space-x-2">
+                        <button
+                          onClick={() => handleEdit(client)}
+                          className="text-indigo-600 hover:text-indigo-900"
+                          title="Edit"
+                        >
+                          <Pencil className="w-4 h-4" />
                         </button>
-                        <button onClick={() => handleDelete(client.clientId)} className="text-red-600 hover:text-red-900">
-                          <Trash2 className="w-5 h-5" />
+                        <button
+                          onClick={() => handleDelete(client.client_id)}
+                          className="text-red-600 hover:text-red-900"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </td>
                     </tr>
                   ))
-                ) : (
-                  <tr>
-                    <td colSpan="10" className="px-6 py-12 text-center">
-                      <div className="flex flex-col items-center justify-center">
-                        <User className="w-16 h-16 text-gray-300 mb-4" />
-                        <h4 className="text-lg font-medium text-gray-500">No clients found</h4>
-                        <p className="text-gray-400 mt-1">Add a new client to get started</p>
-                      </div>
-                    </td>
-                  </tr>
                 )}
               </tbody>
             </table>
           </div>
+          
           {/* Pagination */}
-          {filteredClients.length > itemsPerPage && (
-            <div className="px-6 py-4 border-t border-gray-100 bg-gradient-to-r from-gray-50 via-white to-purple-50 flex items-center justify-between">
-              <div className="text-sm text-gray-700">
-                Page <span className="font-medium">{currentPage}</span> of <span className="font-medium">{totalPages}</span>
+          {totalPages > 1 && (
+            <div className="flex flex-col md:flex-row justify-between items-center px-4 py-3 border-t border-gray-200 bg-gray-50">
+              <div className="text-sm text-gray-700 mb-2 md:mb-0">
+                Showing {indexOfFirstItem + 1} to{' '}
+                {Math.min(indexOfLastItem, filteredClients.length)} of {filteredClients.length} clients
               </div>
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1}
-                  className={`px-3 py-1 rounded-lg border ${
-                    currentPage === 1
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                      : 'bg-white text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  <ChevronLeft className="w-5 h-5" />
-                </button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+              <div className="flex items-center">
+                <div className="flex space-x-1">
                   <button
-                    key={page}
-                    onClick={() => setCurrentPage(page)}
-                    className={`px-3 py-1 rounded-lg border ${
-                      currentPage === page
-                        ? 'bg-indigo-600 text-white border-indigo-600'
-                        : 'bg-white text-gray-700 hover:bg-gray-50'
-                    }`}
+                    onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                    disabled={currentPage === 1}
+                    className="p-2 rounded-md hover:bg-gray-100 disabled:opacity-50"
+                    title="Previous"
                   >
-                    {page}
+                    <ChevronLeft className="w-4 h-4" />
                   </button>
-                ))}
-                <button
-                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages}
-                  className={`px-3 py-1 rounded-lg border ${
-                    currentPage === totalPages
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                      : 'bg-white text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  <ChevronRight className="w-5 h-5" />
-                </button>
+                  <button
+                    onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                    className="p-2 rounded-md hover:bg-gray-100 disabled:opacity-50"
+                    title="Next"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+              <div className="hidden md:block text-sm font-medium text-gray-700">
+                Total: <span className="text-green-600 font-bold">{filteredClients.length} clients</span>
               </div>
             </div>
           )}
@@ -726,4 +810,4 @@ const ClientManagementPage = () => {
   );
 };
 
-export default ClientManagementPage;
+export default ClientsPage;

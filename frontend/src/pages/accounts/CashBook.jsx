@@ -1,21 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import {
+import { 
   Calculator, Search, Printer, Calendar, ChevronLeft, ChevronRight,
   ArrowUp, ArrowDown, Loader, Check, AlertCircle as Alert
 } from 'lucide-react';
 import Select from 'react-select';
 
-const VatStat = () => {
+const Cashbook = () => {
   // State management
-  const [fromDate, setFromDate] = useState('2025-01-01');
-  const [toDate, setToDate] = useState('2025-06-30');
-  const [clientName, setClientName] = useState('');
-  const [clients, setClients] = useState([]);
-  const [vatStatements, setVatStatements] = useState([]);
+  const [fromDate, setFromDate] = useState('2025-06-21');
+  const [toDate, setToDate] = useState('2025-06-23');
+  const [cashbookEntries, setCashbookEntries] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
-  const [showResults, setShowResults] = useState(false);
   const [sortField, setSortField] = useState('date');
   const [sortDirection, setSortDirection] = useState('desc');
   const [currentPage, setCurrentPage] = useState(1);
@@ -48,19 +45,62 @@ const VatStat = () => {
     };
   };
 
-  // Fetch clients on component mount
+  // Mock cashbook data based on your image
+  const mockCashbookData = [
+    {
+      id: 1,
+      date: '2025-06-21',
+      particulars: 'INSPECTION AMOUNT ADDED IN SGP PORTAL',
+      debit: 10000,
+      credit: 0
+    },
+    {
+      id: 2,
+      date: '2025-06-21',
+      particulars: 'INSPECTION CHARGE PAID, 10976/06/2025, 003064',
+      debit: 0,
+      credit: 815.75
+    },
+    {
+      id: 3,
+      date: '2025-06-21',
+      particulars: 'INSPECTION CHARGE PAID, 10956/06/2025, 4480151',
+      debit: 0,
+      credit: 2828.75
+    },
+    {
+      id: 4,
+      date: '2025-06-22',
+      particulars: 'OFFICE RENT PAYMENT',
+      debit: 0,
+      credit: 5000
+    },
+    {
+      id: 5,
+      date: '2025-06-22',
+      particulars: 'CLIENT PAYMENT RECEIVED',
+      debit: 15000,
+      credit: 0
+    },
+    {
+      id: 6,
+      date: '2025-06-23',
+      particulars: 'UTILITY BILLS PAYMENT',
+      debit: 0,
+      credit: 1200
+    },
+    {
+      id: 7,
+      date: '2025-06-23',
+      particulars: 'BANK TRANSFER RECEIVED',
+      debit: 8500,
+      credit: 0
+    }
+  ];
+
+  // Initialize data
   useEffect(() => {
-    const fetchClients = async () => {
-      try {
-        const res = await fetch('http://localhost:5000/api/clients/', getAuthHeaders());
-        if (!res.ok) throw new Error('Failed to fetch clients');
-        const data = await res.json();
-        setClients(data);
-      } catch (err) {
-        setError('Failed to load clients');
-      }
-    };
-    fetchClients();
+    setCashbookEntries(mockCashbookData);
   }, []);
 
   // Search handler
@@ -71,88 +111,32 @@ const VatStat = () => {
     }
 
     setIsLoading(true);
-    setShowResults(false);
     setError('');
     
     try {
-      // Simulate API call for VAT statements
-      console.log('Searching VAT statements:', { fromDate, toDate, clientName });
+      // Simulate API call
+      console.log('Searching cashbook entries:', { fromDate, toDate });
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Mock VAT data - in real implementation, this would come from your API
-      const mockVatStatements = [
-        {
-          id: 1,
-          date: '2025-01-15',
-          clientName: 'EASTERN POWER SUPPORT TRADING EST.',
-          invoiceNo: 'INV-001',
-          vatAmount: 225.00,
-          baseAmount: 1500.00,
-          vatRate: 15
-        },
-        {
-          id: 2,
-          date: '2025-01-20',
-          clientName: 'PIVOT SHIPPING COMPANY LIMITED',
-          invoiceNo: 'INV-002',
-          vatAmount: 345.00,
-          baseAmount: 2300.00,
-          vatRate: 15
-        },
-        {
-          id: 3,
-          date: '2025-01-22',
-          clientName: 'RAISCO TRADING COMPANY',
-          invoiceNo: 'INV-003',
-          vatAmount: 180.00,
-          baseAmount: 1200.00,
-          vatRate: 15
-        },
-        {
-          id: 4,
-          date: '2025-02-05',
-          clientName: 'GLOBAL LOGISTICS PARTNERS',
-          invoiceNo: 'INV-004',
-          vatAmount: 420.00,
-          baseAmount: 2800.00,
-          vatRate: 15
-        },
-        {
-          id: 5,
-          date: '2025-02-12',
-          clientName: 'MIDDLE EAST TRADING GROUP',
-          invoiceNo: 'INV-005',
-          vatAmount: 315.00,
-          baseAmount: 2100.00,
-          vatRate: 15
-        }
-      ];
-
-      // Filter by client if selected
-      let filteredStatements = mockVatStatements;
-      if (clientName) {
-        filteredStatements = mockVatStatements.filter(statement =>
-          statement.clientName.toLowerCase().includes(clientName.toLowerCase())
-        );
-      }
-
-      // Filter by date range
-      filteredStatements = filteredStatements.filter(statement => {
-        const statementDate = statement.date;
-        return statementDate >= fromDate && statementDate <= toDate;
+      // Filter mock data based on date range
+      const filteredEntries = mockCashbookData.filter(entry => {
+        const entryDate = entry.date;
+        return entryDate >= fromDate && entryDate <= toDate;
       });
 
-      setVatStatements(filteredStatements);
-      setShowResults(true);
-      setSuccessMessage(`Found ${filteredStatements.length} VAT record(s) for the selected period`);
+      setCashbookEntries(filteredEntries);
+      setSuccessMessage(`Found ${filteredEntries.length} cashbook entries for the selected period`);
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (error) {
-      setError('Failed to fetch VAT data. Please try again.');
-      setVatStatements([]);
-      setShowResults(true);
+      setError('Failed to fetch cashbook data. Please try again.');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Print handler
+  const handlePrint = () => {
+    window.print();
   };
 
   // Sort handler
@@ -174,13 +158,13 @@ const VatStat = () => {
       <ArrowDown className="w-3 h-3 text-indigo-600 inline" />;
   };
 
-  // Sort VAT statements
-  const sortedStatements = [...vatStatements].sort((a, b) => {
+  // Sort cashbook entries
+  const sortedEntries = [...cashbookEntries].sort((a, b) => {
     let valA, valB;
     if (sortField === 'date') {
       valA = new Date(a.date);
       valB = new Date(b.date);
-    } else if (sortField === 'vatAmount' || sortField === 'baseAmount') {
+    } else if (sortField === 'debit' || sortField === 'credit') {
       valA = parseFloat(a[sortField]);
       valB = parseFloat(b[sortField]);
     } else {
@@ -195,32 +179,25 @@ const VatStat = () => {
   // Pagination
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentStatements = sortedStatements.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(sortedStatements.length / itemsPerPage);
+  const currentEntries = sortedEntries.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(sortedEntries.length / itemsPerPage);
 
   // Calculate totals
-  const getTotalVatAmount = () => {
-    return vatStatements.reduce((total, statement) => total + parseFloat(statement.vatAmount), 0);
+  const getTotalDebit = () => {
+    return cashbookEntries.reduce((sum, entry) => sum + parseFloat(entry.debit), 0);
   };
 
-  const getTotalBaseAmount = () => {
-    return vatStatements.reduce((total, statement) => total + parseFloat(statement.baseAmount), 0);
+  const getTotalCredit = () => {
+    return cashbookEntries.reduce((sum, entry) => sum + parseFloat(entry.credit), 0);
   };
 
-  // Print handler
-  const handlePrint = () => {
-    window.print();
+  const getBalance = () => {
+    return getTotalDebit() - getTotalCredit();
   };
-
-  // Prepare client options for dropdown
-  const clientOptions = clients.map(client => ({
-    value: client.name,
-    label: client.name
-  }));
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [vatStatements]);
+  }, [cashbookEntries]);
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6">
@@ -230,18 +207,17 @@ const VatStat = () => {
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-gray-800 flex items-center">
               <Calculator className="w-8 h-8 mr-3 text-indigo-600" />
-              VAT Statement Report
+              CASHBOOK
             </h1>
-            <p className="text-gray-600 mt-2">Generate and analyze VAT statements by date range</p>
+            <p className="text-gray-600 mt-2">Track and manage cash transactions</p>
           </div>
           <div className="mt-4 md:mt-0 flex flex-wrap gap-3">
             <button
               onClick={handlePrint}
-              disabled={!showResults || vatStatements.length === 0}
-              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium flex items-center shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium flex items-center shadow-md"
             >
               <Printer className="w-5 h-5 mr-2" />
-              Print Report
+              Print
             </button>
           </div>
         </div>
@@ -269,14 +245,14 @@ const VatStat = () => {
           <div className="bg-indigo-50 p-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-indigo-700 flex items-center">
               <Search className="w-5 h-5 mr-2" />
-              SEARCH VAT RECORDS
+              SEARCH BY DATE
             </h2>
           </div>
           <div className="p-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  From Date <span className="text-red-500">*</span>
+                  From <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -293,7 +269,7 @@ const VatStat = () => {
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  To Date <span className="text-red-500">*</span>
+                  To <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -308,85 +284,62 @@ const VatStat = () => {
                 </div>
               </div>
               
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Client Name (Optional)
-                </label>
-                <Select
-                  options={clientOptions}
-                  value={clientOptions.find(option => option.value === clientName)}
-                  onChange={(selectedOption) => setClientName(selectedOption?.value || '')}
-                  placeholder="Select Client"
-                  isSearchable
-                  isClearable
-                  menuPortalTarget={document.body}
-                  menuPosition="fixed"
-                  styles={selectStyles}
-                  className="w-full text-sm"
-                />
+              <div className="flex items-end">
+                <button
+                  onClick={handleSearch}
+                  disabled={isLoading}
+                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-5 rounded-lg shadow transition text-sm flex items-center justify-center disabled:opacity-50"
+                >
+                  {isLoading ? (
+                    <Loader className="w-4 h-4 animate-spin mr-2" />
+                  ) : (
+                    <Search className="w-4 h-4 mr-2" />
+                  )}
+                  {isLoading ? 'Searching...' : 'Search'}
+                </button>
               </div>
-            </div>
-            
-            <div className="mt-4 flex justify-end">
-              <button
-                onClick={handleSearch}
-                disabled={isLoading}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-5 rounded-lg shadow transition text-sm flex items-center disabled:opacity-50"
-              >
-                {isLoading ? (
-                  <Loader className="w-4 h-4 animate-spin mr-2" />
-                ) : (
-                  <Search className="w-4 h-4 mr-2" />
-                )}
-                {isLoading ? 'Searching...' : 'Search VAT Records'}
-              </button>
             </div>
           </div>
         </div>
 
-        {/* Report Header */}
-        {showResults && vatStatements.length > 0 && (
+        {/* Date Range Header */}
+        {cashbookEntries.length > 0 && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
-            <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
-              <p className="text-lg font-medium text-blue-800">
-                VAT Statement Period: {new Date(fromDate).toLocaleDateString('en-GB')} to {new Date(toDate).toLocaleDateString('en-GB')}
-              </p>
-              {clientName && (
-                <p className="text-lg font-medium text-blue-800 mt-1">
-                  Client: {clientName}
-                </p>
-              )}
+            <div className="text-center">
+              <h2 className="text-lg font-semibold text-gray-800">
+                From Date: {new Date(fromDate).toLocaleDateString('en-GB')} To Date: {new Date(toDate).toLocaleDateString('en-GB')}
+              </h2>
             </div>
           </div>
         )}
 
-        {/* VAT Summary */}
-        {showResults && vatStatements.length > 0 && (
+        {/* Cashbook Summary */}
+        {cashbookEntries.length > 0 && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="text-center">
-                <h3 className="text-sm font-medium text-gray-600">Total Base Amount</h3>
-                <p className="text-2xl font-bold text-blue-600">
-                  SAR {getTotalBaseAmount().toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                </p>
-              </div>
-              <div className="text-center">
-                <h3 className="text-sm font-medium text-gray-600">Total VAT Amount</h3>
+                <h3 className="text-sm font-medium text-gray-600">Total Debit</h3>
                 <p className="text-2xl font-bold text-green-600">
-                  SAR {getTotalVatAmount().toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  {getTotalDebit().toLocaleString('en-US', { minimumFractionDigits: 2 })}
                 </p>
               </div>
               <div className="text-center">
-                <h3 className="text-sm font-medium text-gray-600">Total with VAT</h3>
-                <p className="text-2xl font-bold text-indigo-600">
-                  SAR {(getTotalBaseAmount() + getTotalVatAmount()).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                <h3 className="text-sm font-medium text-gray-600">Total Credit</h3>
+                <p className="text-2xl font-bold text-red-600">
+                  {getTotalCredit().toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                </p>
+              </div>
+              <div className="text-center">
+                <h3 className="text-sm font-medium text-gray-600">Balance</h3>
+                <p className={`text-2xl font-bold ${getBalance() >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+                  {Math.abs(getBalance()).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                 </p>
               </div>
             </div>
           </div>
         )}
 
-        {/* VAT Statements Table */}
+        {/* Cashbook Table */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
@@ -394,11 +347,9 @@ const VatStat = () => {
                 <tr>
                   {[
                     { label: 'Date', key: 'date' },
-                    { label: 'Client Name', key: 'clientName' },
-                    { label: 'Invoice No', key: 'invoiceNo' },
-                    { label: 'Base Amount', key: 'baseAmount' },
-                    { label: 'VAT Rate', key: 'vatRate' },
-                    { label: 'VAT Amount', key: 'vatAmount' },
+                    { label: 'Particulars', key: 'particulars' },
+                    { label: 'Debit', key: 'debit' },
+                    { label: 'Credit', key: 'credit' },
                   ].map(({ label, key }) => (
                     <th
                       key={label}
@@ -414,64 +365,46 @@ const VatStat = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {currentStatements.length === 0 ? (
+                {currentEntries.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-6 text-center text-gray-500">
+                    <td colSpan={4} className="px-4 py-6 text-center text-gray-500">
                       <div className="flex flex-col items-center justify-center">
                         <Calculator className="w-16 h-16 text-gray-300 mb-4" />
-                        <h4 className="text-lg font-medium text-gray-500">
-                          {showResults ? 'No VAT Records Found' : 'Ready to Search'}
-                        </h4>
-                        <p className="text-gray-400 mt-2">
-                          {showResults 
-                            ? 'No VAT records found for the selected criteria' 
-                            : 'Select a date range and click search to view VAT statements'
-                          }
-                        </p>
+                        <h4 className="text-lg font-medium text-gray-500">No cashbook entries found</h4>
+                        <p className="text-gray-400 mt-2">Adjust your search criteria to view transactions</p>
                       </div>
                     </td>
                   </tr>
                 ) : (
-                  currentStatements.map((statement) => (
-                    <tr key={statement.id} className="hover:bg-gray-50 transition">
+                  currentEntries.map((entry) => (
+                    <tr key={entry.id} className="hover:bg-gray-50 transition">
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                        {new Date(statement.date).toLocaleDateString('en-GB')}
+                        {new Date(entry.date).toLocaleDateString('en-GB')}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-900 max-w-xs truncate">
-                        {statement.clientName}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                        <span className="bg-indigo-100 text-indigo-800 px-2 py-1 rounded-md text-xs font-medium">
-                          {statement.invoiceNo}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-blue-600 text-right">
-                        SAR {statement.baseAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
-                        {statement.vatRate}%
+                      <td className="px-4 py-3 text-sm text-gray-900 max-w-md">
+                        {entry.particulars}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-green-600 text-right">
-                        SAR {statement.vatAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                        {entry.debit > 0 ? entry.debit.toLocaleString('en-US', { minimumFractionDigits: 2 }) : ''}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-red-600 text-right">
+                        {entry.credit > 0 ? entry.credit.toLocaleString('en-US', { minimumFractionDigits: 2 }) : ''}
                       </td>
                     </tr>
                   ))
                 )}
                 
                 {/* Total row */}
-                {currentStatements.length > 0 && (
+                {currentEntries.length > 0 && (
                   <tr className="bg-gray-100 font-semibold">
-                    <td colSpan="3" className="px-4 py-3 text-right text-sm text-gray-900">
+                    <td colSpan="2" className="px-4 py-3 text-right text-sm text-gray-900">
                       <strong>TOTALS:</strong>
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-blue-700 text-right font-bold">
-                      SAR {getTotalBaseAmount().toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-900 text-center">
-                      15%
-                    </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-green-700 text-right font-bold">
-                      SAR {getTotalVatAmount().toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                      {getTotalDebit().toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-red-700 text-right font-bold">
+                      {getTotalCredit().toLocaleString('en-US', { minimumFractionDigits: 2 })}
                     </td>
                   </tr>
                 )}
@@ -484,7 +417,7 @@ const VatStat = () => {
             <div className="flex flex-col md:flex-row justify-between items-center px-4 py-3 border-t border-gray-200 bg-gray-50">
               <div className="text-sm text-gray-700 mb-2 md:mb-0">
                 Showing {indexOfFirstItem + 1} to{' '}
-                {Math.min(indexOfLastItem, sortedStatements.length)} of {sortedStatements.length} records
+                {Math.min(indexOfLastItem, sortedEntries.length)} of {sortedEntries.length} entries
               </div>
               <div className="flex items-center">
                 <div className="flex space-x-1">
@@ -507,7 +440,9 @@ const VatStat = () => {
                 </div>
               </div>
               <div className="hidden md:block text-sm font-medium text-gray-700">
-                Total VAT: <span className="text-green-600 font-bold">SAR {getTotalVatAmount().toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                Balance: <span className={`font-bold ${getBalance() >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+                  {Math.abs(getBalance()).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                </span>
               </div>
             </div>
           )}
@@ -517,4 +452,4 @@ const VatStat = () => {
   );
 };
 
-export default VatStat;
+export default Cashbook;

@@ -943,8 +943,9 @@ const AddSupplierPage = () => {
             <p className="text-gray-600 mt-2">Manage and organize your supplier network</p>
           </div>
           <div className="mt-4 md:mt-0 flex flex-wrap gap-3">
-            <button
+            {/* <button
               onClick={() => {
+                handleAddSupplier
                 setIsAdding(!isAdding);
                 setEditingId(null);
                 resetForm();
@@ -956,7 +957,24 @@ const AddSupplierPage = () => {
             >
               {isAdding ? <X className="w-5 h-5 mr-2" /> : <Plus className="w-5 h-5 mr-2" />}
               {isAdding ? 'Cancel' : 'Add Supplier'}
-            </button>
+            </button> */}
+            <button
+  onClick={() => {
+    if (isAdding) {
+      resetForm();
+    } else {
+      resetForm();
+      setIsAdding(true);
+    }
+  }}
+  className={`px-4 py-2 text-white rounded-lg font-medium transition-all flex items-center shadow-md
+    ${isAdding 
+      ? 'bg-red-600 hover:bg-red-700' 
+      : 'bg-indigo-600 hover:bg-indigo-700'}`}
+>
+  {isAdding ? <X className="w-5 h-5 mr-2" /> : <Plus className="w-5 h-5 mr-2" />}
+  {isAdding ? 'Cancel' : 'Add Supplier'}
+</button>
           </div>
         </div>
 
