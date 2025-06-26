@@ -4,7 +4,7 @@ import {
   LogOut, CheckCircle, Home, ArrowLeft, Clock, Shield, 
   User, AlertTriangle, Loader
 } from 'lucide-react';
-import { useAuth } from "../../../backend/modules/auth/AuthContext";
+import { useAuth } from "../services/AuthContext";
 
 const LogoutPage = () => {
   const navigate = useNavigate();

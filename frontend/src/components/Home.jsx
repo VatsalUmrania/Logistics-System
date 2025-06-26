@@ -4,7 +4,7 @@ import {
   Truck, Users, FileText, Database, CreditCard, FileCheck, Home, 
   ArrowRight, TrendingUp, Shield, Clock, CheckCircle, Star
 } from "lucide-react";
-import { useAuth } from "../../../backend/modules/auth/AuthContext";
+import { useAuth } from "../services/AuthContext";
 import logo from '../assets/logo_lms-removebg-preview.jpg';
 
 const HomePage = () => {

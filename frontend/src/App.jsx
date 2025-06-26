@@ -1,6 +1,6 @@
 import React from "react";
 import { createBrowserRouter, RouterProvider, Route, createRoutesFromElements, Outlet } from "react-router-dom";
-import { AuthProvider } from "../../backend/modules/auth/AuthContext"; // Ensure this is the correct path
+import { AuthProvider } from "./services/AuthContext"; // Ensure this is the correct path
 
 import Navbar from "./components/NavBar";
 import HomePage from "./components/Home";
