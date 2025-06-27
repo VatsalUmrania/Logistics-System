@@ -1,12 +1,16 @@
 import React, { lazy, Suspense } from "react";
 import { Route } from "react-router-dom";
+import OpeningBalancePage from "../pages/accounts/OpeningBalance";
 
 // Lazy load the components
 const AccountHead = lazy(() => import("../pages/accounts/AccountHead"));
 const JournalVoucher = lazy(() => import("../pages/accounts/JournalVoucher"));
 const Cashbook = lazy(() => import("../pages/accounts/CashBook"));
 const BalanceSheet = lazy(() => import("../pages/accounts/BalanceSheet"));
-const LedgerReport = lazy(() => import("../pages/accounts/LedgerReport "))
+const LedgerReport = lazy(() => import("../pages/accounts/LedgerReport "));
+const SubAccountHeadPage = lazy(() => import("../pages/accounts/SubAccountHead"));
+const openingBalances = lazy(() => import("../pages/accounts/OpeningBalance"))
+
 const accountsRoutes = (
   <>
     <Route
@@ -46,6 +50,22 @@ const accountsRoutes = (
       element={
         <Suspense fallback={<div>Loading...</div>}>
           <LedgerReport />
+        </Suspense>
+      }
+    />
+    <Route
+      path="/sub-account-head"
+      element={
+        <Suspense fallback={<div>Loading...</div>}>
+          <SubAccountHeadPage />
+        </Suspense>
+      }
+    />
+    <Route
+      path="/opening-balance"
+      element={
+        <Suspense fallback={<div>Loading...</div>}>
+          <OpeningBalancePage />
         </Suspense>
       }
     />
