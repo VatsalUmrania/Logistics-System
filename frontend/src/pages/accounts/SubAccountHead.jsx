@@ -49,59 +49,74 @@ const SubAccountHeadPage = () => {
 
   // Mock data - replace with actual API calls
   useEffect(() => {
-    // Simulate initial data
-    setSubAccountHeads([
-      { id: 1, accountHead: 'Account Receivable', subAccountHead: 'EASTERN STAR TRADING EST.' },
-      { id: 2, accountHead: 'Account Receivable', subAccountHead: 'GLOBELINK WEST STAR SHIPPING' },
-      { id: 3, accountHead: 'Account Receivable', subAccountHead: 'RAWAFID SYSTEMS FOR CONTRACTING, TRADING AND INDUSTRY CO LTD' },
-      { id: 4, accountHead: 'Account Receivable', subAccountHead: 'HASHIM USMAN AL MAIMANY TRADING(مؤسسة هاشم عثمان المیمنی التجاریة)' },
-      { id: 5, accountHead: 'Account Payable', subAccountHead: 'EXPEDITORS INTERNATIONAL CARGO CO LTD' },
-      { id: 6, accountHead: 'Account Receivable', subAccountHead: 'INSTRUMENTATION & CONTROL CO. LTD' }
-    ]);
-  }, []);
-
-  // Handle form submission
-  const handleSubmit = async () => {
-    if (!newSubAccount.accountHead.trim() || !newSubAccount.subAccountHead.trim()) {
-      setError('Please fill in all required fields');
-      return;
-    }
-
-    setLoading(true);
-    setError('');
-    
+  const fetchData = async () => {
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      if (editingId) {
-        // Update existing
-        setSubAccountHeads(prev => prev.map(item => 
-          item.id === editingId 
-            ? { ...item, ...newSubAccount }
-            : item
-        ));
-        setSuccess('Sub Account Head updated successfully!');
-      } else {
-        // Add new
-        const newId = Math.max(...subAccountHeads.map(item => item.id), 0) + 1;
-        setSubAccountHeads(prev => [...prev, { id: newId, ...newSubAccount }]);
-        setSuccess('Sub Account Head added successfully!');
-      }
-      
-      // Reset form
-      setIsAdding(false);
-      setEditingId(null);
-      setNewSubAccount({ accountHead: '', subAccountHead: '' });
-      
-      // Clear success message after 3 seconds
-      setTimeout(() => setSuccess(''), 3000);
+      setLoading(true);
+      const res = await axios.get(BASE_URL, getAuthHeaders());
+      const formatted = res.data.map(item => ({
+        id: item.id,
+        accountHead: item.account_head,
+        subAccountHead: item.sub_account_head
+      }));
+      setSubAccountHeads(formatted);
+
     } catch (err) {
-      setError('Failed to save Sub Account Head. Please try again.');
+      setError('Failed to load Sub Account Heads');
     } finally {
       setLoading(false);
     }
   };
+
+  fetchData();
+}, []);
+
+const BASE_URL = 'http://localhost:5000/api/sub-account-head';
+
+  // Handle form submission
+  const handleSubmit = async () => {
+  if (!newSubAccount.accountHead.trim() || !newSubAccount.subAccountHead.trim()) {
+    setError('Please fill in all required fields');
+    return;
+  }
+
+  setLoading(true);
+  setError('');
+  try {
+    if (editingId) {
+      // PUT request to update
+      await axios.put(`${BASE_URL}/${editingId}`, {
+  account_head: newSubAccount.accountHead,
+  sub_account_head: newSubAccount.subAccountHead
+}, getAuthHeaders());
+
+      setSuccess('Sub Account Head updated successfully!');
+    } else {
+      // POST request to create
+      await axios.post(BASE_URL, {
+  account_head: newSubAccount.accountHead,
+  sub_account_head: newSubAccount.subAccountHead
+}, getAuthHeaders());
+
+      setSuccess('Sub Account Head added successfully!');
+    }
+
+    // Refetch list
+    const res = await axios.get(BASE_URL, getAuthHeaders());
+
+    setSubAccountHeads(res.data);
+
+    // Reset form
+    setIsAdding(false);
+    setEditingId(null);
+    setNewSubAccount({ accountHead: '', subAccountHead: '' });
+    setTimeout(() => setSuccess(''), 5000);
+  } catch (err) {
+    setError('Failed to save Sub Account Head. Please try again.');
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   // Handle edit
   const handleEdit = (item) => {
@@ -120,10 +135,12 @@ const SubAccountHeadPage = () => {
     setLoading(true);
     try {
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setSubAccountHeads(prev => prev.filter(item => item.id !== id));
+      await axios.delete(`${BASE_URL}/${id}`, getAuthHeaders());
+      const res = await axios.get(BASE_URL, getAuthHeaders());
+      setSubAccountHeads(res.data);
+
       setSuccess('Sub Account Head deleted successfully!');
-      setTimeout(() => setSuccess(''), 3000);
+      setTimeout(() => setSuccess(''), 5000);
     } catch (err) {
       setError('Failed to delete Sub Account Head. Please try again.');
     } finally {
@@ -142,10 +159,13 @@ const SubAccountHeadPage = () => {
   };
 
   // Filter and sort data
-  const filteredData = subAccountHeads.filter(item =>
-    item.subAccountHead.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.accountHead.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredData = Array.isArray(subAccountHeads)
+  ? subAccountHeads.filter(item =>
+      (item.subAccountHead?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+      (item.accountHead?.toLowerCase() || '').includes(searchTerm.toLowerCase())
+    )
+  : [];
+
 
   const sortedData = [...filteredData].sort((a, b) => {
     const aValue = a[sortField]?.toString().toLowerCase() || '';
