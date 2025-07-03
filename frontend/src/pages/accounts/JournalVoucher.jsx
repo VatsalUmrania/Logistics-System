@@ -3,36 +3,20 @@ import {
   BookOpen, Plus, X, Save, Trash2, Calculator, 
   ChevronDown, Search, ChevronLeft, ChevronRight
 } from 'lucide-react';
-import axios from 'axios';
 import DatePicker from 'react-datepicker';
-import Select from 'react-select';
 import 'react-datepicker/dist/react-datepicker.css';
-
-// Auth header utility
-const getAuthHeaders = () => {
-  const token = localStorage.getItem('authToken');
-  if (!token) {
-    console.error("Authentication token missing - redirecting to login");
-    window.location.href = '/login';
-    return {};
-  }
-  return {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    }
-  };
-};
+import axios from 'axios';
+import { voucherService } from '../../services/api';
 
 const JournalVoucherPage = () => {
   // State management
   const [journalVouchers, setJournalVouchers] = useState([]);
   const [accountHeads, setAccountHeads] = useState([]);
   const [subAccounts, setSubAccounts] = useState({});
-  const [paymentTypes, setPaymentTypes] = useState(['Cash', 'Bank Transfer', 'Check', 'Credit Card']);
+  const [subAccountIdToName, setSubAccountIdToName] = useState({});
+  const [paymentTypes, setPaymentTypes] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isAdding, setIsAdding] = useState(false);
-  const [editingId, setEditingId] = useState(null);
   
   // Form state
   const [voucherData, setVoucherData] = useState({
@@ -51,44 +35,62 @@ const JournalVoucherPage = () => {
     remarks: ''
   });
   
-  const [sortField, setSortField] = useState('id');
-  const [sortDirection, setSortDirection] = useState('asc');
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [fetchingData, setFetchingData] = useState(true);
   const itemsPerPage = 8;
 
-  // Mock data initialization
+  // Fetch initial data
   useEffect(() => {
-    const mockAccountHeads = [
-      'Current Asset',
-      'Loans And Advances(Asset)',
-      'Account Receivable',
-      'Account Payable',
-      'Cash In Hand',
-      'Current Liability',
-      'Capital Account',
-      'Bank Account',
-      'Fixed Asset',
-      'Investment'
-    ];
-    
-    const mockSubAccounts = {
-      'Current Asset': ['Select', 'Inventory', 'Prepaid Expenses'],
-      'Cash In Hand': ['Select', 'Cash', 'Petty Cash - BAJER ALI', 'Petty Cash Saheer', 'Petty Cash Mureed', 'PETTY CASH SIDDHIQUE', 'PETTY CASH ABDUL HAMEED LAJAMI', 'PETTY CASH IN INSPECTION'],
-      'Current Liability': ['Select', 'VAT SETTLEMENT'],
-      'Account Receivable': ['Select', 'Trade Debtors', 'Other Receivables'],
-      'Account Payable': ['Select', 'Trade Creditors', 'Other Payables'],
-      'Bank Account': ['Select', 'Al Rajhi Bank', 'SABB Bank', 'NCB Bank']
+    const fetchData = async () => {
+      try {
+        const [accountData, vouchers] = await Promise.all([
+          voucherService.getAccountData(),
+          voucherService.getVouchers()
+        ]);
+        
+        // Defensive check
+        if (!accountData || !Array.isArray(accountData.accountHeads)) {
+          setError('Account data is not valid');
+          setFetchingData(false);
+          return;
+        }
+        
+        setAccountHeads(accountData.accountHeads);
+        setPaymentTypes(accountData.paymentTypes);
+        setJournalVouchers(vouchers);
+        
+        // Build sub-account maps
+        const subAccountsMap = {};
+        const idToNameMap = {};
+        
+        for (const head of accountData.accountHeads) {
+          const subAccounts = await voucherService.getSubAccounts(head.id);
+          subAccountsMap[head.id] = subAccounts;
+          
+          subAccounts.forEach(sa => {
+            idToNameMap[sa.id] = sa.name;
+          });
+        }
+        
+        setSubAccounts(subAccountsMap);
+        setSubAccountIdToName(idToNameMap);
+        
+        // Get next voucher number
+        const nextVoucherNo = await voucherService.getNextVoucherNo();
+        setVoucherData(prev => ({ ...prev, voucherNo: nextVoucherNo }));
+        
+      } catch (err) {
+        console.error('Failed to fetch data:', err);
+        setError(err.response?.data?.error || 'Failed to load application data');
+      } finally {
+        setFetchingData(false);
+      }
     };
-    
-    setAccountHeads(mockAccountHeads);
-    setSubAccounts(mockSubAccounts);
-    
-    // Generate next voucher number
-    const nextVoucherNo = `JV-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`;
-    setVoucherData(prev => ({ ...prev, voucherNo: nextVoucherNo }));
+
+    fetchData();
   }, []);
 
   // Handle account head change
@@ -151,72 +153,66 @@ const JournalVoucherPage = () => {
     setError('');
     
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const newVoucher = {
-        id: Date.now(),
-        ...voucherData,
-        date: voucherData.date.toISOString().split('T')[0],
-        entries: [...entries],
-        totalAmount,
-        createdAt: new Date().toISOString()
+      const payload = {
+        voucherData: {
+          voucher_no: voucherData.voucherNo,
+          date: voucherData.date.toISOString().split('T')[0],
+          payment_type: voucherData.paymentType,
+          total_amount: totalAmount
+        },
+        entries: entries.map(entry => ({
+          debit_account_head_id: parseInt(entry.debitAccountHead),
+          debit_account_subhead_id: parseInt(entry.debitAccount),
+          credit_account_head_id: parseInt(entry.creditAccountHead),
+          credit_account_subhead_id: parseInt(entry.creditAccount),
+          amount: entry.amount,
+          remarks: entry.remarks || null
+        }))
       };
 
-      if (editingId) {
-        setJournalVouchers(prev => prev.map(item => 
-          item.id === editingId ? newVoucher : item
-        ));
-        setSuccess('Journal Voucher updated successfully!');
-      } else {
-        setJournalVouchers(prev => [...prev, newVoucher]);
-        setSuccess('Journal Voucher created successfully!');
-      }
+      await voucherService.createVoucher(payload);
       
-      // Reset form
-      setIsAdding(false);
-      setEditingId(null);
-      setVoucherData({
-        date: new Date(),
-        voucherNo: `JV-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`,
-        paymentType: ''
-      });
+      setSuccess('Journal Voucher created successfully!');
+      
+      // Refresh data
+      const [vouchers, nextVoucherNo] = await Promise.all([
+        voucherService.getVouchers(),
+        voucherService.getNextVoucherNo()
+      ]);
+      
+      setJournalVouchers(vouchers);
+      setVoucherData(prev => ({ ...prev, voucherNo: nextVoucherNo }));
       setEntries([]);
-      setCurrentEntry({
-        debitAccountHead: '',
-        debitAccount: '',
-        creditAccountHead: '',
-        creditAccount: '',
-        amount: '',
-        remarks: ''
-      });
       
-      setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      setError('Failed to save Journal Voucher. Please try again.');
+      console.error('Save error:', err);
+      setError(err.response?.data?.error || 'Failed to save Journal Voucher');
     } finally {
       setLoading(false);
     }
   };
 
-  // Filter and sort data
-  const filteredData = journalVouchers.filter(item =>
-    item.voucherNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.paymentType.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const sortedData = [...filteredData].sort((a, b) => {
-    const aValue = a[sortField]?.toString().toLowerCase() || '';
-    const bValue = b[sortField]?.toString().toLowerCase() || '';
-    if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
-    if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
-    return 0;
-  });
+  // Filter data
+  const filteredData = Array.isArray(journalVouchers)
+    ? journalVouchers.filter(item =>
+        item.voucher_no.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.payment_type.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : [];
 
   // Pagination
-  const totalPages = Math.ceil(sortedData.length / itemsPerPage);
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = sortedData.slice(indexOfFirstItem, indexOfLastItem);
+  const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
+
+  if (fetchingData) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-8">
@@ -247,18 +243,21 @@ const JournalVoucherPage = () => {
               </div>
             </div>
             <button
-              onClick={() => {
+              onClick={async () => {
                 setIsAdding(!isAdding);
-                setEditingId(null);
                 setError('');
                 if (!isAdding) {
-                  const nextVoucherNo = `JV-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`;
-                  setVoucherData({
-                    date: new Date(),
-                    voucherNo: nextVoucherNo,
-                    paymentType: ''
-                  });
-                  setEntries([]);
+                  try {
+                    const nextVoucherNo = await voucherService.getNextVoucherNo();
+                    setVoucherData({
+                      date: new Date(),
+                      voucherNo: nextVoucherNo,
+                      paymentType: ''
+                    });
+                    setEntries([]);
+                  } catch (err) {
+                    setError('Failed to get next voucher number');
+                  }
                 }
               }}
               className={`px-5 py-2 text-white rounded-lg font-medium transition-all flex items-center shadow-md ${
@@ -333,10 +332,11 @@ const JournalVoucherPage = () => {
                     type="text"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                     value={voucherData.voucherNo}
-                    onChange={(e) => setVoucherData({ ...voucherData, voucherNo: e.target.value })}
+                    readOnly
                   />
                 </div>
                 
+                {/* Payment Type Field */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Payment Type <span className="text-red-500">*</span>
@@ -377,7 +377,7 @@ const JournalVoucherPage = () => {
                     >
                       <option value="">Select</option>
                       {accountHeads.map(head => (
-                        <option key={head} value={head}>{head}</option>
+                        <option key={head.id} value={head.id}>{head.name}</option>
                       ))}
                     </select>
                   </div>
@@ -394,7 +394,7 @@ const JournalVoucherPage = () => {
                     >
                       <option value="">Select</option>
                       {(subAccounts[currentEntry.debitAccountHead] || []).map(account => (
-                        <option key={account} value={account}>{account}</option>
+                        <option key={account.id} value={account.id}>{account.name}</option>
                       ))}
                     </select>
                   </div>
@@ -410,7 +410,7 @@ const JournalVoucherPage = () => {
                     >
                       <option value="">Select</option>
                       {accountHeads.map(head => (
-                        <option key={head} value={head}>{head}</option>
+                        <option key={head.id} value={head.id}>{head.name}</option>
                       ))}
                     </select>
                   </div>
@@ -427,7 +427,7 @@ const JournalVoucherPage = () => {
                     >
                       <option value="">Select</option>
                       {(subAccounts[currentEntry.creditAccountHead] || []).map(account => (
-                        <option key={account} value={account}>{account}</option>
+                        <option key={account.id} value={account.id}>{account.name}</option>
                       ))}
                     </select>
                   </div>
@@ -486,8 +486,12 @@ const JournalVoucherPage = () => {
                       <tbody>
                         {entries.map((entry) => (
                           <tr key={entry.id} className="border-t border-gray-200">
-                            <td className="px-4 py-2 text-sm text-gray-900">{entry.debitAccount}</td>
-                            <td className="px-4 py-2 text-sm text-gray-900">{entry.creditAccount}</td>
+                            <td className="px-4 py-2 text-sm text-gray-900">
+                              {subAccountIdToName[entry.debitAccount] || entry.debitAccount}
+                            </td>
+                            <td className="px-4 py-2 text-sm text-gray-900">
+                              {subAccountIdToName[entry.creditAccount] || entry.creditAccount}
+                            </td>
                             <td className="px-4 py-2 text-sm text-gray-900">{entry.remarks || '-'}</td>
                             <td className="px-4 py-2 text-sm text-gray-900 text-right font-medium">
                               SAR {entry.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
@@ -575,17 +579,17 @@ const JournalVoucherPage = () => {
                       <td className="px-6 py-4 text-center text-gray-900 font-medium">
                         {indexOfFirstItem + index + 1}
                       </td>
-                      <td className="px-6 py-4 text-gray-900 font-medium">{voucher.voucherNo}</td>
+                      <td className="px-6 py-4 text-gray-900 font-medium">{voucher.voucher_no}</td>
                       <td className="px-6 py-4 text-gray-900">
                         {new Date(voucher.date).toLocaleDateString('en-GB')}
                       </td>
                       <td className="px-6 py-4">
                         <span className="px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                          {voucher.paymentType}
+                          {voucher.payment_type}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right font-bold text-gray-900">
-                        SAR {voucher.totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                        SAR {voucher.total_amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                       </td>
                       <td className="px-6 py-4 text-center">
                         <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
@@ -600,10 +604,10 @@ const JournalVoucherPage = () => {
           </div>
 
           {/* Pagination */}
-          {sortedData.length > itemsPerPage && (
+          {filteredData.length > itemsPerPage && (
             <div className="flex justify-between items-center px-6 py-4 border-t border-gray-200 bg-gray-50">
               <div className="text-sm text-gray-700">
-                Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, sortedData.length)} of {sortedData.length} results
+                Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, filteredData.length)} of {filteredData.length} results
               </div>
               <div className="flex space-x-2">
                 <button

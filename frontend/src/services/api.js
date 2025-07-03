@@ -1,44 +1,57 @@
-// api.js
 import axios from 'axios';
-
 
 const API = axios.create({
   baseURL: 'http://localhost:5000/api',
   withCredentials: true
 });
 
-const getAuthHeaders = () => {
-  const token = localStorage.getItem('authToken');
-  if (!token) throw new Error('Authentication token missing');
-  return { 'Authorization': `Bearer ${token}` };
-};
-
+// Always attach the JWT token from localStorage or sessionStorage to every request
 API.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+  // Try both localStorage and sessionStorage for flexibility
+  const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken') || localStorage.getItem('token') || sessionStorage.getItem('token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
 
-const authService = {
-  login: async (credentials) => {
-    try {
-      const response = await API.post('/auth/login', credentials);
-      return response.data;
-    } catch (error) {
-      throw error.response?.data?.message || 'Login failed';
+// Add error handling
+API.interceptors.response.use(
+  response => response,
+  error => {
+    if (error.response?.status === 401) {
+      // Handle unauthorized error
+      localStorage.removeItem('authToken');
+      sessionStorage.removeItem('authToken');
+      localStorage.removeItem('token');
+      sessionStorage.removeItem('token');
+      window.location.href = '/login';
     }
-  },
+    return Promise.reject(error);
+  }
+);
 
-  getProtectedData: async () => {
-    try {
-      const response = await API.get('/protected');
-      return response.data;
-    } catch (error) {
-      throw error.response?.data?.message || 'Request failed';
-    }
+const voucherService = {
+  getAccountData: async () => {
+    const response = await API.get('/journal-vouchers/account-data');
+    return response.data;
+  },
+  getVouchers: async () => {
+    const response = await API.get('/journal-vouchers');
+    return response.data;
+  },
+  getSubAccounts: async (headId) => {
+    const response = await API.get(`/journal-vouchers/sub-accounts/${headId}`);
+    return response.data;
+  },
+  createVoucher: async (voucherData) => {
+    const response = await API.post('/journal-vouchers', voucherData);
+    return response.data;
+  },
+  getNextVoucherNo: async () => {
+    const response = await API.get('/journal-vouchers/next-voucher-no');
+    return response.data;
   }
 };
 
-export { authService };
+export { API, voucherService };

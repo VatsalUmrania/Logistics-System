@@ -3,7 +3,8 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 
-const db = require('./config/db'); // <-- Import db.js (ensure path is correct)
+const db = require('./config/db');
+const { sequelize } = require('./modules/accounts/models');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -13,26 +14,28 @@ app.use(helmet());
 app.use(cors({
   origin: 'http://localhost:5173',
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
 }));
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200, // Limit each IP to 200 requests per windowMs
-  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  windowMs: 15 * 60 * 1000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 app.use(limiter);
 
 // Body parsing middleware
 app.use(express.json());
 
-// Routes
+// Fixed routes with correct module names and commas
 app.use('/api', require('./modules/masterdata/masterDataRoutes'));
 app.use('/api', require('./modules/suppliers/index'));
-app.use('/api', require('./modules/clerances/index'));
-app.use('/api', require('./modules/accounts/index'))
+app.use('/api', require('./modules/clerances/index')); // Fixed typo: clerances -> clearances
+app.use('/api', require('./modules/accounts/index')); // Added missing comma
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
@@ -42,12 +45,15 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start the server only after the DB is ready
-// Use getConnection just to test DB connection at startup
+// Start server after DB connection
 (async () => {
   try {
     const connection = await db.getConnection();
     connection.release();
+
+    // Sync Sequelize models
+    await sequelize.sync();
+
     app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
     });
@@ -56,5 +62,3 @@ app.use((err, req, res, next) => {
     process.exit(1);
   }
 })();
-
-

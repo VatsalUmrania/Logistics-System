@@ -17,7 +17,10 @@ const SubAccountHead = {
       [account_head, sub_account_head, id]
     ),
 
-  delete: (id) => db.query('DELETE FROM sub_account_heads WHERE id = ?', [id])
+  delete: (id) => db.query('DELETE FROM sub_account_heads WHERE id = ?', [id]),
+
+  getByAccountHeadId: (accountHeadId) =>
+    db.query('SELECT * FROM sub_account_heads WHERE account_head = ?', [accountHeadId])
 };
 
 module.exports = SubAccountHead;
