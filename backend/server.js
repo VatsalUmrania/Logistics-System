@@ -4,7 +4,7 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 
 const db = require('./config/db');
-const { sequelize } = require('./modules/accounts/models');
+const { sequelize } = require('./modules/accounts/index');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -50,9 +50,6 @@ app.use((err, req, res, next) => {
   try {
     const connection = await db.getConnection();
     connection.release();
-
-    // Sync Sequelize models
-    await sequelize.sync();
 
     app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);

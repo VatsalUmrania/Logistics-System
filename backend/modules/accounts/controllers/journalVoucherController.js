@@ -1,143 +1,349 @@
-const { JournalVoucher } = require('../models/JournalVoucher');
-const { JournalVoucherEntry } = require("../models/JournalVoucherEntry");
-const { AccountHead } = require('../models/AccountHead');
-const { AccountSubHead } = require('../models/SubAccountHead');
-const { Op } = require('sequelize');
+const JournalVoucher = require('../models/JournalVoucher');
+const Joi = require('joi');
 
-// Generate voucher number (JV-YYYY-XXXX)
-async function generateVoucherNo(prefix = 'JV') {
-  const year = new Date().getFullYear();
-  const lastVoucher = await JournalVoucher.findOne({
-    where: {
-      voucher_no: {
-        [Op.like]: `${prefix}-${year}-%`
-      }
+// ✅ Validation schemas
+const voucherSchema = Joi.object({
+    voucher_no: Joi.string().required().trim().max(50),
+    date: Joi.date().iso().required(),
+    payment_type: Joi.string().valid('Cash', 'Bank', 'Credit', 'Cheque', 'Online Transfer', 'Other').required(),
+    total_amount: Joi.number().positive().precision(2).required(),
+    remarks: Joi.string().max(1000).allow('', null).optional()
+});
+
+const entrySchema = Joi.object({
+    debit_account_head_id: Joi.number().integer().positive().required(),
+    debit_account_subhead_id: Joi.number().integer().positive().required(),
+    credit_account_head_id: Joi.number().integer().positive().required(),
+    credit_account_subhead_id: Joi.number().integer().positive().required(),
+    amount: Joi.number().positive().precision(2).required(),
+    remarks: Joi.string().max(500).allow('', null).optional()
+});
+
+const journalVoucherController = {
+    // ✅ Get all vouchers
+    async getAll(req, res) {
+        try {
+            const { page = 1, limit = 10, search = '' } = req.query;
+
+            // Pre-check: Validate pagination parameters
+            const pageNum = parseInt(page);
+            const limitNum = parseInt(limit);
+
+            if (isNaN(pageNum) || pageNum < 1) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Page must be a positive number'
+                });
+            }
+
+            if (isNaN(limitNum) || limitNum < 1 || limitNum > 100) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Limit must be between 1 and 100'
+                });
+            }
+
+            const result = await JournalVoucher.getAll(pageNum, limitNum, search);
+
+            if (!result.success) {
+                return res.status(500).json({
+                    success: false,
+                    error: result.error
+                });
+            }
+
+            res.status(200).json(result);
+        } catch (error) {
+            console.error('Error in getAll controller:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Internal server error while fetching journal vouchers'
+            });
+        }
     },
-    order: [['created_at', 'DESC']]
-  });
 
-  let sequence = 1;
-  if (lastVoucher) {
-    const lastSeq = parseInt(lastVoucher.voucher_no.split('-')[2]) || 0;
-    sequence = lastSeq + 1;
-  }
+    // ✅ Create voucher
+    async create(req, res) {
+        try {
+            const { voucherData, entries } = req.body;
 
-  return `${prefix}-${year}-${sequence.toString().padStart(4, '0')}`;
-}
+            // Pre-check: Validate voucher data
+            const { error: voucherError, value: validatedVoucherData } = voucherSchema.validate(voucherData);
+            if (voucherError) {
+                return res.status(400).json({
+                    success: false,
+                    error: `Voucher validation error: ${voucherError.details[0].message}`
+                });
+            }
 
-// Create new journal voucher
-exports.createVoucher = async (req, res) => {
-  try {
-    const { voucherData, entries } = req.body;
-    
-    // Calculate total amount from entries
-    const totalAmount = entries.reduce((sum, entry) => sum + parseFloat(entry.amount), 0);
-    
-    const voucher = await JournalVoucher.create({
-      voucher_no: voucherData.voucher_no,
-      date: voucherData.date,
-      payment_type: voucherData.payment_type,
-      total_amount: totalAmount
-    });
+            // Pre-check: Validate entries
+            if (!entries || !Array.isArray(entries) || entries.length === 0) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'At least one journal entry is required'
+                });
+            }
 
-    const entryPromises = entries.map(entry => 
-      JournalVoucherEntry.create({
-        voucher_id: voucher.id,
-        debit_account_head_id: entry.debit_account_head_id,
-        debit_account_subhead_id: entry.debit_account_subhead_id,
-        credit_account_head_id: entry.credit_account_head_id,
-        credit_account_subhead_id: entry.credit_account_subhead_id,
-        amount: entry.amount,
-        remarks: entry.remarks
-      })
-    );
+            const validatedEntries = [];
+            for (let i = 0; i < entries.length; i++) {
+                const { error: entryError, value: validatedEntry } = entrySchema.validate(entries[i]);
+                if (entryError) {
+                    return res.status(400).json({
+                        success: false,
+                        error: `Entry ${i + 1} validation error: ${entryError.details[0].message}`
+                    });
+                }
+                validatedEntries.push(validatedEntry);
+            }
 
-    await Promise.all(entryPromises);
+            // Pre-check: Validate total amount matches entries sum
+            const entriesSum = validatedEntries.reduce((sum, entry) => sum + entry.amount, 0);
+            if (Math.abs(entriesSum - validatedVoucherData.total_amount) > 0.01) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Total amount does not match sum of entries'
+                });
+            }
 
-    res.status(201).json({
-      message: 'Journal voucher created successfully',
-      voucherId: voucher.id
-    });
-  } catch (error) {
-    console.error('Error creating journal voucher:', error);
-    res.status(500).json({ 
-      error: 'Server error',
-      details: error.message 
-    });
-  }
+            const result = await JournalVoucher.create(validatedVoucherData, validatedEntries);
+
+            if (!result.success) {
+                return res.status(400).json({
+                    success: false,
+                    error: result.error
+                });
+            }
+
+            res.status(201).json({
+                success: true,
+                message: 'Journal voucher created successfully',
+                data: result.data
+            });
+        } catch (error) {
+            console.error('Error in create controller:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Internal server error while creating journal voucher'
+            });
+        }
+    },
+
+    // ✅ Get voucher by ID
+    async getById(req, res) {
+        try {
+            const { id } = req.params;
+
+            // Pre-check: Validate ID parameter
+            if (!id || isNaN(id) || parseInt(id) < 1) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Invalid journal voucher ID'
+                });
+            }
+
+            const result = await JournalVoucher.getById(parseInt(id));
+
+            if (!result.success) {
+                const statusCode = result.error.includes('not found') ? 404 : 500;
+                return res.status(statusCode).json({
+                    success: false,
+                    error: result.error
+                });
+            }
+
+            res.status(200).json(result);
+        } catch (error) {
+            console.error('Error in getById controller:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Internal server error while fetching journal voucher'
+            });
+        }
+    },
+
+    // ✅ Update voucher
+    async update(req, res) {
+      try {
+          const { id } = req.params;
+          const { voucherData, entries } = req.body;
+
+          // Pre-check: Validate ID parameter
+          if (!id || isNaN(id) || parseInt(id) < 1) {
+              return res.status(400).json({
+                  success: false,
+                  error: 'Invalid journal voucher ID'
+              });
+          }
+
+          // Pre-check: Validate voucher data
+          const { error: voucherError, value: validatedVoucherData } = voucherSchema.validate(voucherData);
+          if (voucherError) {
+              return res.status(400).json({
+                  success: false,
+                  error: `Voucher validation error: ${voucherError.details[0].message}`
+              });
+          }
+
+          // Pre-check: Validate entries
+          if (!entries || !Array.isArray(entries) || entries.length === 0) {
+              return res.status(400).json({
+                  success: false,
+                  error: 'At least one journal entry is required'
+              });
+          }
+
+          const validatedEntries = [];
+          for (let i = 0; i < entries.length; i++) {
+              const { error: entryError, value: validatedEntry } = entrySchema.validate(entries[i]);
+              if (entryError) {
+                  return res.status(400).json({
+                      success: false,
+                      error: `Entry ${i + 1} validation error: ${entryError.details[0].message}`
+                  });
+              }
+              validatedEntries.push(validatedEntry);
+          }
+
+          // Pre-check: Validate total amount matches entries sum
+          const entriesSum = validatedEntries.reduce((sum, entry) => sum + entry.amount, 0);
+          if (Math.abs(entriesSum - validatedVoucherData.total_amount) > 0.01) {
+              return res.status(400).json({
+                  success: false,
+                  error: 'Total amount does not match sum of entries'
+              });
+          }
+
+          const result = await JournalVoucher.update(parseInt(id), validatedVoucherData, validatedEntries);
+
+          if (!result.success) {
+              const statusCode = result.error.includes('not found') ? 404 : 400;
+              return res.status(statusCode).json({
+                  success: false,
+                  error: result.error
+              });
+          }
+
+          res.status(200).json({
+              success: true,
+              message: 'Journal voucher updated successfully',
+              data: result.data
+          });
+      } catch (error) {
+          console.error('Error in update controller:', error);
+          res.status(500).json({
+              success: false,
+              error: 'Internal server error while updating journal voucher'
+          });
+      }
+  },
+    // ✅ Delete voucher
+    async delete(req, res) {
+        try {
+            const { id } = req.params;
+
+            // Pre-check: Validate ID parameter
+            if (!id || isNaN(id) || parseInt(id) < 1) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Invalid journal voucher ID'
+                });
+            }
+
+            const result = await JournalVoucher.delete(parseInt(id));
+
+            if (!result.success) {
+                const statusCode = result.error.includes('not found') ? 404 : 400;
+                return res.status(statusCode).json({
+                    success: false,
+                    error: result.error
+                });
+            }
+
+            res.status(200).json({
+                success: true,
+                message: 'Journal voucher deleted successfully',
+                data: result.data
+            });
+        } catch (error) {
+            console.error('Error in delete controller:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Internal server error while deleting journal voucher'
+            });
+        }
+    },
+
+    // ✅ Get next voucher number
+    async getNextVoucherNo(req, res) {
+        try {
+            const voucherNo = await JournalVoucher.generateVoucherNumber();
+            
+            res.status(200).json({
+                success: true,
+                data: { voucher_no: voucherNo }
+            });
+        } catch (error) {
+            console.error('Error in getNextVoucherNo controller:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Failed to generate voucher number'
+            });
+        }
+    },
+
+    // ✅ Get account data for dropdowns
+    async getAccountData(req, res) {
+        try {
+            const result = await JournalVoucher.getAccountData();
+
+            if (!result.success) {
+                return res.status(500).json({
+                    success: false,
+                    error: result.error
+                });
+            }
+
+            res.status(200).json(result);
+        } catch (error) {
+            console.error('Error in getAccountData controller:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Internal server error while fetching account data'
+            });
+        }
+    },
+
+    // ✅ Get sub accounts for account head
+    async getSubAccounts(req, res) {
+        try {
+            const { accountHeadId } = req.params;
+
+            // Pre-check: Validate account head ID
+            if (!accountHeadId || isNaN(accountHeadId) || parseInt(accountHeadId) < 1) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Invalid account head ID'
+                });
+            }
+
+            const result = await JournalVoucher.getSubAccounts(parseInt(accountHeadId));
+
+            if (!result.success) {
+                return res.status(500).json({
+                    success: false,
+                    error: result.error
+                });
+            }
+
+            res.status(200).json(result);
+        } catch (error) {
+            console.error('Error in getSubAccounts controller:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Internal server error while fetching sub accounts'
+            });
+        }
+    }
 };
 
-// Get all journal vouchers
-exports.getAllVouchers = async (req, res) => {
-  try {
-    const vouchers = await JournalVoucher.findAll({
-      include: [{
-        model: JournalVoucherEntry,
-        as: 'entries',
-        attributes: ['id', 'amount', 'remarks']
-      }],
-      order: [['date', 'DESC']]
-    });
-
-    res.json(vouchers);
-  } catch (error) {
-    console.error('Error fetching journal vouchers:', error);
-    res.status(500).json({ 
-      error: 'Server error',
-      details: error.message 
-    });
-  }
-};
-
-// Get next voucher number
-exports.getNextVoucherNo = async (req, res) => {
-  try {
-    const voucherNo = await generateVoucherNo('JV');
-    res.json({ voucher_no: voucherNo });
-  } catch (error) {
-    console.error('Error generating voucher number:', error);
-    res.status(500).json({ 
-      error: 'Server error',
-      details: error.message 
-    });
-  }
-};
-
-// Get account data for voucher creation
-exports.getAccountData = async (req, res) => {
-  try {
-    const accountHeads = await AccountHead.findAll({
-      attributes: ['id', 'name'],
-      order: [['name', 'ASC']]
-    });
-
-    const paymentTypes = ['Cash', 'Cheque', 'Bank Transfer', 'Online Payment'];
-    res.json({ accountHeads, paymentTypes });
-  } catch (error) {
-    console.error('Error fetching account data:', error);
-    res.status(500).json({ 
-      error: 'Server error',
-      details: error.message 
-    });
-  }
-};
-
-// Get sub-accounts by account head ID
-exports.getSubAccounts = async (req, res) => {
-  try {
-    const headId = req.params.headId;
-    const subAccounts = await AccountSubHead.findAll({
-      where: { head_id: headId },
-      attributes: ['id', 'name'],
-      order: [['name', 'ASC']]
-    });
-    
-    res.json(subAccounts);
-  } catch (error) {
-    console.error('Error fetching sub accounts:', error);
-    res.status(500).json({ 
-      error: 'Server error',
-      details: error.message 
-    });
-  }
-};
+module.exports = journalVoucherController;
