@@ -9,7 +9,7 @@ const Cashbook = lazy(() => import("../pages/accounts/CashBook"));
 const BalanceSheet = lazy(() => import("../pages/accounts/BalanceSheet"));
 const LedgerReport = lazy(() => import("../pages/accounts/LedgerReport "));
 const SubAccountHeadPage = lazy(() => import("../pages/accounts/SubAccountHead"));
-const openingBalances = lazy(() => import("../pages/accounts/OpeningBalance"))
+
 
 const accountsRoutes = (
   <>
