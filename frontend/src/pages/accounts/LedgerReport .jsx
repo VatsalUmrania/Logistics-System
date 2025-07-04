@@ -4,12 +4,15 @@ import {
   ArrowUp, ArrowDown, Loader, Check, AlertCircle as Alert
 } from 'lucide-react';
 import Select from 'react-select';
+import axios from 'axios';
+
+const API_BASE = '/api/ledger-report';
 
 const LedgerReport = () => {
   // State management
-  const [fromDate, setFromDate] = useState('2025-06-15');
-  const [toDate, setToDate] = useState('2025-06-25');
-  const [accountName, setAccountName] = useState('Container Deposits');
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
+  const [accountName, setAccountName] = useState('');
   const [ledgerEntries, setLedgerEntries] = useState([]);
   const [accounts, setAccounts] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -35,77 +38,20 @@ const LedgerReport = () => {
     menu: (base) => ({ ...base, zIndex: 9999 })
   };
 
-  // Auth header utility
-  const getAuthHeaders = () => {
-    const token = localStorage.getItem('authToken');
-    if (!token) throw new Error('Authentication token missing');
-    return {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
+  // Fetch accounts for dropdown
+  useEffect(() => {
+    const fetchAccounts = async () => {
+      try {
+        const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken') || localStorage.getItem('token') || sessionStorage.getItem('token');
+        const response = await axios.get(`${API_BASE}/ledger-accounts`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setAccounts(response.data);
+      } catch (err) {
+        setError('Failed to fetch accounts');
       }
     };
-  };
-
-  // Mock ledger data based on your image
-  const mockLedgerData = [
-    {
-      id: 1,
-      date: '2025-06-16',
-      description: 'Opening Balance',
-      voucherNo: '',
-      debit: 33000.01,
-      credit: 0
-    },
-    {
-      id: 2,
-      date: '2025-06-16',
-      description: 'CNTR DEPOSITED, 10931/06/2025, 2522706',
-      voucherNo: '1525',
-      debit: 6000.00,
-      credit: 0
-    },
-    {
-      id: 3,
-      date: '2025-06-19',
-      description: 'CNTR DEPOSITED, 10965/06/2025, 060281',
-      voucherNo: '1562',
-      debit: 3000.00,
-      credit: 0
-    },
-    {
-      id: 4,
-      date: '2025-06-19',
-      description: 'CNTR DEPOSITED, 10964/06/2025, 059397',
-      voucherNo: '1562',
-      debit: 3000.00,
-      credit: 0
-    },
-    {
-      id: 5,
-      date: '',
-      description: 'C/D.',
-      voucherNo: '',
-      debit: 0,
-      credit: 45000.01
-    }
-  ];
-
-  // Mock accounts data
-  const mockAccounts = [
-    'Container Deposits',
-    'Cash Account',
-    'Bank Account',
-    'Accounts Receivable',
-    'Accounts Payable',
-    'Office Supplies',
-    'Equipment'
-  ];
-
-  // Initialize data
-  useEffect(() => {
-    setLedgerEntries(mockLedgerData);
-    setAccounts(mockAccounts);
+    fetchAccounts();
   }, []);
 
   // Search handler
@@ -114,21 +60,19 @@ const LedgerReport = () => {
       setError('Please select both From and To dates');
       return;
     }
-
     if (!accountName) {
       setError('Please select an account name');
       return;
     }
-
     setIsLoading(true);
     setError('');
-    
     try {
-      // Simulate API call
-      console.log('Generating ledger report for:', { fromDate, toDate, accountName });
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setLedgerEntries(mockLedgerData);
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken') || localStorage.getItem('token') || sessionStorage.getItem('token');
+      const response = await axios.get(`${API_BASE}/ledger-entries`, {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { fromDate, toDate, accountName }
+      });
+      setLedgerEntries(response.data);
       setSuccessMessage(`Ledger report generated successfully for ${accountName}`);
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (error) {
@@ -196,7 +140,8 @@ const LedgerReport = () => {
   };
 
   // Prepare account options for dropdown
-  const accountOptions = accounts.map(account => ({
+  const safeAccounts = Array.isArray(accounts) ? accounts : [];
+  const accountOptions = safeAccounts.map(account => ({
     value: account,
     label: account
   }));
@@ -296,7 +241,7 @@ const LedgerReport = () => {
                 </label>
                 <Select
                   options={accountOptions}
-                  value={accountOptions.find(option => option.value === accountName)}
+                  value={accountOptions.find(option => option.value === accountName) || null}
                   onChange={(selectedOption) => setAccountName(selectedOption?.value || '')}
                   placeholder="Select Account"
                   isSearchable

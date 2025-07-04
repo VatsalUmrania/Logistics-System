@@ -15,6 +15,8 @@ const sequelize = new Sequelize(
 
 const JournalVoucher = require('./JournalVoucher')(sequelize, DataTypes);
 const JournalVoucherEntry = require('./JournalVoucherEntry')(sequelize, DataTypes);
+const LedgerEntry = require('./LedgerEntry')(sequelize, DataTypes);
+const CashbookEntry = require('./CashbookEntry')(sequelize, DataTypes);
 
 // Set up associations if needed
 if (JournalVoucher.associate) {
@@ -28,4 +30,6 @@ module.exports = {
   sequelize,
   JournalVoucher,
   JournalVoucherEntry,
+  LedgerEntry,
+  CashbookEntry,
 }; 

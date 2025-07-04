@@ -4,6 +4,7 @@ import {
   ArrowUp, ArrowDown, Loader, Check, AlertCircle as Alert
 } from 'lucide-react';
 import Select from 'react-select';
+import { API } from '../../services/api';
 
 const Cashbook = () => {
   // State management
@@ -33,106 +34,39 @@ const Cashbook = () => {
     menu: (base) => ({ ...base, zIndex: 9999 })
   };
 
-  // Auth header utility
-  const getAuthHeaders = () => {
-    const token = localStorage.getItem('authToken');
-    if (!token) throw new Error('Authentication token missing');
-    return {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    };
-  };
-
-  // Mock cashbook data based on your image
-  const mockCashbookData = [
-    {
-      id: 1,
-      date: '2025-06-21',
-      particulars: 'INSPECTION AMOUNT ADDED IN SGP PORTAL',
-      debit: 10000,
-      credit: 0
-    },
-    {
-      id: 2,
-      date: '2025-06-21',
-      particulars: 'INSPECTION CHARGE PAID, 10976/06/2025, 003064',
-      debit: 0,
-      credit: 815.75
-    },
-    {
-      id: 3,
-      date: '2025-06-21',
-      particulars: 'INSPECTION CHARGE PAID, 10956/06/2025, 4480151',
-      debit: 0,
-      credit: 2828.75
-    },
-    {
-      id: 4,
-      date: '2025-06-22',
-      particulars: 'OFFICE RENT PAYMENT',
-      debit: 0,
-      credit: 5000
-    },
-    {
-      id: 5,
-      date: '2025-06-22',
-      particulars: 'CLIENT PAYMENT RECEIVED',
-      debit: 15000,
-      credit: 0
-    },
-    {
-      id: 6,
-      date: '2025-06-23',
-      particulars: 'UTILITY BILLS PAYMENT',
-      debit: 0,
-      credit: 1200
-    },
-    {
-      id: 7,
-      date: '2025-06-23',
-      particulars: 'BANK TRANSFER RECEIVED',
-      debit: 8500,
-      credit: 0
-    }
-  ];
-
-  // Initialize data
-  useEffect(() => {
-    setCashbookEntries(mockCashbookData);
-  }, []);
-
-  // Search handler
-  const handleSearch = async () => {
+  // Fetch cashbook entries from backend
+  const fetchCashbookEntries = async () => {
     if (!fromDate || !toDate) {
       setError('Please select both From and To dates');
       return;
     }
-
     setIsLoading(true);
     setError('');
-    
     try {
-      // Simulate API call
-      console.log('Searching cashbook entries:', { fromDate, toDate });
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Filter mock data based on date range
-      const filteredEntries = mockCashbookData.filter(entry => {
-        const entryDate = entry.date;
-        return entryDate >= fromDate && entryDate <= toDate;
+      const response = await API.get(`/cashbook/entries`, {
+        params: { fromDate, toDate }
       });
-
-      setCashbookEntries(filteredEntries);
-      setSuccessMessage(`Found ${filteredEntries.length} cashbook entries for the selected period`);
+      setCashbookEntries(Array.isArray(response.data) ? response.data : []);
+      setSuccessMessage(`Found ${response.data.length} cashbook entries for the selected period`);
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (error) {
-      setError('Failed to fetch cashbook data. Please try again.');
+      setError(
+        error.response?.data?.error || 'Failed to fetch cashbook data. Please try again.'
+      );
+      setCashbookEntries([]);
     } finally {
       setIsLoading(false);
     }
   };
+
+  // On mount, fetch initial data
+  useEffect(() => {
+    fetchCashbookEntries();
+    // eslint-disable-next-line
+  }, []);
+
+  // Search handler
+  const handleSearch = fetchCashbookEntries;
 
   // Print handler
   const handlePrint = () => {

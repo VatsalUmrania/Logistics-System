@@ -65,7 +65,7 @@ const accountsRoutes = (
       path="/opening-balance"
       element={
         <Suspense fallback={<div>Loading...</div>}>
-          <OpeningBalancePage />
+          <openingBalances />
         </Suspense>
       }
     />
