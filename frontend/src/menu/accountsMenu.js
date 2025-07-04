@@ -3,7 +3,7 @@ import { href } from "react-router-dom";
 const accountsMenu = [
     { label: 'Account Head', key: 'account_head', href: "/account-head" },
     { label: 'Sub Account Head', key: 'sub_account_head',href:"/sub-account-head" },
-    { label: 'Opening Balance', key: 'opening_balance' },
+    { label: 'Opening Balance', key: 'opening_balance',href:"/opening-balance" },
     { label: 'Journal Voucher', key: 'journal_voucher', href:"/journal-voucher" },
     { label: 'Journal Voucher Edit', key: 'journal_voucher_edit' },
     { label: 'Journal Voucher Print', key: 'journal_voucher_print' },
