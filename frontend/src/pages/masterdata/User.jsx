@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { 
   User, Plus, Pencil, Trash2, Search, ChevronLeft, ChevronRight, X, 
-  ArrowUp, ArrowDown, Loader, Check, AlertCircle as Alert, Eye, EyeOff, 
+  ArrowUp, ArrowDown, Loader, AlertTriangle, Eye, EyeOff, 
   Lock, Phone, Home, CreditCard, Globe, Shield
 } from 'lucide-react';
 import Select from 'react-select';
 import axios from 'axios';
+import toast from 'react-hot-toast';
+import ToastConfig from '../../components/ToastConfig';
 
 // Helper functions for case conversion
 const toCamelCase = (str) =>
@@ -36,8 +38,6 @@ const UserManagementPage = () => {
   const [currentUser, setCurrentUser] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [accessDenied, setAccessDenied] = useState(false);
-  const [error, setError] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -56,7 +56,7 @@ const UserManagementPage = () => {
     employeeName: '',
     username: '',
     email: '',
-    currentPassword: '', // Added for password change verification
+    currentPassword: '',
     password: '',
     confirmPassword: '',
     nationality: '',
@@ -87,9 +87,98 @@ const UserManagementPage = () => {
   const getAuthHeaders = () => {
     const token = localStorage.getItem('authToken');
     if (!token) {
-      throw new Error('Authentication token missing');
+      console.warn('No authentication token found');
+      return {
+        'Content-Type': 'application/json'
+      };
     }
-    return { 'Authorization': `Bearer ${token}` };
+    return { 
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    };
+  };
+
+  // Handle authentication errors using ToastConfig styles
+  const handleAuthError = (error) => {
+    console.error('API Error:', error);
+    
+    if (error.response?.status === 401 || error.message.includes('Authentication')) {
+      toast.error('🔐 Authentication failed. Please login again.');
+    } else if (error.response?.status === 404 || error.message.includes('404')) {
+      toast.error('🔍 API endpoint not found. Please check if the server is running.');
+    } else if (error.code === 'ECONNREFUSED' || error.message.includes('Network Error')) {
+      toast.error('🌐 Cannot connect to server. Please ensure the backend server is running on port 5000.');
+    } else if (error.response?.status === 500 || error.message.includes('500')) {
+      toast.error('⚠️ Server error occurred. Please try again later.');
+    } else {
+      toast.error(`❌ ${error.message || 'An unexpected error occurred'}`);
+    }
+  };
+
+  // Validation function using ToastConfig warning style
+  const validateUserForm = () => {
+    const errors = [];
+    
+    if (!newUser.employeeName.trim()) {
+      errors.push('Employee name is required');
+    } else if (newUser.employeeName.trim().length < 2) {
+      errors.push('Employee name must be at least 2 characters');
+    }
+    
+    if (!newUser.username.trim()) {
+      errors.push('Username is required');
+    } else if (newUser.username.trim().length < 3) {
+      errors.push('Username must be at least 3 characters');
+    }
+    
+    if (!newUser.email.trim()) {
+      errors.push('Email is required');
+    } else if (!/\S+@\S+\.\S+/.test(newUser.email)) {
+      errors.push('Please enter a valid email address');
+    }
+    
+    if (!newUser.password || newUser.password === '') {
+      errors.push('Password is required');
+    } else if (newUser.password !== '***' && newUser.password.length < 6) {
+      errors.push('Password must be at least 6 characters');
+    }
+    
+    if (newUser.password !== newUser.confirmPassword) {
+      errors.push('Passwords do not match');
+      setPasswordMatchError(true);
+    } else {
+      setPasswordMatchError(false);
+    }
+    
+    // For editing users, require current password if changing password
+    if (editingId && newUser.password !== '***' && !newUser.currentPassword) {
+      errors.push('Current password is required to change password');
+      setCurrentPasswordError(true);
+    } else {
+      setCurrentPasswordError(false);
+    }
+    
+    if (errors.length > 0) {
+      errors.forEach(error => {
+        toast((t) => (
+          <div className="flex items-center">
+            <AlertTriangle className="w-5 h-5 mr-2" />
+            {error}
+          </div>
+        ), {
+          duration: 4500,
+          style: {
+            background: 'linear-gradient(135deg, #D97706 0%, #B45309 50%, #92400E 100%)',
+            color: '#ffffff',
+            border: '1px solid rgba(245, 158, 11, 0.3)',
+            boxShadow: '0 20px 25px -5px rgba(245, 158, 11, 0.2), 0 10px 10px -5px rgba(245, 158, 11, 0.1)',
+          },
+        });
+      });
+      return false;
+    }
+    
+    return true;
   };
 
   // Check if current user is admin
@@ -109,22 +198,20 @@ const UserManagementPage = () => {
           setAccessDenied(false);
           // If user is admin, fetch all users
           await fetchUsers();
+          toast.success('✅ Admin access verified');
         } else {
           setIsAdmin(false);
           setAccessDenied(true);
+          toast.error('❌ Access denied - Administrator privileges required');
         }
       } else {
-        setError('Failed to verify user permissions');
+        toast.error('❌ Failed to verify user permissions');
         setAccessDenied(true);
       }
     } catch (err) {
       console.error('Admin check error:', err);
-      if (err.response && err.response.status === 401) {
-        setError('Session expired. Please log in again.');
-      } else {
-        setError('Failed to verify user permissions');
-      }
       setAccessDenied(true);
+      handleAuthError(err);
     } finally {
       setIsLoading(false);
     }
@@ -138,13 +225,15 @@ const UserManagementPage = () => {
       });
       const camelCaseUsers = convertObjectKeys(response.data, toCamelCase);
       setUsers(camelCaseUsers.filter(user => user.password !== ''));
-      setError('');
-    } catch (err) {
-      if (err.response && err.response.status === 401) {
-        setError('Session expired. Please log in again.');
-      } else {
-        setError('Failed to load users');
+      console.log('Users loaded successfully:', camelCaseUsers.length, 'records');
+      
+      // Using ToastConfig success style
+      if (camelCaseUsers.length > 0) {
+        toast.success(`✅ Successfully loaded ${camelCaseUsers.length} user${camelCaseUsers.length > 1 ? 's' : ''}`);
       }
+    } catch (err) {
+      console.error('Error fetching users:', err);
+      handleAuthError(err);
     }
   };
 
@@ -176,48 +265,47 @@ const UserManagementPage = () => {
     setShowPassword(false);
     setShowConfirmPassword(false);
     setShowCurrentPassword(false);
-    setError('');
-    setSuccessMessage('');
   };
 
-  // Fixed toggle function for Add User button
+  // Toggle add form using ToastConfig custom style
   const handleToggleAddForm = () => {
     if (isAdding) {
       resetForm();
+      // Using ToastConfig custom style
+      toast((t) => (
+        <div className="flex items-center">
+          <X className="w-5 h-5 mr-2" />
+          Form cancelled
+        </div>
+      ), {
+        duration: 2000,
+      });
     } else {
       setIsAdding(true);
       setEditingId(null);
-      setError('');
-      setSuccessMessage('');
+      
+      // Using ToastConfig custom style
+      toast((t) => (
+        <div className="flex items-center">
+          <Plus className="w-5 h-5 mr-2" />
+          Ready to add new user
+        </div>
+      ), {
+        duration: 2000,
+      });
     }
   };
 
-  // Add or update user
+  // Add or update user using ToastConfig styles
   const handleAddUser = async () => {
-    setError('');
-    setSuccessMessage('');
-    setPasswordMatchError(false);
-    setCurrentPasswordError(false);
-    
-    if (!newUser.employeeName.trim() || !newUser.username.trim() || !newUser.password) {
-      setError('Please fill out all required fields.');
-      return;
-    }
-    
-    if (newUser.password !== newUser.confirmPassword) {
-      setPasswordMatchError(true);
+    if (!validateUserForm()) {
       return;
     }
 
-    // For editing users, require current password if changing password
-    if (editingId && newUser.password !== '***' && !newUser.currentPassword) {
-      setCurrentPasswordError(true);
-      setError('Please enter your current password to change the password.');
-      return;
-    }
-    
-    setPasswordMatchError(false);
-    setCurrentPasswordError(false);
+    // Using ToastConfig loading style
+    const loadingToast = toast.loading(
+      editingId ? '🔄 Updating user...' : '💾 Adding new user...'
+    );
 
     try {
       setIsLoading(true);
@@ -247,32 +335,71 @@ const UserManagementPage = () => {
         res = await axios.put(`http://localhost:5000/api/users/${editingId}`, userPayload, {
           headers: getAuthHeaders(),
         });
-        setSuccessMessage('User updated successfully!');
+        
+        toast.dismiss(loadingToast);
+        // Using ToastConfig success style
+        toast.success(`✅ "${newUser.employeeName}" updated successfully!`);
       } else {
         res = await axios.post('http://localhost:5000/api/users/', userPayload, {
           headers: getAuthHeaders(),
         });
-        setSuccessMessage('User added successfully!');
+        
+        toast.dismiss(loadingToast);
+        // Using ToastConfig success style
+        toast.success(`🎉 "${newUser.employeeName}" added successfully!`);
       }
 
       await fetchUsers();
       resetForm();
-      setTimeout(() => setSuccessMessage(''), 3000);
     } catch (err) {
-      if (err.response && err.response.status === 401) {
-        setError('Session expired. Please log in again.');
-      } else if (err.response && err.response.status === 400 && err.response.data.message.includes('current password')) {
+      toast.dismiss(loadingToast);
+      console.error('Error saving user:', err);
+      
+      if (err.response?.status === 400 && err.response.data.message.includes('current password')) {
         setCurrentPasswordError(true);
-        setError('Current password is incorrect.');
+        // Using ToastConfig warning style
+        toast((t) => (
+          <div className="flex items-center">
+            <AlertTriangle className="w-5 h-5 mr-2" />
+            Current password is incorrect
+          </div>
+        ), {
+          duration: 4500,
+          style: {
+            background: 'linear-gradient(135deg, #D97706 0%, #B45309 50%, #92400E 100%)',
+            color: '#ffffff',
+            border: '1px solid rgba(245, 158, 11, 0.3)',
+            boxShadow: '0 20px 25px -5px rgba(245, 158, 11, 0.2), 0 10px 10px -5px rgba(245, 158, 11, 0.1)',
+          },
+        });
+      } else if (err.response?.status === 409) {
+        // Using ToastConfig warning style
+        toast((t) => (
+          <div className="flex items-center">
+            <AlertTriangle className="w-5 h-5 mr-2" />
+            Username or email already exists
+          </div>
+        ), {
+          duration: 4500,
+          style: {
+            background: 'linear-gradient(135deg, #D97706 0%, #B45309 50%, #92400E 100%)',
+            color: '#ffffff',
+            border: '1px solid rgba(245, 158, 11, 0.3)',
+            boxShadow: '0 20px 25px -5px rgba(245, 158, 11, 0.2), 0 10px 10px -5px rgba(245, 158, 11, 0.1)',
+          },
+        });
       } else {
-        setError('Error saving user: ' + (err.response ? err.response.data.message : err.message));
+        // Using ToastConfig error style
+        toast.error(`❌ ${err.response ? err.response.data.message : err.message}`);
       }
-      setTimeout(() => setError(''), 3000);
+      
+      handleAuthError(err);
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Edit user using ToastConfig custom style
   const handleEdit = (user) => {
     setNewUser({
       employeeName: user.employeeName || '',
@@ -294,11 +421,38 @@ const UserManagementPage = () => {
     setShowPassword(false);
     setShowConfirmPassword(false);
     setShowCurrentPassword(false);
+    
+    // Using ToastConfig custom style
+    toast((t) => (
+      <div className="flex items-center">
+        <Pencil className="w-5 h-5 mr-2" />
+        Editing: {user.employeeName}
+      </div>
+    ), {
+      duration: 2500,
+    });
   };
 
-  // Delete user
+  // Delete user using ToastConfig styles
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this user?')) return;
+    const user = users.find(u => u.id === id);
+    const userName = user ? user.employeeName : 'this user';
+    
+    if (!window.confirm(`⚠️ Are you sure you want to delete "${userName}"?\n\nThis action cannot be undone.`)) {
+      // Using ToastConfig custom style
+      toast((t) => (
+        <div className="flex items-center">
+          <X className="w-5 h-5 mr-2" />
+          Deletion cancelled
+        </div>
+      ), {
+        duration: 2000,
+      });
+      return;
+    }
+
+    // Using ToastConfig loading style
+    const loadingToast = toast.loading(`🗑️ Deleting "${userName}"...`);
 
     try {
       setIsLoading(true);
@@ -306,12 +460,18 @@ const UserManagementPage = () => {
         headers: getAuthHeaders(),
       });
       
+      toast.dismiss(loadingToast);
+      // Using ToastConfig success style
+      toast.success(`🗑️ "${userName}" deleted successfully!`);
+      
       await fetchUsers();
-      setSuccessMessage('User deleted successfully!');
-      setTimeout(() => setSuccessMessage(''), 3000);
     } catch (err) {
-      setError('Failed to delete user');
-      setTimeout(() => setError(''), 3000);
+      toast.dismiss(loadingToast);
+      console.error('Error deleting user:', err);
+      
+      // Using ToastConfig error style
+      toast.error(`❌ ${err.message || 'Failed to delete user'}`);
+      handleAuthError(err);
     } finally {
       setIsLoading(false);
     }
@@ -334,6 +494,50 @@ const UserManagementPage = () => {
     return sortDirection === 'asc' ?
       <ArrowUp className="w-3 h-3 text-indigo-600 inline" /> :
       <ArrowDown className="w-3 h-3 text-indigo-600 inline" />;
+  };
+
+  // Handle search using ToastConfig styles
+  const handleSearch = (searchValue) => {
+    setSearchTerm(searchValue);
+    setCurrentPage(1);
+    
+    // Show toast for search results
+    setTimeout(() => {
+      const filteredResults = users.filter(user =>
+        (user.employeeName || '').toLowerCase().includes(searchValue.toLowerCase()) ||
+        (user.username || '').toLowerCase().includes(searchValue.toLowerCase()) ||
+        (user.email || '').toLowerCase().includes(searchValue.toLowerCase()) ||
+        (user.nationality || '').toLowerCase().includes(searchValue.toLowerCase())
+      );
+      
+      if (filteredResults.length === 0 && searchValue.trim()) {
+        // Using ToastConfig warning style
+        toast((t) => (
+          <div className="flex items-center">
+            <Search className="w-5 h-5 mr-2" />
+            No users found for "{searchValue}"
+          </div>
+        ), {
+          duration: 3000,
+          style: {
+            background: 'linear-gradient(135deg, #D97706 0%, #B45309 50%, #92400E 100%)',
+            color: '#ffffff',
+            border: '1px solid rgba(245, 158, 11, 0.3)',
+            boxShadow: '0 20px 25px -5px rgba(245, 158, 11, 0.2), 0 10px 10px -5px rgba(245, 158, 11, 0.1)',
+          },
+        });
+      } else if (filteredResults.length > 0 && searchValue.trim()) {
+        // Using ToastConfig custom style
+        toast((t) => (
+          <div className="flex items-center">
+            <Search className="w-5 h-5 mr-2" />
+            Found {filteredResults.length} user{filteredResults.length > 1 ? 's' : ''}
+          </div>
+        ), {
+          duration: 2000,
+        });
+      }
+    }, 100);
   };
 
   // Filtered and sorted users
@@ -368,6 +572,17 @@ const UserManagementPage = () => {
     setCurrentPage(1);
   }, [searchTerm, users]);
 
+  // Debounced search effect
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchTerm !== '') {
+        handleSearch(searchTerm);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
   // Loading state
   if (isLoading && !accessDenied) {
     return (
@@ -395,7 +610,7 @@ const UserManagementPage = () => {
           
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
             <div className="flex items-center justify-center mb-2">
-              <Alert className="w-5 h-5 text-red-600 mr-2" />
+              <AlertTriangle className="w-5 h-5 text-red-600 mr-2" />
               <span className="text-red-800 font-medium">Administrator Access Required</span>
             </div>
             <p className="text-red-700 text-sm">
@@ -432,6 +647,9 @@ const UserManagementPage = () => {
             </button>
           </div>
         </div>
+        
+        {/* Toast Configuration for access denied page */}
+        <ToastConfig position="bottom-right" />
       </div>
     );
   }
@@ -440,7 +658,7 @@ const UserManagementPage = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
-        {/* Header - Removed "Logged in as" text */}
+        {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-gray-800 flex items-center">
@@ -453,34 +671,16 @@ const UserManagementPage = () => {
             <button
               type="button"
               onClick={handleToggleAddForm}
-              className={`px-4 py-2 text-white rounded-lg font-medium transition-all flex items-center shadow-md
+              className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center shadow-md 
                 ${isAdding 
-                  ? 'bg-red-600 hover:bg-red-700' 
-                  : 'bg-indigo-600 hover:bg-indigo-700'}`}
+                  ? 'bg-red-600 hover:bg-red-700 text-white' 
+                  : 'bg-white-600 hover:bg-gray-100 text-indigo-600'}`}
             >
               {isAdding ? <X className="w-5 h-5 mr-2" /> : <Plus className="w-5 h-5 mr-2" />}
               {isAdding ? 'Cancel' : 'Add User'}
             </button>
           </div>
         </div>
-
-        {/* Status Messages */}
-        {error && (
-          <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded">
-            <div className="flex items-center">
-              <Alert className="w-5 h-5 text-red-500 mr-2" />
-              <p className="text-red-700">{error}</p>
-            </div>
-          </div>
-        )}
-        {successMessage && (
-          <div className="bg-green-50 border-l-4 border-green-500 p-4 mb-6 rounded">
-            <div className="flex items-center">
-              <Check className="w-5 h-5 text-green-500 mr-2" />
-              <p className="text-green-700">{successMessage}</p>
-            </div>
-          </div>
-        )}
 
         {/* Search Section */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-visible mb-6">
@@ -770,7 +970,13 @@ const UserManagementPage = () => {
                 </div>
               </div>
               
-              <div className="mt-4 flex justify-end">
+              <div className="mt-4 flex justify-end space-x-3">
+                <button
+                  onClick={handleToggleAddForm}
+                  className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-5 rounded-lg shadow transition text-sm"
+                >
+                  Cancel
+                </button>
                 <button
                   onClick={handleAddUser}
                   className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-5 rounded-lg shadow transition text-sm"
@@ -792,7 +998,7 @@ const UserManagementPage = () => {
           </div>
         </div>
 
-        {/* Users Table */}
+        {/* Users Table - Password column removed and better layout */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
@@ -802,9 +1008,9 @@ const UserManagementPage = () => {
                     { label: 'Employee Name', key: 'employeeName' },
                     { label: 'Username', key: 'username' },
                     { label: 'Email', key: 'email' },
-                    { label: 'Password', key: 'password' }, // Added password column
                     { label: 'Nationality', key: 'nationality' },
                     { label: 'Phone', key: 'phone' },
+                    { label: 'License No', key: 'licenseNo' },
                     { label: 'Role', key: 'isAdmin' },
                     { label: 'Actions', key: null },
                   ].map(({ label, key }) => (
@@ -825,7 +1031,13 @@ const UserManagementPage = () => {
                 {currentUsers.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="px-4 py-6 text-center text-gray-500">
-                      No user records found
+                      <div className="flex flex-col items-center justify-center">
+                        <User className="w-16 h-16 text-gray-300 mb-4" />
+                        <h4 className="text-lg font-medium text-gray-500">No user records found</h4>
+                        <p className="text-gray-400 mt-2">
+                          {searchTerm ? 'Try adjusting your search criteria' : 'Create your first user to get started'}
+                        </p>
+                      </div>
                     </td>
                   </tr>
                 ) : (
@@ -839,22 +1051,17 @@ const UserManagementPage = () => {
                           </div>
                           <div>
                             <div className="text-sm font-semibold text-gray-900">{user.employeeName}</div>
-                            <div className="text-xs text-gray-500">{user.licenseNo}</div>
+                            <div className="text-xs text-gray-500">ID: {user.id}</div>
                           </div>
                         </div>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                        {user.username}
+                        <div className="font-medium">{user.username}</div>
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                        {user.email}
-                      </td>
-                      {/* Password column - show encrypted hash */}
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                         <div className="flex items-center">
-                          <Lock className="w-4 h-4 text-gray-400 mr-2" />
-                          <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">
-                            {user.password ? user.password.substring(0, 20) + '...' : 'N/A'}
+                          <span className="truncate max-w-[200px]" title={user.email}>
+                            {user.email}
                           </span>
                         </div>
                       </td>
@@ -871,34 +1078,41 @@ const UserManagementPage = () => {
                         </div>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          user.isAdmin 
-                            ? 'bg-purple-100 text-purple-800' 
-                            : 'bg-green-100 text-green-800'
-                        }`}>
-                          {user.isAdmin ? 'Admin' : 'User'}
-                        </span>
-                        {user.isProtected && (
-                          <span className="ml-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                            Protected
-                          </span>
-                        )}
+                        <span className="text-gray-600">{user.licenseNo || 'N/A'}</span>
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium flex space-x-2">
-                        <button
-                          onClick={() => handleEdit(user)}
-                          className="text-indigo-600 hover:text-indigo-900"
-                          title="Edit"
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(user.id)}
-                          className="text-red-600 hover:text-red-900"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                        <div className="flex flex-col gap-1">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            user.isAdmin 
+                              ? 'bg-purple-100 text-purple-800' 
+                              : 'bg-green-100 text-green-800'
+                          }`}>
+                            {user.isAdmin ? 'Admin' : 'User'}
+                          </span>
+                          {user.isProtected && (
+                            <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                              Protected
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => handleEdit(user)}
+                            className="text-indigo-600 hover:text-indigo-900 p-1 rounded hover:bg-indigo-50"
+                            title="Edit"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(user.id)}
+                            className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -941,6 +1155,9 @@ const UserManagementPage = () => {
           )}
         </div>
       </div>
+
+      {/* Toast Configuration */}
+      <ToastConfig position="bottom-right" />
     </div>
   );
 };

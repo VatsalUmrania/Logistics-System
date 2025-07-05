@@ -506,10 +506,10 @@ const AssignExpenses = () => {
       setSuccessMessage('');
     }
   }}
-  className={`px-4 py-2 text-white rounded-lg font-medium transition-all flex items-center shadow-md
+  className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center shadow-md 
     ${isAdding 
-      ? 'bg-red-600 hover:bg-red-700' 
-      : 'bg-indigo-600 hover:bg-indigo-700'}`}
+      ? 'bg-red-600 hover:bg-red-700 text-white' 
+      : 'bg-white-600 hover:bg-gray-100 text-indigo-600'}`}
 >
   {isAdding ? <X className="w-5 h-5 mr-2" /> : <Plus className="w-5 h-5 mr-2" />}
   {isAdding ? 'Cancel' : 'Add Expense'}
@@ -597,7 +597,7 @@ const AssignExpenses = () => {
               <div className="flex items-end">
                 <button
                   onClick={handleSearch}
-                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-5 rounded-lg shadow transition text-sm flex items-center justify-center"
+                  className="w-full bg-white-500 hover:bg-gray-200 text-indigo-600 font-medium py-2 px-5 rounded-lg shadow transition text-sm flex items-center justify-center"
                 >
                   <Search className="w-4 h-4 mr-2" />
                   Search

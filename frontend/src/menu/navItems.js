@@ -10,7 +10,7 @@ import {
 import { href } from 'react-router-dom';
 
 const navItems = [
-  { icon: Home, text: 'Dashboard', id: 'home', color: 'text-violet-600'},
+  { icon: Home, text: 'Dashboard', id: 'home', color: 'text-violet-600', Link:"/home"},
   { icon: Database, text: 'Master Data', hasDropdown: true, id: 'master', color: 'text-indigo-600', dropdownItems: masterDataMenu },
   { icon: Truck, text: 'Suppliers', hasDropdown: true, id: 'supplier', color: 'text-white-600', dropdownItems: supplierMenu },
   { icon: FileCheck, text: 'Custom Clearance', hasDropdown: true, id: 'clearance', color: 'text-orange-600', dropdownItems: clearanceMenu },

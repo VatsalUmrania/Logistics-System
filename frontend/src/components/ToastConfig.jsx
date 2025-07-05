@@ -15,90 +15,140 @@ const ToastConfig = ({
       containerClassName={containerClassName}
       containerStyle={containerStyle}
       toastOptions={{
-        // Enhanced default options
         className: '',
-        duration: 4000,
+        duration: 3500, // Slightly longer duration for a smooth feel
         style: {
-          background: 'linear-gradient(135deg, #1F2937 0%, #111827 100%)',
-          color: '#F9FAFB',
-          borderRadius: '16px',
-          fontSize: '14px',
-          fontWeight: '500',
-          padding: '16px 20px',
-          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(255, 255, 255, 0.05)',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-          backdropFilter: 'blur(16px)',
-          maxWidth: '420px',
+          background: '#FFFFFF',  // Clean white background
+          color: '#333',  // Dark text for clarity
+          borderRadius: '12px',  // Slightly more rounded edges for a modern feel
+          fontSize: '16px',  // Comfortable font size
+          fontWeight: '500',  // A refined font weight
+          padding: '16px 20px',  // Spacious padding
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',  // Modern floating shadow
+          border: 'none',
+          backdropFilter: 'blur(12px)',  // Soft blur effect for added depth
+          maxWidth: '480px',
           minWidth: '300px',
+          transition: 'all 0.3s ease-in-out',  // Smooth transition for all changes
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '12px',
+          textAlign: 'left',
+          letterSpacing: '0.5px',
+          lineHeight: '1.5',
+          zIndex: 9999,
         },
-        
-        // Enhanced success toast styling
+
+        hoverStyle: {
+          transform: 'scale(1.05)',  // Slightly enlarge when hovered
+          boxShadow: '0 12px 36px rgba(0, 0, 0, 0.2)',  // Subtle stronger shadow
+          cursor: 'pointer',
+        },
+
+        iconStyle: {
+          width: '24px',
+          height: '24px',
+          color: '#fff',
+          opacity: 0.85,
+          transition: 'opacity 0.3s ease',
+        },
+
+        buttonStyle: {
+          backgroundColor: '#2563EB',  // Modern Indigo button
+          color: '#fff',
+          fontWeight: '600',
+          borderRadius: '8px',
+          padding: '8px 16px',
+          cursor: 'pointer',
+          border: 'none',
+          transition: 'background-color 0.3s ease, transform 0.3s ease',
+        },
+
+        buttonHoverStyle: {
+          backgroundColor: '#1D4ED8',  // Slightly darker on hover
+          transform: 'scale(1.05)',  // Smooth scaling effect on hover
+        },
+
         success: {
           duration: 3500,
           style: {
-            background: 'linear-gradient(135deg, #059669 0%, #047857 50%, #065f46 100%)',
-            color: '#ffffff',
-            border: '1px solid rgba(16, 185, 129, 0.3)',
-            boxShadow: '0 20px 25px -5px rgba(16, 185, 129, 0.2), 0 10px 10px -5px rgba(16, 185, 129, 0.1)',
+            background: 'linear-gradient(135deg, #059669 0%, #047857 50%, #065f46 100%)',  // Fresh green gradient
+            color: '#fff',
+            border: '1px solid rgba(16, 185, 129, 0.3)',  // Subtle border
+            boxShadow: '0 10px 30px rgba(16, 185, 129, 0.2), 0 8px 8px -4px rgba(16, 185, 129, 0.1)',  // Light, floating shadow
           },
           iconTheme: {
-            primary: '#ffffff',
+            primary: '#fff',
             secondary: '#059669',
           },
         },
-        
-        // Enhanced error toast styling
+
         error: {
-          duration: 5000,
+          duration: 4500,
           style: {
-            background: 'linear-gradient(135deg, #DC2626 0%, #B91C1C 50%, #991B1B 100%)',
-            color: '#ffffff',
-            border: '1px solid rgba(239, 68, 68, 0.3)',
-            boxShadow: '0 20px 25px -5px rgba(239, 68, 68, 0.2), 0 10px 10px -5px rgba(239, 68, 68, 0.1)',
+            background: 'linear-gradient(135deg, #DC2626 0%, #B91C1C 50%, #991B1B 100%)',  // Deep red gradient
+            color: '#fff',
+            border: '1px solid rgba(239, 68, 68, 0.3)',  // Subtle border for error toasts
+            boxShadow: '0 10px 30px rgba(239, 68, 68, 0.2), 0 8px 8px -4px rgba(239, 68, 68, 0.1)',  // Clean, modern shadow
           },
           iconTheme: {
-            primary: '#ffffff',
+            primary: '#fff',
             secondary: '#DC2626',
           },
         },
-        
-        // Enhanced loading toast styling
+
         loading: {
           duration: Infinity,
           style: {
-            background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 50%, #1E40AF 100%)',
-            color: '#ffffff',
-            border: '1px solid rgba(59, 130, 246, 0.3)',
-            boxShadow: '0 20px 25px -5px rgba(59, 130, 246, 0.2), 0 10px 10px -5px rgba(59, 130, 246, 0.1)',
+            background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 50%, #1E40AF 100%)',  // Fresh blue gradient
+            color: '#fff',
+            border: '1px solid rgba(59, 130, 246, 0.3)',  // Subtle blue border
+            boxShadow: '0 10px 30px rgba(59, 130, 246, 0.2), 0 8px 8px -4px rgba(59, 130, 246, 0.1)',  // Soft floating shadow
           },
           iconTheme: {
-            primary: '#ffffff',
+            primary: '#fff',
             secondary: '#2563EB',
           },
         },
-        
-        // Enhanced info/custom toast styling
+
         custom: {
           duration: 4000,
           style: {
-            background: 'linear-gradient(135deg, #0891B2 0%, #0E7490 50%, #155E75 100%)',
-            color: '#ffffff',
-            border: '1px solid rgba(6, 182, 212, 0.3)',
-            boxShadow: '0 20px 25px -5px rgba(6, 182, 212, 0.2), 0 10px 10px -5px rgba(6, 182, 212, 0.1)',
+            background: 'linear-gradient(135deg, #3B82F6 0%, #9333EA 100%)',  // Smooth blue to purple gradient
+            color: '#fff',
+            border: 'none',
+            borderRadius: '12px',
+            boxShadow: '0 8px 32px rgba(59, 130, 246, 0.2), 0 12px 12px -6px rgba(59, 130, 246, 0.1)',  // Modern shadow with depth
+            padding: '18px 24px',
+            fontSize: '17px',
+            fontWeight: '500',
+            textAlign: 'center',
+            letterSpacing: '0.5px',
+            textTransform: 'capitalize',
+            lineHeight: '1.5',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '12px',
+            transition: 'all 0.3s ease-in-out',
+          },
+          hoverStyle: {
+            transform: 'scale(1.05)',  // Slight hover effect for interactivity
+            boxShadow: '0 10px 40px rgba(59, 130, 246, 0.25), 0 12px 10px -6px rgba(59, 130, 246, 0.2)',  // Stronger shadow on hover
           },
         },
-        
-        // Warning toast styling (new addition)
+
         warning: {
           duration: 4500,
           style: {
-            background: 'linear-gradient(135deg, #D97706 0%, #B45309 50%, #92400E 100%)',
-            color: '#ffffff',
+            background: 'linear-gradient(135deg, #D97706 0%, #B45309 50%, #92400E 100%)',  // Subtle orange gradient
+            color: '#fff',
             border: '1px solid rgba(245, 158, 11, 0.3)',
-            boxShadow: '0 20px 25px -5px rgba(245, 158, 11, 0.2), 0 10px 10px -5px rgba(245, 158, 11, 0.1)',
+            boxShadow: '0 10px 30px rgba(245, 158, 11, 0.2), 0 8px 8px -4px rgba(245, 158, 11, 0.1)',
           },
           iconTheme: {
-            primary: '#ffffff',
+            primary: '#fff',
             secondary: '#D97706',
           },
         },

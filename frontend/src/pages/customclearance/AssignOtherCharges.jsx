@@ -348,11 +348,11 @@ const AssignOtherCharges = () => {
                   date_assigned: new Date().toISOString().split('T')[0]
                 });
               }}
-              className={`px-4 py-2 text-white rounded-lg font-medium transition-all flex items-center shadow-md
-                ${isAdding 
-                  ? 'bg-red-600 hover:bg-red-700' 
-                  : 'bg-indigo-600 hover:bg-indigo-700'}`}
-            >
+             className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center shadow-md 
+              ${isAdding 
+                ? 'bg-red-600 hover:bg-red-700 text-white' 
+                : 'bg-white-600 hover:bg-gray-100 text-indigo-600'}`}
+          >
               {isAdding ? <X className="w-5 h-5 mr-2" /> : <Plus className="w-5 h-5 mr-2" />}
               {isAdding ? 'Cancel' : 'Add Other Charge'}
             </button>

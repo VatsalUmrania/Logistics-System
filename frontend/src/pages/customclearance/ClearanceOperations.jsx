@@ -81,7 +81,7 @@ const commoditiesAPI = {
   getAll: () => axios.get(`${API_URL}/commodities`, getAuthHeaders()),
 };
 const JobAPI = {
-  getAll: () => axios.get(`${API_URL}/commodities`, getAuthHeaders()),
+  getAll: () => axios.get(`${API_URL}/invoices/job-numbers`, getAuthHeaders()),
 };
 // Custom styles for react-select dropdowns (matching AssignExpenses)
 const selectStyles = {
@@ -186,6 +186,7 @@ function ClearanceOperation() {
     containers: false,
     commodities: false
   });
+  const [jobNumberOptions, setJobNumberOptions] = useState([]);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState({});
   const itemsPerPage = 10;
 
@@ -285,6 +286,7 @@ function ClearanceOperation() {
     fetchVessels();
     fetchContainers();
     fetchCommodities();
+    fetchJobNumbers();
   }, []);
 
   const fetchOperations = async () => {
@@ -317,7 +319,24 @@ function ClearanceOperation() {
       ]);
     }
   };
+  const fetchJobNumbers = async () => {
+    try {
+      const response = await JobAPI.getAll();
+      const JobNoOptions = response.data.map(jobNumber => ({
+        value: jobNumber.name,
+        label: jobNumber.name
+      }));
+      setClientOptions(JobNoOptions);
+    } catch (error) {
+      console.error("Error fetching clients:", error);
+      setClientOptions([
+        { value: "Client A", label: "Client A" },
+        { value: "Client B", label: "Client B" },
+      ]);
+    }
+  };
 
+  
   // Add this function to handle status toggles from the table
   const handleStatusChange = async (operationId, newStatus) => {
     setIsUpdatingStatus(prev => ({ ...prev, [operationId]: true }));
@@ -706,10 +725,10 @@ function ClearanceOperation() {
                   setIsAdding(true);
                 }
               }}
-              className={`px-4 py-2 text-white rounded-lg font-medium transition-all flex items-center shadow-md
+              className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center shadow-md 
                 ${isAdding 
-                  ? 'bg-red-600 hover:bg-red-700' 
-                  : 'bg-indigo-600 hover:bg-indigo-700'}`}
+                  ? 'bg-red-600 hover:bg-red-700 text-white' 
+                  : 'bg-white-600 hover:bg-gray-100 text-indigo-600'}`}
             >
               {isAdding ? <X className="w-5 h-5 mr-2" /> : <Plus className="w-5 h-5 mr-2" />}
               {isAdding ? 'Cancel' : 'Add Operation'}
@@ -839,7 +858,7 @@ function ClearanceOperation() {
                         />
                       </div>
                       
-                      <div>
+                      {/* <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           Job Number <span className="text-red-500">*</span>
                         </label>
@@ -851,7 +870,24 @@ function ClearanceOperation() {
                           onChange={(e) => handleFormChange("job_no", e.target.value)}
                           required
                         />
-                      </div>
+                      </div> */}
+                      <div>
+  <label className="block text-sm font-medium text-gray-700 mb-1">
+    Job Number <span className="text-red-500">*</span>
+  </label>
+  <Select
+    options={jobNumberOptions} // This should contain the job number options fetched from your API
+    value={jobNumberOptions.find(option => option.value === formData.jobNumber)} // Assuming `formData.jobNumber` contains the selected job number
+    onChange={(selectedOption) => handleFormChange('jobNumber', selectedOption?.value || '')} // handleFormChange updates the form state
+    placeholder="Select Job Number"
+    isSearchable
+    menuPortalTarget={document.body}
+    menuPosition="fixed"
+    styles={selectStyles} // Custom styles for the select dropdown (optional)
+    className="w-full text-sm"
+  />
+</div>
+
                     </div>
                     
                     <div className="space-y-3">
@@ -1385,3 +1421,4 @@ function ClearanceOperation() {
 }
 
 export default ClearanceOperation;
+

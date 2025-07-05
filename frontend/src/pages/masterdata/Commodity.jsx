@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Package, Plus, Pencil, Trash2, Search, ChevronLeft, ChevronRight, X, 
-  ArrowUp, ArrowDown, Loader, Check, AlertCircle as Alert, Settings
+  ArrowUp, ArrowDown, Loader, AlertTriangle, Settings
 } from 'lucide-react';
 import Select from 'react-select';
+import toast from 'react-hot-toast';
+import ToastConfig from '../../components/ToastConfig';
 
 const CommodityManagementPage = () => {
   // State management
   const [commodities, setCommodities] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [error, setError] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -30,7 +30,7 @@ const CommodityManagementPage = () => {
 
   const API_BASE_URL = 'http://localhost:5000/api';
 
-  // Custom styles for react-select dropdowns (matching AssignExpenses)
+  // Custom styles for react-select dropdowns
   const selectStyles = {
     control: (base) => ({
       ...base,
@@ -47,11 +47,111 @@ const CommodityManagementPage = () => {
 
   const getAuthHeaders = () => {
     const token = localStorage.getItem('authToken');
-    if (!token) throw new Error('Authentication token missing');
+    if (!token) {
+      console.warn('No authentication token found');
+      return {
+        'Content-Type': 'application/json'
+      };
+    }
     return { 
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json'
     };
+  };
+
+  // Handle authentication errors using ToastConfig styles
+  const handleAuthError = (error) => {
+    console.error('API Error:', error);
+    
+    if (error.message.includes('401') || error.message.includes('Authentication')) {
+      toast.error('🔐 Authentication failed. Please login again.');
+    } else if (error.message.includes('404')) {
+      toast.error('🔍 API endpoint not found. Please check if the server is running.');
+    } else if (error.message.includes('ECONNREFUSED') || error.message.includes('Network Error')) {
+      toast.error('🌐 Cannot connect to server. Please ensure the backend server is running on port 5000.');
+    } else if (error.message.includes('500')) {
+      toast.error('⚠️ Server error occurred. Please try again later.');
+    } else {
+      toast.error(`❌ ${error.message || 'An unexpected error occurred'}`);
+    }
+  };
+
+  // Validation function using ToastConfig warning style
+  const validateCommodityForm = () => {
+    const errors = [];
+    
+    if (!newCommodity.name.trim()) {
+      errors.push('Commodity name is required');
+    } else if (newCommodity.name.trim().length < 2) {
+      errors.push('Commodity name must be at least 2 characters');
+    }
+    
+    if (!newCommodity.category_sino) {
+      errors.push('Please select a category');
+    }
+    
+    if (errors.length > 0) {
+      errors.forEach(error => {
+        toast((t) => (
+          <div className="flex items-center">
+            <AlertTriangle className="w-5 h-5 mr-2" />
+            {error}
+          </div>
+        ), {
+          duration: 4500,
+          style: {
+            background: 'linear-gradient(135deg, #D97706 0%, #B45309 50%, #92400E 100%)',
+            color: '#ffffff',
+            border: '1px solid rgba(245, 158, 11, 0.3)',
+            boxShadow: '0 20px 25px -5px rgba(245, 158, 11, 0.2), 0 10px 10px -5px rgba(245, 158, 11, 0.1)',
+          },
+        });
+      });
+      return false;
+    }
+    
+    return true;
+  };
+
+  // Validation for category name
+  const validateCategoryName = (name) => {
+    if (!name.trim()) {
+      toast((t) => (
+        <div className="flex items-center">
+          <AlertTriangle className="w-5 h-5 mr-2" />
+          Category name is required
+        </div>
+      ), {
+        duration: 4500,
+        style: {
+          background: 'linear-gradient(135deg, #D97706 0%, #B45309 50%, #92400E 100%)',
+          color: '#ffffff',
+          border: '1px solid rgba(245, 158, 11, 0.3)',
+          boxShadow: '0 20px 25px -5px rgba(245, 158, 11, 0.2), 0 10px 10px -5px rgba(245, 158, 11, 0.1)',
+        },
+      });
+      return false;
+    }
+    
+    if (categories.find(cat => cat.name.toLowerCase() === name.trim().toLowerCase())) {
+      toast((t) => (
+        <div className="flex items-center">
+          <AlertTriangle className="w-5 h-5 mr-2" />
+          Category already exists
+        </div>
+      ), {
+        duration: 4500,
+        style: {
+          background: 'linear-gradient(135deg, #D97706 0%, #B45309 50%, #92400E 100%)',
+          color: '#ffffff',
+          border: '1px solid rgba(245, 158, 11, 0.3)',
+          boxShadow: '0 20px 25px -5px rgba(245, 158, 11, 0.2), 0 10px 10px -5px rgba(245, 158, 11, 0.1)',
+        },
+      });
+      return false;
+    }
+    
+    return true;
   };
 
   // Fetch categories from database
@@ -62,8 +162,10 @@ const CommodityManagementPage = () => {
       const data = await res.json();
       const activeCategories = data.filter(cat => cat.status === 'Active');
       setCategories(activeCategories);
+      console.log('Categories loaded successfully:', activeCategories.length, 'active categories');
     } catch (err) {
-      setError('Failed to load categories');
+      console.error('Error fetching categories:', err);
+      handleAuthError(err);
     }
   };
 
@@ -75,9 +177,15 @@ const CommodityManagementPage = () => {
       if (!res.ok) throw new Error('Failed to fetch commodities');
       const data = await res.json();
       setCommodities(data);
-      setError('');
+      console.log('Commodities loaded successfully:', data.length, 'records');
+      
+      // Using ToastConfig success style
+      if (data.length > 0) {
+        toast.success(`✅ Successfully loaded ${data.length} commodit${data.length > 1 ? 'ies' : 'y'}`);
+      }
     } catch (err) {
-      setError('Failed to load commodities');
+      console.error('Error fetching commodities:', err);
+      handleAuthError(err);
     } finally {
       setIsLoading(false);
     }
@@ -89,7 +197,8 @@ const CommodityManagementPage = () => {
         setIsLoading(true);
         await Promise.all([fetchCategories(), fetchCommodities()]);
       } catch (err) {
-        setError('Failed to load data');
+        console.error('Error loading data:', err);
+        handleAuthError(err);
       } finally {
         setIsLoading(false);
       }
@@ -106,33 +215,48 @@ const CommodityManagementPage = () => {
     });
     setEditingId(null);
     setIsAdding(false);
-    setError('');
-    setSuccessMessage('');
   };
 
-  // Fixed toggle function for Add Commodity button
+  // Toggle add form using ToastConfig custom style
   const handleToggleAddForm = () => {
-    console.log('Button clicked, current state:', isAdding); // Debug log
+    console.log('Button clicked, current state:', isAdding);
     if (isAdding) {
       resetForm();
+      // Using ToastConfig custom style
+      toast((t) => (
+        <div className="flex items-center">
+          <X className="w-5 h-5 mr-2" />
+          Form cancelled
+        </div>
+      ), {
+        duration: 2000,
+      });
     } else {
       setIsAdding(true);
       setEditingId(null);
-      setError('');
-      setSuccessMessage('');
+      
+      // Using ToastConfig custom style
+      toast((t) => (
+        <div className="flex items-center">
+          <Plus className="w-5 h-5 mr-2" />
+          Ready to add new commodity
+        </div>
+      ), {
+        duration: 2000,
+      });
     }
   };
 
-  // Add or update commodity
+  // Add or update commodity using ToastConfig styles
   const handleAddCommodity = async () => {
-    if (!newCommodity.name.trim()) {
-      setError('Commodity name is required');
+    if (!validateCommodityForm()) {
       return;
     }
-    if (!newCommodity.category_sino) {
-      setError('Please select a category');
-      return;
-    }
+
+    // Using ToastConfig loading style
+    const loadingToast = toast.loading(
+      editingId ? '🔄 Updating commodity...' : '💾 Adding new commodity...'
+    );
 
     try {
       const headers = getAuthHeaders();
@@ -149,48 +273,111 @@ const CommodityManagementPage = () => {
           headers,
           body: JSON.stringify(commodityData),
         });
-        if (!res.ok) throw new Error('Failed to update commodity');
-        setSuccessMessage('Commodity updated successfully!');
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({}));
+          throw new Error(errorData.message || 'Failed to update commodity');
+        }
+        
+        toast.dismiss(loadingToast);
+        // Using ToastConfig success style
+        toast.success(`✅ "${newCommodity.name}" updated successfully!`);
       } else {
         res = await fetch(`${API_BASE_URL}/commodities`, {
           method: 'POST',
           headers,
           body: JSON.stringify(commodityData),
         });
-        if (!res.ok) throw new Error('Failed to add commodity');
-        setSuccessMessage('Commodity added successfully!');
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({}));
+          if (res.status === 409) {
+            throw new Error('Commodity with this name already exists');
+          }
+          throw new Error(errorData.message || 'Failed to add commodity');
+        }
+        
+        toast.dismiss(loadingToast);
+        // Using ToastConfig success style
+        toast.success(`🎉 "${newCommodity.name}" added successfully!`);
       }
 
       await fetchCommodities();
       resetForm();
-      setTimeout(() => setSuccessMessage(''), 3000);
     } catch (err) {
-      setError(err.message || 'Failed to save commodity');
-      setTimeout(() => setError(''), 3000);
+      toast.dismiss(loadingToast);
+      console.error('Error saving commodity:', err);
+      
+      if (err.message.includes('already exists')) {
+        // Using ToastConfig warning style
+        toast((t) => (
+          <div className="flex items-center">
+            <AlertTriangle className="w-5 h-5 mr-2" />
+            Commodity already exists with this name
+          </div>
+        ), {
+          duration: 4500,
+          style: {
+            background: 'linear-gradient(135deg, #D97706 0%, #B45309 50%, #92400E 100%)',
+            color: '#ffffff',
+            border: '1px solid rgba(245, 158, 11, 0.3)',
+            boxShadow: '0 20px 25px -5px rgba(245, 158, 11, 0.2), 0 10px 10px -5px rgba(245, 158, 11, 0.1)',
+          },
+        });
+      } else {
+        // Using ToastConfig error style
+        toast.error(`❌ ${err.message || 'Failed to save commodity'}`);
+      }
+      
+      handleAuthError(err);
     }
   };
 
-  // Delete commodity
+  // Delete commodity using ToastConfig styles
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this commodity?')) return;
+    const commodity = commodities.find(c => c.id === id);
+    const commodityName = commodity ? commodity.name : 'this commodity';
+    
+    if (!window.confirm(`⚠️ Are you sure you want to delete "${commodityName}"?\n\nThis action cannot be undone.`)) {
+      // Using ToastConfig custom style
+      toast((t) => (
+        <div className="flex items-center">
+          <X className="w-5 h-5 mr-2" />
+          Deletion cancelled
+        </div>
+      ), {
+        duration: 2000,
+      });
+      return;
+    }
+
+    // Using ToastConfig loading style
+    const loadingToast = toast.loading(`🗑️ Deleting "${commodityName}"...`);
 
     try {
       const res = await fetch(`${API_BASE_URL}/commodities/${id}`, {
         method: 'DELETE',
         headers: getAuthHeaders(),
       });
-      if (!res.ok) throw new Error('Failed to delete commodity');
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to delete commodity');
+      }
+      
+      toast.dismiss(loadingToast);
+      // Using ToastConfig success style
+      toast.success(`🗑️ "${commodityName}" deleted successfully!`);
       
       await fetchCommodities();
-      setSuccessMessage('Commodity deleted successfully!');
-      setTimeout(() => setSuccessMessage(''), 3000);
     } catch (err) {
-      setError('Failed to delete commodity');
-      setTimeout(() => setError(''), 3000);
+      toast.dismiss(loadingToast);
+      console.error('Error deleting commodity:', err);
+      
+      // Using ToastConfig error style
+      toast.error(`❌ ${err.message || 'Failed to delete commodity'}`);
+      handleAuthError(err);
     }
   };
 
-  // Edit commodity
+  // Edit commodity using ToastConfig custom style
   const handleEdit = (commodity) => {
     setNewCommodity({
       name: commodity.name || '',
@@ -199,11 +386,23 @@ const CommodityManagementPage = () => {
     });
     setEditingId(commodity.id);
     setIsAdding(true);
+    
+    // Using ToastConfig custom style
+    toast((t) => (
+      <div className="flex items-center">
+        <Pencil className="w-5 h-5 mr-2" />
+        Editing: {commodity.name}
+      </div>
+    ), {
+      duration: 2500,
+    });
   };
 
-  // Toggle commodity status
+  // Toggle commodity status using ToastConfig styles
   const toggleCommodityStatus = async (commodity) => {
     const newStatus = commodity.status === 'Active' ? 'Inactive' : 'Active';
+    const loadingToast = toast.loading(`🔄 Updating "${commodity.name}" status...`);
+
     try {
       const headers = getAuthHeaders();
       const commodityData = { 
@@ -218,14 +417,23 @@ const CommodityManagementPage = () => {
         body: JSON.stringify(commodityData),
       });
       
-      if (!res.ok) throw new Error('Failed to update commodity status');
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to update commodity status');
+      }
+      
+      toast.dismiss(loadingToast);
+      // Using ToastConfig success style
+      toast.success(`✅ "${commodity.name}" status updated to ${newStatus}!`);
       
       await fetchCommodities();
-      setSuccessMessage(`Commodity status updated to ${newStatus}!`);
-      setTimeout(() => setSuccessMessage(''), 3000);
     } catch (err) {
-      setError('Failed to update status');
-      setTimeout(() => setError(''), 3000);
+      toast.dismiss(loadingToast);
+      console.error('Error updating commodity status:', err);
+      
+      // Using ToastConfig error style
+      toast.error(`❌ ${err.message || 'Failed to update status'}`);
+      handleAuthError(err);
     }
   };
 
@@ -248,10 +456,127 @@ const CommodityManagementPage = () => {
       <ArrowDown className="w-3 h-3 text-indigo-600 inline" />;
   };
 
+  // Handle search using ToastConfig styles
+  const handleSearch = (searchValue) => {
+    setSearchTerm(searchValue);
+    setCurrentPage(1);
+    
+    // Show toast for search results
+    setTimeout(() => {
+      const filteredResults = commodities.filter(commodity => {
+        const categoryName = getCategoryName(commodity.category_sino) || '';
+        return (
+          (commodity.name || '').toLowerCase().includes(searchValue.toLowerCase()) ||
+          categoryName.toLowerCase().includes(searchValue.toLowerCase()) ||
+          commodity.id.toString().includes(searchValue)
+        );
+      });
+      
+      if (filteredResults.length === 0 && searchValue.trim()) {
+        // Using ToastConfig warning style
+        toast((t) => (
+          <div className="flex items-center">
+            <Search className="w-5 h-5 mr-2" />
+            No commodities found for "{searchValue}"
+          </div>
+        ), {
+          duration: 3000,
+          style: {
+            background: 'linear-gradient(135deg, #D97706 0%, #B45309 50%, #92400E 100%)',
+            color: '#ffffff',
+            border: '1px solid rgba(245, 158, 11, 0.3)',
+            boxShadow: '0 20px 25px -5px rgba(245, 158, 11, 0.2), 0 10px 10px -5px rgba(245, 158, 11, 0.1)',
+          },
+        });
+      } else if (filteredResults.length > 0 && searchValue.trim()) {
+        // Using ToastConfig custom style
+        toast((t) => (
+          <div className="flex items-center">
+            <Search className="w-5 h-5 mr-2" />
+            Found {filteredResults.length} commodit{filteredResults.length > 1 ? 'ies' : 'y'}
+          </div>
+        ), {
+          duration: 2000,
+        });
+      }
+    }, 100);
+  };
+
   // Helper function to get category name
   const getCategoryName = (categorySino) => {
     const category = categories.find(cat => cat.sino === categorySino);
     return category ? category.name : 'Unknown Category';
+  };
+
+  // Category management functions using ToastConfig styles
+  const addCategory = async () => {
+    if (!validateCategoryName(newCategoryName)) {
+      return;
+    }
+
+    const loadingToast = toast.loading('💾 Adding new category...');
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/categories`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ name: newCategoryName.trim(), status: 'Active' })
+      });
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to add category');
+      }
+      
+      toast.dismiss(loadingToast);
+      toast.success(`🎉 Category "${newCategoryName}" added successfully!`);
+      
+      await fetchCategories();
+      setNewCategoryName('');
+    } catch (err) {
+      toast.dismiss(loadingToast);
+      console.error('Error adding category:', err);
+      
+      toast.error(`❌ ${err.message || 'Failed to add category'}`);
+      handleAuthError(err);
+    }
+  };
+
+  const removeCategory = async (category) => {
+    if (!window.confirm(`⚠️ Are you sure you want to delete "${category.name}"?\n\nThis action cannot be undone.`)) {
+      toast((t) => (
+        <div className="flex items-center">
+          <X className="w-5 h-5 mr-2" />
+          Deletion cancelled
+        </div>
+      ), {
+        duration: 2000,
+      });
+      return;
+    }
+
+    const loadingToast = toast.loading(`🗑️ Deleting category "${category.name}"...`);
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/categories/${category.sino}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+      });
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to delete category');
+      }
+      
+      toast.dismiss(loadingToast);
+      toast.success(`🗑️ Category "${category.name}" deleted successfully!`);
+      
+      await fetchCategories();
+    } catch (err) {
+      toast.dismiss(loadingToast);
+      console.error('Error deleting category:', err);
+      
+      toast.error(`❌ ${err.message || 'Failed to delete category'}`);
+      handleAuthError(err);
+    }
   };
 
   // Filtered and sorted commodities
@@ -286,45 +611,6 @@ const CommodityManagementPage = () => {
   const currentCommodities = sortedCommodities.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(sortedCommodities.length / itemsPerPage);
 
-  // Category management functions
-  const addCategory = async () => {
-    if (newCategoryName.trim() && !categories.find(cat => cat.name === newCategoryName)) {
-      try {
-        const res = await fetch(`${API_BASE_URL}/categories`, {
-          method: 'POST',
-          headers: getAuthHeaders(),
-          body: JSON.stringify({ name: newCategoryName, status: 'Active' })
-        });
-        if (!res.ok) throw new Error('Failed to add category');
-        await fetchCategories();
-        setNewCategoryName('');
-        setSuccessMessage('Category added successfully!');
-        setTimeout(() => setSuccessMessage(''), 3000);
-      } catch (err) {
-        setError('Failed to add category');
-        setTimeout(() => setError(''), 3000);
-      }
-    }
-  };
-
-  const removeCategory = async (category) => {
-    if (window.confirm(`Are you sure you want to delete "${category.name}"?`)) {
-      try {
-        const res = await fetch(`${API_BASE_URL}/categories/${category.sino}`, {
-          method: 'DELETE',
-          headers: getAuthHeaders()
-        });
-        if (!res.ok) throw new Error('Failed to delete category');
-        await fetchCategories();
-        setSuccessMessage('Category deleted successfully!');
-        setTimeout(() => setSuccessMessage(''), 3000);
-      } catch (err) {
-        setError('Failed to delete category');
-        setTimeout(() => setError(''), 3000);
-      }
-    }
-  };
-
   // Prepare options for dropdowns
   const categoryOptions = categories.map(category => ({
     value: category.sino,
@@ -334,6 +620,17 @@ const CommodityManagementPage = () => {
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, commodities]);
+
+  // Debounced search effect
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchTerm !== '') {
+        handleSearch(searchTerm);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   if (isLoading) {
     return (
@@ -349,7 +646,7 @@ const CommodityManagementPage = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
-        {/* Header - Matching AssignExpenses */}
+        {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-gray-800 flex items-center">
@@ -359,14 +656,13 @@ const CommodityManagementPage = () => {
             <p className="text-gray-600 mt-2">Manage all commodity information in your logistics system</p>
           </div>
           <div className="mt-4 md:mt-0 flex flex-wrap gap-3">
-            {/* Fixed Add Commodity Button */}
             <button
               type="button"
               onClick={handleToggleAddForm}
-              className={`px-4 py-2 text-white rounded-lg font-medium transition-all flex items-center shadow-md
+              className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center shadow-md 
                 ${isAdding 
-                  ? 'bg-red-600 hover:bg-red-700' 
-                  : 'bg-indigo-600 hover:bg-indigo-700'}`}
+                  ? 'bg-red-600 hover:bg-red-700 text-white' 
+                  : 'bg-white-600 hover:bg-gray-100 text-indigo-600'}`}
             >
               {isAdding ? <X className="w-5 h-5 mr-2" /> : <Plus className="w-5 h-5 mr-2" />}
               {isAdding ? 'Cancel' : 'Add Commodity'}
@@ -381,25 +677,7 @@ const CommodityManagementPage = () => {
           </div>
         </div>
 
-        {/* Status Messages */}
-        {error && (
-          <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded">
-            <div className="flex items-center">
-              <Alert className="w-5 h-5 text-red-500 mr-2" />
-              <p className="text-red-700">{error}</p>
-            </div>
-          </div>
-        )}
-        {successMessage && (
-          <div className="bg-green-50 border-l-4 border-green-500 p-4 mb-6 rounded">
-            <div className="flex items-center">
-              <Check className="w-5 h-5 text-green-500 mr-2" />
-              <p className="text-green-700">{successMessage}</p>
-            </div>
-          </div>
-        )}
-
-        {/* Search Section - Matching AssignExpenses */}
+        {/* Search Section */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-visible mb-6">
           <div className="bg-indigo-50 p-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-indigo-700 flex items-center">
@@ -447,6 +725,7 @@ const CommodityManagementPage = () => {
                       onChange={(e) => setNewCategoryName(e.target.value)}
                       className="flex-grow px-3 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-indigo-500 text-sm"
                       placeholder="Enter category name"
+                      onKeyPress={(e) => e.key === 'Enter' && addCategory()}
                     />
                     <button
                       onClick={addCategory}
@@ -459,18 +738,24 @@ const CommodityManagementPage = () => {
                 <div>
                   <h3 className="text-md font-medium text-gray-800 mb-3">Current Categories</h3>
                   <ul className="border border-gray-200 rounded-lg divide-y divide-gray-200 max-h-60 overflow-y-auto">
-                    {categories.map((category) => (
-                      <li key={category.sino} className="flex justify-between items-center p-3 hover:bg-gray-50">
-                        <span className="text-sm">{category.name}</span>
-                        <button
-                          onClick={() => removeCategory(category)}
-                          className="text-red-600 hover:text-red-800"
-                          title="Delete category"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                    {categories.length === 0 ? (
+                      <li className="p-3 text-center text-gray-500 text-sm">
+                        No categories available
                       </li>
-                    ))}
+                    ) : (
+                      categories.map((category) => (
+                        <li key={category.sino} className="flex justify-between items-center p-3 hover:bg-gray-50">
+                          <span className="text-sm">{category.name}</span>
+                          <button
+                            onClick={() => removeCategory(category)}
+                            className="text-red-600 hover:text-red-800 p-1 rounded hover:bg-red-50"
+                            title="Delete category"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </li>
+                      ))
+                    )}
                   </ul>
                 </div>
                 <div className="mt-4 flex justify-end">
@@ -554,7 +839,13 @@ const CommodityManagementPage = () => {
                 </div>
               </div>
               
-              <div className="mt-4 flex justify-end">
+              <div className="mt-4 flex justify-end space-x-3">
+                <button
+                  onClick={handleToggleAddForm}
+                  className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-5 rounded-lg shadow transition text-sm"
+                >
+                  Cancel
+                </button>
                 <button
                   onClick={handleAddCommodity}
                   className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-5 rounded-lg shadow transition text-sm"
@@ -607,7 +898,13 @@ const CommodityManagementPage = () => {
                 {currentCommodities.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-4 py-6 text-center text-gray-500">
-                      No commodity records found
+                      <div className="flex flex-col items-center justify-center">
+                        <Package className="w-16 h-16 text-gray-300 mb-4" />
+                        <h4 className="text-lg font-medium text-gray-500">No commodity records found</h4>
+                        <p className="text-gray-400 mt-2">
+                          {searchTerm ? 'Try adjusting your search criteria' : 'Create your first commodity to get started'}
+                        </p>
+                      </div>
                     </td>
                   </tr>
                 ) : (
@@ -648,14 +945,14 @@ const CommodityManagementPage = () => {
                       <td className="px-4 py-3 whitespace-nowrap text-sm font-medium flex space-x-2">
                         <button
                           onClick={() => handleEdit(commodity)}
-                          className="text-indigo-600 hover:text-indigo-900"
+                          className="text-indigo-600 hover:text-indigo-900 p-1 rounded hover:bg-indigo-50"
                           title="Edit"
                         >
                           <Pencil className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDelete(commodity.id)}
-                          className="text-red-600 hover:text-red-900"
+                          className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50"
                           title="Delete"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -702,6 +999,9 @@ const CommodityManagementPage = () => {
           )}
         </div>
       </div>
+
+      {/* Toast Configuration */}
+      <ToastConfig position="bottom-right" />
     </div>
   );
 };

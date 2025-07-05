@@ -278,11 +278,10 @@ const CreditNotePage = () => {
                   date: new Date()
                 });
               }}
-              className={`px-5 py-2 text-white rounded-lg font-medium transition-all flex items-center shadow-md ${
-                isAdding
-                  ? 'bg-red-600 hover:bg-red-700'
-                  : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700'
-              }`}
+              className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center shadow-md 
+                ${isAdding 
+                  ? 'bg-red-600 hover:bg-red-700 text-white' 
+                  : 'bg-white-600 hover:bg-gray-100 text-indigo-600'}`}
             >
               {isAdding ? (
                 <>
@@ -429,7 +428,7 @@ const CreditNotePage = () => {
         {/* Credit Notes Table */}
         <div className="bg-white rounded-xl shadow-lg overflow-hidden">
           <table className="min-w-full table-auto border-collapse">
-            <thead className="bg-indigo-600 text-white text-sm font-semibold">
+            <thead className="bg-white-600 text-indigo-500 text-sm font-semibold">
               <tr>
                 {[
                   { label: 'SL', key: 'sl', noSort: true },
@@ -444,7 +443,7 @@ const CreditNotePage = () => {
                     key={label}
                     onClick={() => key && !noSort && handleSort(key)}
                     className={`px-4 py-3 text-left cursor-pointer select-none ${
-                      key && !noSort ? 'hover:bg-indigo-700' : ''
+                      key && !noSort ? 'hover:bg-gray-100' : ''
                     }`}
                   >
                     <div className="flex items-center">
@@ -543,3 +542,5 @@ const CreditNotePage = () => {
 };
 
 export default CreditNotePage;
+
+
