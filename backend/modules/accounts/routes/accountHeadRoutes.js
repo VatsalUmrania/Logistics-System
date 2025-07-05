@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const accountHeadController = require('../controllers/accountHeadController');
+const db      = require('../../../config/db');
 
 // Add logging middleware to debug routes
 router.use((req, res, next) => {
@@ -10,6 +11,51 @@ router.use((req, res, next) => {
 
 // GET /api/accounts-head - Get all account heads with search and pagination
 router.get('/', accountHeadController.getAllAccountHeads);
+
+router.get('/balance-sheet', async (req, res) => {
+  const asOf = req.query.asOf ?? new Date().toISOString().substring(0,10);
+
+  try {
+    const [assets] = await db.query(`
+      SELECT g.group_name AS \`group\`, ah.account_head AS name, 
+             SUM(le.debit - le.credit) AS amount
+      FROM ledger_entries le
+      JOIN account_heads ah  ON ah.id = le.account_head_id
+      JOIN account_groups g  ON g.id  = ah.group_id
+      WHERE le.entry_date <= ?
+      AND ah.account_type = 'Asset'
+      GROUP BY ah.id
+    `, [asOf]);
+
+    const [liab] = await db.query(`
+      SELECT g.group_name AS \`group\`, ah.account_head AS name, 
+             SUM(le.credit - le.debit) AS amount
+      FROM ledger_entries le
+      JOIN account_heads ah  ON ah.id = le.account_head_id
+      JOIN account_groups g  ON g.id  = ah.group_id
+      WHERE le.entry_date <= ?
+      AND ah.account_type = 'Liability'
+      GROUP BY ah.id
+    `, [asOf]);
+
+    const [eq] = await db.query(`
+      SELECT g.group_name AS \`group\`, ah.account_head AS name, 
+             SUM(le.credit - le.debit) AS amount
+      FROM ledger_entries le
+      JOIN account_heads ah  ON ah.id = le.account_head_id
+      JOIN account_groups g  ON g.id  = ah.group_id
+      WHERE le.entry_date <= ?
+      AND ah.account_type = 'Equity'
+      GROUP BY ah.id
+    `, [asOf]);
+
+    res.json({ success: true, data: { assets, liabilities: liab, equity: eq } });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
 
 // GET /api/accounts-head/types - Get account types
 router.get('/types', accountHeadController.getAccountTypes);
