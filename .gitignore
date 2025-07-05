@@ -51,7 +51,7 @@ Thumbs.db
 .idea/
 
 # MySQL database files - usually you don't store database files here
-*.sql
+
 *.sqlite
 *.sqlite3
 
