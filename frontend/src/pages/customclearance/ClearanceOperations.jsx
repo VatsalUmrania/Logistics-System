@@ -20,7 +20,8 @@ import {
 import axios from 'axios';
 import { format, parseISO } from 'date-fns';
 import Select from 'react-select';
-
+import toast from 'react-hot-toast';
+import ToastConfig from '../../components/ToastConfig';
 // API Configuration
 const API_URL = "http://localhost:5000/api";
 
@@ -186,7 +187,8 @@ function ClearanceOperation() {
     containers: false,
     commodities: false
   });
-  const [jobNumberOptions, setJobNumberOptions] = useState([]);
+  const [jobNumbers, setJobNumbers] = useState([]); // State for job options
+  const [jobNo, setJobNo] = useState('');           // State for selected job number
   const [isUpdatingStatus, setIsUpdatingStatus] = useState({});
   const itemsPerPage = 10;
 
@@ -319,22 +321,33 @@ function ClearanceOperation() {
       ]);
     }
   };
+  
+
+// FETCH ON MOUNT  (inside useEffect(fetchSuppliers) or a dedicated one)
+
+
   const fetchJobNumbers = async () => {
     try {
       const response = await JobAPI.getAll();
-      const JobNoOptions = response.data.map(jobNumber => ({
-        value: jobNumber.name,
-        label: jobNumber.name
+
+      // Map the response to job dropdown options (value, label)
+      const jobDropdownOptions = response.data.map(job => ({
+        value: job.job_number,   // Assuming job_number is the key
+        label: job.job_number    // Customize as needed (e.g., job.client_name, job.description)
       }));
-      setClientOptions(JobNoOptions);
+
+      setJobNumbers(jobDropdownOptions);  // Set the job numbers to state
     } catch (error) {
-      console.error("Error fetching clients:", error);
-      setClientOptions([
-        { value: "Client A", label: "Client A" },
-        { value: "Client B", label: "Client B" },
+      console.error("Error fetching job numbers:", error);
+
+      // Fallback options in case of error
+      setJobNumbers([
+        { value: "Job 001", label: "Job 001" },
+        { value: "Job 002", label: "Job 002" },
       ]);
     }
   };
+
 
   
   // Add this function to handle status toggles from the table
@@ -858,35 +871,19 @@ function ClearanceOperation() {
                         />
                       </div>
                       
-                      {/* <div>
+                      <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           Job Number <span className="text-red-500">*</span>
                         </label>
-                        <input
-                          type="text"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
-                          placeholder="Enter job number"
-                          value={formData.job_no}
-                          onChange={(e) => handleFormChange("job_no", e.target.value)}
-                          required
-                        />
-                      </div> */}
-                      <div>
-  <label className="block text-sm font-medium text-gray-700 mb-1">
-    Job Number <span className="text-red-500">*</span>
-  </label>
-  <Select
-    options={jobNumberOptions} // This should contain the job number options fetched from your API
-    value={jobNumberOptions.find(option => option.value === formData.jobNumber)} // Assuming `formData.jobNumber` contains the selected job number
-    onChange={(selectedOption) => handleFormChange('jobNumber', selectedOption?.value || '')} // handleFormChange updates the form state
-    placeholder="Select Job Number"
-    isSearchable
-    menuPortalTarget={document.body}
-    menuPosition="fixed"
-    styles={selectStyles} // Custom styles for the select dropdown (optional)
-    className="w-full text-sm"
-  />
-</div>
+                        <Select
+                              options={jobNumbers} // Directly use jobNumbers as options
+                              value={jobNumbers.find(o => o.value === jobNo)} // Find the selected job number based on jobNo
+                              onChange={opt => setJobNo(opt?.value || '')} // Update jobNo on selection
+                              placeholder="Select Job Number"
+                              isSearchable // Enable search feature
+                              styles={selectStyles} // Assuming `selectStyles` is defined somewhere
+                            />
+                      </div>
 
                     </div>
                     
@@ -1416,6 +1413,7 @@ function ClearanceOperation() {
           )}
         </div>
       </div>
+      <ToastConfig/>
     </div>
   );
 }
