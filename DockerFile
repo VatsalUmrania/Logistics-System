@@ -1,4 +1,4 @@
-# 1. Build the React frontend
+# 1. React frontend
 FROM node:18 AS frontend-build
 WORKDIR /app/frontend
 COPY frontend/package*.json ./
@@ -23,3 +23,5 @@ COPY --from=backend-build /app/backend ./
 ENV NODE_ENV=production
 EXPOSE 5000
 CMD ["node", "server.js"]
+
+
