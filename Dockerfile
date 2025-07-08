@@ -1,0 +1,25 @@
+# 1. Build the React frontend
+FROM node:18 AS frontend-build
+WORKDIR /app/frontend
+COPY frontend/package*.json ./
+RUN npm install
+COPY frontend/ ./
+RUN npm run build
+
+# 2. Prepare the backend and production build
+FROM node:18 AS backend-build
+WORKDIR /app/backend
+COPY backend/package*.json ./
+RUN npm install --production
+COPY backend/ ./
+
+# Copy frontend build into backend public folder
+COPY --from=frontend-build /app/frontend/dist ./public
+
+# 3. Final image
+FROM node:18
+WORKDIR /app/backend
+COPY --from=backend-build /app/backend ./
+ENV NODE_ENV=production
+EXPOSE 5000
+CMD ["node", "server.js"]
