@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import ToastConfig from '../../components/ToastConfig';
 
 const VesselDetailsPage = () => {
+  const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/api/vessels`;
   // State management
   const [vessels, setVessels] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -116,7 +117,7 @@ const VesselDetailsPage = () => {
   const fetchVessels = async () => {
     try {
       setIsLoading(true);
-      const res = await fetch('http://localhost:5000/api/vessels/', { headers: getAuthHeaders() });
+      const res = await fetch(`${API_BASE_URL}`, { headers: getAuthHeaders() });
       if (!res.ok) throw new Error(`Failed to fetch vessels: ${res.status} ${res.statusText}`);
       const data = await res.json();
       
@@ -210,7 +211,7 @@ const VesselDetailsPage = () => {
 
       let res;
       if (editingId) {
-        res = await fetch(`http://localhost:5000/api/vessels/${editingId}`, {
+        res = await fetch(`${API_BASE_URL}${editingId}`, {
           method: 'PUT',
           headers,
           body: JSON.stringify(vesselData),
@@ -224,7 +225,7 @@ const VesselDetailsPage = () => {
         // Using ToastConfig success style
         toast.success(`✅ "${newVessel.vesselName}" updated successfully!`);
       } else {
-        res = await fetch('http://localhost:5000/api/vessels/', {
+        res = await fetch(`${API_BASE_URL}`, {
           method: 'POST',
           headers,
           body: JSON.stringify(vesselData),
@@ -295,7 +296,7 @@ const VesselDetailsPage = () => {
     const loadingToast = toast.loading(`🗑️ Deleting "${vesselName}"...`);
 
     try {
-      const res = await fetch(`http://localhost:5000/api/vessels/${id}`, {
+      const res = await fetch(`${API_BASE_URL}${id}`, {
         method: 'DELETE',
         headers: getAuthHeaders(),
       });

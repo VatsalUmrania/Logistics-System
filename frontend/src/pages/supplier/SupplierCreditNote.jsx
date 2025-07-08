@@ -8,7 +8,7 @@ import Select from 'react-select';
 import toast from 'react-hot-toast';
 import ToastConfig from '../../components/ToastConfig';
 
-const API_URL = 'http://localhost:5000/api';
+const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/api`;
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem('authToken');
@@ -42,7 +42,7 @@ const SupplierCreditNote = () => {
   
   const [formData, setFormData] = useState({
     supplier_id: '',
-    credit_note_no: `CN-${Math.floor(Math.random() * 1000)}`,
+    credit_note_no: ``,
     credit_note_date: new Date().toISOString().split('T')[0],
     total_amount: '',
     vat_amount: '',
@@ -135,41 +135,51 @@ const SupplierCreditNote = () => {
     return true;
   };
 
-  // Enhanced fetch with detailed feedback
   const fetchData = async () => {
     try {
       setIsLoading(true);
       const loadingToast = toast.loading('🔄 Loading credit note data...');
-      
-      const [suppliersRes, portsRes, assignmentsRes, creditNotesRes] = await Promise.all([
-        fetch(`${API_URL}/suppliers`, { headers: getAuthHeaders() }),
-        fetch(`${API_URL}/ports`, { headers: getAuthHeaders() }),
-        fetch(`${API_URL}/supplier-assignments`, { headers: getAuthHeaders() }),
-        fetch(`${API_URL}/supplier-credit-notes`, { headers: getAuthHeaders() })
+  
+      const [suppliersRes, portsRes, assignmentsRes, creditNotesRes, nextCreditNoteRes] = await Promise.all([
+        fetch(`${API_BASE_URL}/suppliers`, { headers: getAuthHeaders() }),
+        fetch(`${API_BASE_URL}/ports`, { headers: getAuthHeaders() }),
+        fetch(`${API_BASE_URL}/supplier-assignments`, { headers: getAuthHeaders() }),
+        fetch(`${API_BASE_URL}/supplier-credit-notes`, { headers: getAuthHeaders() }),
+        fetch(`${API_BASE_URL}/supplier-credit-notes/next-credit-note-no`, { headers: getAuthHeaders() })
       ]);
-
-      if (!suppliersRes.ok || !portsRes.ok || !assignmentsRes.ok || !creditNotesRes.ok) {
+  
+      if (
+        !suppliersRes.ok || !portsRes.ok || !assignmentsRes.ok ||
+        !creditNotesRes.ok || !nextCreditNoteRes.ok
+      ) {
         throw new Error('Failed to fetch some data');
       }
-
+  
       const suppliersData = await suppliersRes.json();
       const portsData = await portsRes.json();
       const assignmentsData = await assignmentsRes.json();
       const creditNotesData = await creditNotesRes.json();
-
+      const nextCreditNoteData = await nextCreditNoteRes.json();
+  
       const suppliersList = Array.isArray(suppliersData) ? suppliersData : suppliersData.data || [];
       const portsList = Array.isArray(portsData) ? portsData : portsData.data || [];
       const assignmentsList = assignmentsData.data || [];
       const creditNotesList = creditNotesData.data || [];
-
+      const nextCreditNoteNo = nextCreditNoteData.next_credit_note_no || '';
+  
       setSuppliers(suppliersList);
       setPorts(portsList);
       setAssignments(assignmentsList);
       setCreditNotes(creditNotesList);
-
+  
+      // ✅ Set auto-generated credit note number
+      setFormData(prev => ({
+        ...prev,
+        credit_note_no: nextCreditNoteNo
+      }));
+  
       toast.dismiss(loadingToast);
-      
-      // Success feedback with data counts
+  
       toast((t) => (
         <div className="flex items-center">
           <Check className="w-5 h-5 mr-2" />
@@ -178,7 +188,7 @@ const SupplierCreditNote = () => {
       ), {
         duration: 3000,
       });
-
+  
     } catch (err) {
       console.error('Error fetching data:', err);
       toast.error('❌ Failed to load data. Please refresh the page.');
@@ -187,6 +197,7 @@ const SupplierCreditNote = () => {
       setIsLoading(false);
     }
   };
+  
 
   // Fetch data on mount
   useEffect(() => {
@@ -379,7 +390,7 @@ const SupplierCreditNote = () => {
 
       let res;
       if (editingId) {
-        res = await fetch(`${API_URL}/supplier-credit-notes/${editingId}`, {
+        res = await fetch(`${API_BASE_URL}/supplier-credit-notes/${editingId}`, {
           method: 'PUT',
           headers: getAuthHeaders(),
           body: JSON.stringify(payload)
@@ -391,7 +402,7 @@ const SupplierCreditNote = () => {
         toast.dismiss(loadingToast);
         toast.success(`✅ Credit note for "${supplierName}" updated successfully!`);
       } else {
-        res = await fetch(`${API_URL}/supplier-credit-notes`, {
+        res = await fetch(`${API_BASE_URL}/supplier-credit-notes`, {
           method: 'POST',
           headers: getAuthHeaders(),
           body: JSON.stringify(payload)
@@ -408,7 +419,7 @@ const SupplierCreditNote = () => {
       }
 
       // Refresh credit notes
-      const creditNotesRes = await fetch(`${API_URL}/supplier-credit-notes`, { headers: getAuthHeaders() });
+      const creditNotesRes = await fetch(`${API_BASE_URL}/supplier-credit-notes`, { headers: getAuthHeaders() });
       const creditNotesData = await creditNotesRes.json();
       setCreditNotes(creditNotesData.data || []);
       resetForm();
@@ -495,7 +506,7 @@ const SupplierCreditNote = () => {
     const loadingToast = toast.loading(`🗑️ Deleting credit note ${creditNoteNo}...`);
     
     try {
-      const res = await fetch(`${API_URL}/supplier-credit-notes/${id}`, {
+      const res = await fetch(`${API_BASE_URL}/supplier-credit-notes/${id}`, {
         method: 'DELETE',
         headers: getAuthHeaders()
       });
@@ -506,7 +517,7 @@ const SupplierCreditNote = () => {
       }
       
       // Refresh credit notes
-      const creditNotesRes = await fetch(`${API_URL}/supplier-credit-notes`, { headers: getAuthHeaders() });
+      const creditNotesRes = await fetch(`${API_BASE_URL}/supplier-credit-notes`, { headers: getAuthHeaders() });
       const creditNotesData = await creditNotesRes.json();
       setCreditNotes(creditNotesData.data || []);
       

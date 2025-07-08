@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { 
   ClipboardList, Plus, Pencil, Trash2, ChevronDown, Search, 
-  ChevronLeft, ChevronRight, X, CreditCard
+  ChevronLeft, ChevronRight, X, CreditCard, Loader
 } from 'lucide-react';
 import axios from 'axios';
 import Select from 'react-select';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import toast from 'react-hot-toast';
+import ToastConfig from '../../components/ToastConfig';
+
+const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/api`;
 
 const CreditNotePage = () => {
   // State variables
@@ -28,16 +32,18 @@ const CreditNotePage = () => {
   const [sortDirection, setSortDirection] = useState('asc');
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const itemsPerPage = 5;
 
   // Authentication helper
   const getAuthHeaders = () => {
     const token = localStorage.getItem('authToken');
     if (!token) {
-      console.error("Authentication token missing - redirecting to login");
-      window.location.href = '/login';
-      return {};
+      toast.error("Authentication token missing - please login");
+      setTimeout(() => {
+        window.location.href = '/login';
+      }, 2000);
+      return null;
     }
     return {
       headers: {
@@ -48,51 +54,53 @@ const CreditNotePage = () => {
   };
 
   // Fetch data from backend
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const headers = getAuthHeaders();
+      if (!headers) return;
+
+      const [notesRes, clientsRes, jobsRes] = await Promise.all([
+        axios.get(`${API_BASE_URL}/credit-note`, headers),
+        axios.get(`${API_BASE_URL}/clients`, headers),
+        axios.get(`${API_BASE_URL}/clearance-operations`, headers)
+      ]);
+
+      setCreditNotes(notesRes.data);
+      setClients(clientsRes.data);
+      
+      // Extract unique job numbers from clearance operations
+      const uniqueJobNumbers = [...new Set(jobsRes.data.map(op => op.job_no))]
+        .filter(Boolean)
+        .map(job => ({
+          value: job,
+          label: job
+        }));
+      setJobNumbers(uniqueJobNumbers);
+
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      toast.error('Failed to fetch data. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const headers = getAuthHeaders();
-        if (Object.keys(headers).length > 0) {
-          // Credit notes
-          const notesRes = await axios.get(
-            'http://localhost:5000/api/credit-note',
-            headers
-          );
-          setCreditNotes(notesRes.data);
-
-          // Clients
-          const clientsRes = await axios.get(
-            'http://localhost:5000/api/clients',
-            headers
-          );
-          setClients(clientsRes.data);
-
-          // Job numbers
-          const jobsRes = await axios.get(
-            'http://localhost:5000/api/clearance-operations/job-numbers',
-            headers
-          );
-          setJobNumbers(jobsRes.data.data.map(job => ({
-            value: job.job_no,
-            label: job.job_no
-          })));
-        }
-      } catch (error) {
-        console.error('Error fetching data:', error);
-        setError('Failed to fetch data. Please try again.');
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchData();
   }, []);
 
-  // Handle search
-  const handleSearch = () => {
-    if (!searchTerm.trim()) return;
-    // Optionally implement backend search here
+  // Form validation
+  const validateForm = () => {
+    if (!newCreditNote.credit_note_no.trim()) {
+      toast.error('Credit Note No is required');
+      return false;
+    }
+    if (!newCreditNote.amount || parseFloat(newCreditNote.amount) <= 0) {
+      toast.error('Valid amount is required');
+      return false;
+    }
+    return true;
   };
 
   // Sorting handler
@@ -107,92 +115,118 @@ const CreditNotePage = () => {
 
   // CRUD Operations
   const handleAddCreditNote = async () => {
+    if (!validateForm()) return;
+    
+    setIsSubmitting(true);
+    const loadingToast = toast.loading(editingId ? 'Updating credit note...' : 'Creating credit note...');
+    
     try {
       const headers = getAuthHeaders();
-      if (Object.keys(headers).length > 0) {
-        if (editingId) {
-          // Update existing
-          await axios.put(
-            `http://localhost:5000/api/credit-note/${editingId}`,
-            {
-              ...newCreditNote,
-              date: newCreditNote.date.toISOString().split('T')[0]
-            },
-            headers
-          );
-        } else {
-          // Create new
-          await axios.post(
-            'http://localhost:5000/api/credit-note',
-            {
-              ...newCreditNote,
-              date: newCreditNote.date.toISOString().split('T')[0]
-            },
-            headers
-          );
-        }
-        // Refresh data
-        const res = await axios.get(
-          'http://localhost:5000/api/credit-note',
-          headers
-        );
-        setCreditNotes(res.data);
-        setIsAdding(false);
-        setEditingId(null);
-        setNewCreditNote({
-          credit_note_no: '',
-          operation_no: '',
-          client_name: '',
-          client_name_ar: '',
-          amount: '',
-          date: new Date()
-        });
+      if (!headers) return;
+
+      const payload = {
+        ...newCreditNote,
+        date: newCreditNote.date.toISOString().split('T')[0],
+        amount: parseFloat(newCreditNote.amount)
+      };
+
+      if (editingId) {
+        await axios.put(`${API_BASE_URL}/credit-note/${editingId}`, payload, headers);
+        toast.dismiss(loadingToast);
+        toast.success('Credit note updated successfully');
+      } else {
+        await axios.post(`${API_BASE_URL}/credit-note`, payload, headers);
+        toast.dismiss(loadingToast);
+        toast.success('Credit note created successfully');
       }
+
+      // Refresh data
+      await fetchData();
+      
+      // Reset form
+      setIsAdding(false);
+      setEditingId(null);
+      setNewCreditNote({
+        credit_note_no: '',
+        operation_no: '',
+        client_name: '',
+        client_name_ar: '',
+        amount: '',
+        date: new Date()
+      });
+
     } catch (error) {
       console.error('Error saving credit note:', error);
-      setError('Failed to save credit note. Please try again.');
+      toast.dismiss(loadingToast);
+      toast.error(error.response?.data?.error || 'Failed to save credit note');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this credit note?')) return;
+    
+    const loadingToast = toast.loading('Deleting credit note...');
+    
     try {
       const headers = getAuthHeaders();
-      if (Object.keys(headers).length > 0) {
-        await axios.delete(
-          `http://localhost:5000/api/credit-note/${id}`,
-          headers
-        );
-        // Refresh data
-        const res = await axios.get(
-          'http://localhost:5000/api/credit-note',
-          headers
-        );
-        setCreditNotes(res.data);
-      }
+      if (!headers) return;
+
+      await axios.delete(`${API_BASE_URL}/credit-note/${id}`, headers);
+      
+      toast.dismiss(loadingToast);
+      toast.success('Credit note deleted successfully');
+      
+      // Refresh data
+      await fetchData();
+      
     } catch (error) {
       console.error('Error deleting credit note:', error);
-      setError('Failed to delete credit note. Please try again.');
+      toast.dismiss(loadingToast);
+      toast.error(error.response?.data?.error || 'Failed to delete credit note');
     }
   };
 
   const handleEdit = (note) => {
     setNewCreditNote({
       credit_note_no: note.credit_note_no,
-      operation_no: note.operation_no,
+      operation_no: note.operation_no || '',
       client_name: note.client_name,
-      client_name_ar: note.client_name_ar,
-      amount: note.amount,
+      client_name_ar: note.client_name_ar || '',
+      amount: note.amount.toString(),
       date: new Date(note.date)
     });
     setEditingId(note.id);
     setIsAdding(true);
   };
 
+  const resetForm = () => {
+    setIsAdding(false);
+    setEditingId(null);
+    setNewCreditNote({
+      credit_note_no: '',
+      operation_no: '',
+      client_name: '',
+      client_name_ar: '',
+      amount: '',
+      date: new Date()
+    });
+  };
+
   // Sorting and filtering
   const sortedCreditNotes = [...creditNotes].sort((a, b) => {
-    if (a[sortField] < b[sortField]) return sortDirection === 'asc' ? -1 : 1;
-    if (a[sortField] > b[sortField]) return sortDirection === 'asc' ? 1 : -1;
+    let aValue = a[sortField];
+    let bValue = b[sortField];
+    
+    // Handle numeric sorting for amount
+    if (sortField === 'amount') {
+      aValue = parseFloat(aValue) || 0;
+      bValue = parseFloat(bValue) || 0;
+    }
+    
+    if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+    if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
     return 0;
   });
 
@@ -208,32 +242,27 @@ const CreditNotePage = () => {
   const currentCreditNotes = filteredCreditNotes.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(filteredCreditNotes.length / itemsPerPage);
 
+  // React Select styles
+  const selectStyles = {
+    control: (base) => ({
+      ...base,
+      minHeight: '42px',
+      borderRadius: '8px',
+      borderColor: '#d1d5db',
+      '&:hover': {
+        borderColor: '#9ca3af'
+      }
+    }),
+    menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+    menu: (base) => ({ ...base, zIndex: 9999 })
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600 mx-auto"></div>
+          <Loader className="w-12 h-12 mx-auto text-indigo-600 animate-spin" />
           <p className="mt-4 text-gray-600">Loading credit notes...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
-        <div className="bg-white p-8 rounded-xl shadow-lg max-w-md text-center">
-          <div className="text-red-500 mb-4">
-            <CreditCard className="w-16 h-16 mx-auto" />
-          </div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Error Loading Data</h2>
-          <p className="text-gray-600 mb-6">{error}</p>
-          <button 
-            onClick={() => window.location.reload()}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-6 rounded-lg"
-          >
-            Try Again
-          </button>
         </div>
       </div>
     );
@@ -261,22 +290,16 @@ const CreditNotePage = () => {
                   className="bg-transparent outline-none w-40"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                 />
               </div>
             </div>
             <button
               onClick={() => {
-                setIsAdding(!isAdding);
-                setEditingId(null);
-                setNewCreditNote({
-                  credit_note_no: '',
-                  operation_no: '',
-                  client_name: '',
-                  client_name_ar: '',
-                  amount: '',
-                  date: new Date()
-                });
+                if (isAdding) {
+                  resetForm();
+                } else {
+                  setIsAdding(true);
+                }
               }}
               className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center shadow-md 
                 ${isAdding 
@@ -334,9 +357,13 @@ const CreditNotePage = () => {
                       options={jobNumbers}
                       value={jobNumbers.find(option => option.value === newCreditNote.operation_no)}
                       onChange={(selected) =>
-                        setNewCreditNote({ ...newCreditNote, operation_no: selected.value })
+                        setNewCreditNote({ ...newCreditNote, operation_no: selected?.value || '' })
                       }
                       placeholder="Select Operation No"
+                      isClearable
+                      styles={selectStyles}
+                      menuPortalTarget={document.body}
+                      menuPosition="fixed"
                     />
                   </div>
                   
@@ -353,14 +380,20 @@ const CreditNotePage = () => {
                           setNewCreditNote({
                             ...newCreditNote,
                             client_name: selectedClient.name,
-                            client_name_ar: selectedClient.ar_name
+                            client_name_ar: selectedClient.ar_name || ''
+                          });
+                        } else {
+                          setNewCreditNote({
+                            ...newCreditNote,
+                            client_name: '',
+                            client_name_ar: ''
                           });
                         }
                       }}
                     >
                       <option value="">Select Client</option>
                       {clients.map(client => (
-                        <option key={client.client_id} value={client.name}>
+                        <option key={client.id || client.client_id} value={client.name}>
                           {client.name}
                         </option>
                       ))}
@@ -392,6 +425,8 @@ const CreditNotePage = () => {
                     </label>
                     <input
                       type="number"
+                      step="0.01"
+                      min="0"
                       placeholder="Enter Amount"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                       value={newCreditNote.amount}
@@ -409,6 +444,7 @@ const CreditNotePage = () => {
                       selected={newCreditNote.date}
                       onChange={(date) => setNewCreditNote({ ...newCreditNote, date })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      dateFormat="yyyy-MM-dd"
                     />
                   </div>
                 </div>
@@ -416,8 +452,10 @@ const CreditNotePage = () => {
               <div className="mt-6 flex justify-end">
                 <button
                   onClick={handleAddCreditNote}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition"
+                  disabled={isSubmitting}
+                  className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition flex items-center"
                 >
+                  {isSubmitting && <Loader className="w-4 h-4 mr-2 animate-spin" />}
                   {editingId ? 'Update Credit Note' : 'Add Credit Note'}
                 </button>
               </div>
@@ -428,7 +466,7 @@ const CreditNotePage = () => {
         {/* Credit Notes Table */}
         <div className="bg-white rounded-xl shadow-lg overflow-hidden">
           <table className="min-w-full table-auto border-collapse">
-            <thead className="bg-white-600 text-indigo-500 text-sm font-semibold">
+            <thead className="bg-gray-50 text-gray-700 text-sm font-semibold">
               <tr>
                 {[
                   { label: 'SL', key: 'sl', noSort: true },
@@ -474,13 +512,15 @@ const CreditNotePage = () => {
                   <tr key={note.id} className="border-b border-gray-200 hover:bg-gray-50 transition">
                     <td className="px-4 py-3 text-center text-gray-900">{indexOfFirstItem + index + 1}</td>
                     <td className="px-4 py-3 font-bold text-gray-900">{note.credit_note_no}</td>
-                    <td className="px-4 py-3 text-gray-900">{note.operation_no}</td>
+                    <td className="px-4 py-3 text-gray-900">{note.operation_no || '-'}</td>
                     <td className="px-4 py-3">
                       <div className="leading-tight">
                         <div className="font-semibold text-gray-900 mb-1">{note.client_name}</div>
-                        <div className="text-xs text-gray-500 italic" style={{ direction: 'rtl' }}>
-                          {note.client_name_ar}
-                        </div>
+                        {note.client_name_ar && (
+                          <div className="text-xs text-gray-500 italic" style={{ direction: 'rtl' }}>
+                            {note.client_name_ar}
+                          </div>
+                        )}
                       </div>
                     </td>
                     <td className="px-4 py-3 text-right font-bold text-gray-900">
@@ -537,10 +577,11 @@ const CreditNotePage = () => {
           </div>
         </div>
       </div>
+      
+      {/* Toast Config Component */}
+      <ToastConfig />
     </div>
   );
 };
 
 export default CreditNotePage;
-
-

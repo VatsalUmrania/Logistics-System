@@ -9,7 +9,8 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import ToastConfig from '../../components/ToastConfig';
 
-const API_URL = 'http://localhost:5000/api';
+const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/api`;
+
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem('authToken');
@@ -138,7 +139,7 @@ const SupplierInvoiceEdit = () => {
     setIsLoading(prev => ({ ...prev, table: true }));
     
     try {
-      let url = `${API_URL}/invoices`;
+      let url = `${API_BASE_URL}/invoices`;
       if (Object.keys(params).length) {
         const query = new URLSearchParams(params).toString();
         url += `?${query}`;
@@ -196,7 +197,7 @@ const SupplierInvoiceEdit = () => {
   // Enhanced fetch suppliers with feedback
   const fetchSuppliers = async () => {
     try {
-      const response = await fetch(`${API_URL}/suppliers`, { headers: getAuthHeaders() });
+      const response = await fetch(`${API_BASE_URL}/suppliers`, { headers: getAuthHeaders() });
       if (!response.ok) {
         throw new Error(`Failed to fetch suppliers: ${response.status}`);
       }
@@ -227,8 +228,8 @@ const SupplierInvoiceEdit = () => {
     
     try {
       const [jobResponse, invoiceResponse] = await Promise.all([
-        axios.get('http://localhost:5000/api/invoices/next-job-number', { headers: getAuthHeaders() }),
-        axios.get('http://localhost:5000/api/invoices/next-invoice-number', { headers: getAuthHeaders() })
+        axios.get(`${API_BASE_URL}/invoices/next-job-number`, { headers: getAuthHeaders() }),
+        axios.get(`${API_BASE_URL}/invoices/next-invoice-number`, { headers: getAuthHeaders() })
       ]);
       
       setCurrentInvoice(prev => ({
@@ -402,7 +403,7 @@ const SupplierInvoiceEdit = () => {
     const loadingToast = toast.loading(`🗑️ Deleting invoice ${invoiceNo}...`);
     
     try {
-      const response = await fetch(`${API_URL}/invoices/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/invoices/${id}`, {
         method: 'DELETE',
         headers: getAuthHeaders()
       });
@@ -501,7 +502,7 @@ const SupplierInvoiceEdit = () => {
     try {
       let response;
       if (currentInvoice.id) {
-        response = await fetch(`${API_URL}/invoices/${currentInvoice.id}`, {
+        response = await fetch(`${API_BASE_URL}/invoices/${currentInvoice.id}`, {
           method: 'PUT',
           headers: getAuthHeaders(),
           body: JSON.stringify(invoiceData),
@@ -512,7 +513,7 @@ const SupplierInvoiceEdit = () => {
         toast.dismiss(loadingToast);
         toast.success(`✅ Invoice "${currentInvoice.invoice_no}" updated successfully!`);
       } else {
-        response = await fetch(`${API_URL}/invoices`, {
+        response = await fetch(`${API_BASE_URL}/invoices`, {
           method: 'POST',
           headers: getAuthHeaders(),
           body: JSON.stringify(invoiceData)

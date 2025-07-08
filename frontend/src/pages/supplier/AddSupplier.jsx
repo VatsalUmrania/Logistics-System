@@ -8,7 +8,8 @@ import toast from 'react-hot-toast';
 import ToastConfig from '../../components/ToastConfig';
 
 const AddSupplierPage = () => {
-  const API_URL = 'http://localhost:5000/api/suppliers';
+  const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/api/suppliers`;
+  // const API_BASE_URL = 'http://localhost:5000/api/suppliers';
 
   // State management
   const [suppliers, setSuppliers] = useState([]);
@@ -119,7 +120,7 @@ const AddSupplierPage = () => {
   const fetchSuppliers = async () => {
     try {
       setIsLoading(true);
-      const res = await fetch(API_URL, {
+      const res = await fetch(API_BASE_URL, {
         headers: getAuthHeaders(),
       });
 
@@ -202,7 +203,7 @@ const AddSupplierPage = () => {
       let res;
 
       if (editingId !== null) {
-        res = await fetch(`${API_URL}/${editingId}`, {
+        res = await fetch(`${API_BASE_URL}/${editingId}`, {
           method: 'PUT',
           headers,
           body: JSON.stringify(newSupplier),
@@ -216,7 +217,7 @@ const AddSupplierPage = () => {
         // Using ToastConfig success style
         toast.success(`✅ "${newSupplier.name}" updated successfully!`);
       } else {
-        res = await fetch(API_URL, {
+        res = await fetch(API_BASE_URL, {
           method: 'POST',
           headers,
           body: JSON.stringify(newSupplier),
@@ -287,7 +288,7 @@ const AddSupplierPage = () => {
     const loadingToast = toast.loading(`🗑️ Deleting "${supplierName}"...`);
 
     try {
-      const res = await fetch(`${API_URL}/${id}`, {
+      const res = await fetch(`${API_BASE_URL}/${id}`, {
         method: 'DELETE',
         headers: getAuthHeaders(),
       });

@@ -6,6 +6,7 @@ const operationsController = require('../controllers/clearanceOperationsControll
 router.get('/job-numbers', operationsController.getAllJobNos);
 router.get('/', operationsController.getAll);
 router.get('/:id', operationsController.getById);
+router.get('/:id/containers', operationsController.getContainers);
 
 router.post('/', operationsController.create);
 router.put('/:id', operationsController.update);

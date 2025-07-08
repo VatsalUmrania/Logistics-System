@@ -9,6 +9,7 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import ToastConfig from '../../components/ToastConfig';
 
+
 // Helper functions for case conversion
 const toCamelCase = (str) =>
   str.replace(/([-_][a-z])/ig, ($1) =>
@@ -33,6 +34,7 @@ const nationalities = [
 ];
 
 const UserManagementPage = () => {
+  const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/api/users`;
   // State management
   const [users, setUsers] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
@@ -185,7 +187,7 @@ const UserManagementPage = () => {
   const checkAdminAccess = async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get('http://localhost:5000/api/users/me', {
+      const response = await axios.get(`${API_BASE_URL}/me`, {
         headers: getAuthHeaders(),
       });
       
@@ -220,7 +222,7 @@ const UserManagementPage = () => {
   // Fetch users from backend (only called if user is admin)
   const fetchUsers = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/users/', {
+      const response = await axios.get(`${API_BASE_URL}/`, {
         headers: getAuthHeaders(),
       });
       const camelCaseUsers = convertObjectKeys(response.data, toCamelCase);
@@ -332,7 +334,7 @@ const UserManagementPage = () => {
 
       let res;
       if (editingId !== null) {
-        res = await axios.put(`http://localhost:5000/api/users/${editingId}`, userPayload, {
+        res = await axios.put(`${API_BASE_URL}/${editingId}`, userPayload, {
           headers: getAuthHeaders(),
         });
         
@@ -340,7 +342,7 @@ const UserManagementPage = () => {
         // Using ToastConfig success style
         toast.success(`✅ "${newUser.employeeName}" updated successfully!`);
       } else {
-        res = await axios.post('http://localhost:5000/api/users/', userPayload, {
+        res = await axios.post(`${API_BASE_URL}/`, userPayload, {
           headers: getAuthHeaders(),
         });
         
@@ -456,7 +458,7 @@ const UserManagementPage = () => {
 
     try {
       setIsLoading(true);
-      await axios.delete(`http://localhost:5000/api/users/${id}`, {
+      await axios.delete(`${API_BASE_URL}/${id}`, {
         headers: getAuthHeaders(),
       });
       

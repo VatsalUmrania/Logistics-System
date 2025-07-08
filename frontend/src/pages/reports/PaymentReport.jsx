@@ -6,6 +6,7 @@ import {
 import Select from 'react-select';
 
 const PaymentReport = () => {
+  const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/api`;
   // State management
   const [fromDate, setFromDate] = useState('2025-05-01');
   const [toDate, setToDate] = useState('2025-06-30');
@@ -52,7 +53,7 @@ const PaymentReport = () => {
   useEffect(() => {
     const fetchClients = async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/clients/', getAuthHeaders());
+        const res = await fetch(`${API_BASE_URL}/clients/`, getAuthHeaders());
         if (!res.ok) throw new Error('Failed to fetch clients');
         const data = await res.json();
         setClients(data);
@@ -74,7 +75,7 @@ const PaymentReport = () => {
     setError('');
     
     try {
-      const res = await fetch('http://localhost:5000/api/supplier-payment/', getAuthHeaders());
+      const res = await fetch(`${API_BASE_URL}/supplier-payment/`, getAuthHeaders());
       if (!res.ok) throw new Error('Failed to fetch payments');
       const data = await res.json();
 

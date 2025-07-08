@@ -22,8 +22,7 @@ const getAuthHeaders = () => {
     'Content-Type': 'application/json'
   };
 };
-
-const API_URL = 'http://localhost:5000/api/supplier-assignments/';
+const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/api/supplier-assignments/`;
 const PAGE_SIZE = 10;
 
 const formatNumber = (num) => {
@@ -162,7 +161,7 @@ const PurchaseSearch = () => {
       const loadingToast = toast.loading('🔄 Loading purchase data...');
       
       // Fetch purchases
-      const purchasesRes = await fetch(API_URL, { headers: getAuthHeaders() });
+      const purchasesRes = await fetch(API_BASE_URL, { headers: getAuthHeaders() });
       if (!purchasesRes.ok) {
         throw new Error(`Failed to fetch purchases: ${purchasesRes.status} ${purchasesRes.statusText}`);
       }

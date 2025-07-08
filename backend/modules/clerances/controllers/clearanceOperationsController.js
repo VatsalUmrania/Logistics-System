@@ -84,3 +84,84 @@ exports.getAllJobNos = async (req, res) => {
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
+
+
+// Add to controllers/clearanceOperationsController.js
+
+// exports.create = async (req, res) => {
+//   try {
+//     const { containers, ...operationData } = req.body;
+    
+//     // Create the operation
+//     const newOperation = await Operations.create(operationData);
+//     const operationId = newOperation.insertId;
+    
+//     // Create containers if provided
+//     if (containers && containers.length > 0) {
+//       await Operations.createContainers(operationId, containers);
+//     }
+    
+//     res.status(201).json({ 
+//       message: 'Operation created successfully', 
+//       operation: { id: operationId, ...operationData } 
+//     });
+//   } catch (err) {
+//     res.status(500).json({ error: 'Error creating operation', details: err.message });
+//   }
+// };
+
+exports.getById = async (req, res) => {
+  try {
+    const operation = await Operations.getById(req.params.id);
+    if (!operation) return res.status(404).json({ error: 'Operation not found' });
+    
+    // Get containers for this operation
+    const containers = await Operations.getContainersByOperationId(req.params.id);
+    
+    res.json({ ...operation, containers });
+  } catch (err) {
+    res.status(500).json({ error: 'Error fetching operation', details: err.message });
+  }
+};
+
+exports.update = async (req, res) => {
+  try {
+    const { containers, ...operationData } = req.body;
+    
+    // Update the operation
+    const updatedOperation = await Operations.update(req.params.id, operationData);
+    
+    // Update containers
+    if (containers) {
+      await Operations.updateContainers(req.params.id, containers);
+    }
+    
+    res.json({ message: 'Operation updated successfully', operation: updatedOperation });
+  } catch (err) {
+    res.status(500).json({ error: 'Error updating operation', details: err.message });
+  }
+};
+
+exports.delete = async (req, res) => {
+  try {
+    // Delete containers first (handled by CASCADE, but explicit is better)
+    await Operations.deleteContainersByOperationId(req.params.id);
+    
+    // Delete operation
+    await Operations.delete(req.params.id);
+    
+    res.status(204).send();
+  } catch (err) {
+    res.status(500).json({ error: 'Error deleting operation', details: err.message });
+  }
+};
+
+// New endpoint to get containers for an operation
+exports.getContainers = async (req, res) => {
+  try {
+    const containers = await Operations.getContainersByOperationId(req.params.id);
+    res.json(containers);
+  } catch (err) {
+    res.status(500).json({ error: 'Error fetching containers', details: err.message });
+  }
+};

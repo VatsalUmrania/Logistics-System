@@ -38,7 +38,8 @@ const AccountHead = () => {
   const itemsPerPage = 10;
 
   // API Base URL
-  const API_BASE_URL = 'http://localhost:5000/api/accounts-head';
+  const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/api/accounts-head`;
+
 
   // Authentication headers function
   const getAuthHeaders = () => {

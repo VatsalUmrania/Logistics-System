@@ -28,11 +28,11 @@ async function createCreditNote(data) {
     if (!credit_note_no || !amount || !date) {
       throw new Error('Missing required fields: credit_note_no, amount, date');
     }
-    
+
     const [result] = await pool.query(
       `INSERT INTO credit_notes
-      (credit_note_no, operation_no, client_name, client_name_ar, amount, date)
-      VALUES (?, ?, ?, ?, ?, ?)`,
+       (credit_note_no, operation_no, client_name, client_name_ar, amount, date)
+       VALUES (?, ?, ?, ?, ?, ?)`,
       [credit_note_no, operation_no, client_name, client_name_ar, amount, date]
     );
     
@@ -49,13 +49,13 @@ async function updateCreditNote(id, data) {
     
     await pool.query(
       `UPDATE credit_notes SET
-      credit_note_no = ?,
-      operation_no = ?,
-      client_name = ?,
-      client_name_ar = ?,
-      amount = ?,
-      date = ?
-      WHERE id = ?`,
+       credit_note_no = ?,
+       operation_no = ?,
+       client_name = ?,
+       client_name_ar = ?,
+       amount = ?,
+       date = ?
+       WHERE id = ?`,
       [credit_note_no, operation_no, client_name, client_name_ar, amount, date, id]
     );
     

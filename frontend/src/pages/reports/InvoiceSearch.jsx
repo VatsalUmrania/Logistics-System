@@ -13,9 +13,9 @@ const getAuthHeaders = () => {
     'Content-Type': 'application/json'
   };
 };
-
-const API_URL = 'http://localhost:5000/api/invoices';
-const SUPPLIERS_URL = 'http://localhost:5000/api/suppliers';
+const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/api`;
+const API_URL = `${API_BASE_URL}/invoices`;
+const SUPPLIERS_URL = `${API_BASE_URL}/suppliers`;
 
 const InvoiceSearch = () => {
   // State management

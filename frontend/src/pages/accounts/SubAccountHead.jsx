@@ -9,7 +9,8 @@ import toast from 'react-hot-toast';
 import ToastConfig from '../../components/ToastConfig';
 
 // Move BASE_URL outside component
-const BASE_URL = 'http://localhost:5000/api/sub-accounts-head';
+const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/api`;
+const BASE_URL = `${API_BASE_URL}/sub-accounts-head`;
 
 // Auth header utility
 const getAuthHeaders = () => {

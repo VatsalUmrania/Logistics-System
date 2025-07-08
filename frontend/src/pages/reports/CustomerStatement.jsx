@@ -6,6 +6,7 @@ import {
 import Select from 'react-select';
 
 const CustomerStatement = () => {
+  const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/api`;
   // State management
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
@@ -52,7 +53,7 @@ const CustomerStatement = () => {
   useEffect(() => {
     const fetchClients = async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/clients', getAuthHeaders());
+        const res = await fetch(`${API_BASE_URL}/clients`, getAuthHeaders());
         const data = await res.json();
         setClients(data);
       } catch (err) {

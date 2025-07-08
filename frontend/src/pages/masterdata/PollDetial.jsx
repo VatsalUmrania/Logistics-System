@@ -6,7 +6,10 @@ import {
 import toast from 'react-hot-toast';
 import ToastConfig from '../../components/ToastConfig';
 
+
+
 const PolDetailsPage = () => {
+  const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/api/containers`;
   // State management
   const [polName, setPolName] = useState('');
   const [polList, setPolList] = useState([]);
@@ -99,7 +102,7 @@ const PolDetailsPage = () => {
   const fetchPolList = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:5000/api/ports', {
+      const response = await fetch(`${API_BASE_URL}`, {
         headers: getAuthHeaders(),
       });
       if (!response.ok) throw new Error('Failed to fetch POL list');
@@ -170,7 +173,7 @@ const PolDetailsPage = () => {
     const loadingToast = toast.loading('💾 Adding new port...');
 
     try {
-      const response = await fetch('http://localhost:5000/api/ports', {
+      const response = await fetch(`${API_BASE_URL}`, {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify({ name: polName.trim() })
@@ -245,7 +248,7 @@ const PolDetailsPage = () => {
     const loadingToast = toast.loading('🔄 Updating port...');
 
     try {
-      const response = await fetch(`http://localhost:5000/api/ports/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/${id}`, {
         method: 'PUT',
         headers: getAuthHeaders(),
         body: JSON.stringify({ name: editingName.trim() })
@@ -333,7 +336,7 @@ const PolDetailsPage = () => {
     const loadingToast = toast.loading(`🗑️ Deleting "${portName}"...`);
 
     try {
-      const response = await fetch(`http://localhost:5000/api/ports/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/${id}`, {
         method: 'DELETE',
         headers: getAuthHeaders(),
       });

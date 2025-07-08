@@ -88,6 +88,37 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Predict the next credit_note_no for credit_notes
+router.get('/next-credit-note-no', async (req, res) => {
+  try {
+    const pool = await db.getPool();
+    const [rows] = await pool.execute(`
+      SELECT credit_note_no 
+      FROM supplier_credit_notes 
+      WHERE credit_note_no LIKE 'CN-%'
+      ORDER BY id DESC 
+      LIMIT 1
+    `);
+
+    let nextNumber;
+    if (rows.length === 0) {
+      nextNumber = 'CN-001';
+    } else {
+      const match = rows[0].credit_note_no.match(/CN-(\d+)/);
+      if (match) {
+        const next = parseInt(match[1], 10) + 1;
+        nextNumber = `CN-${String(next).padStart(3, '0')}`;
+      } else {
+        nextNumber = 'CN-001';
+      }
+    }
+
+    res.json({ success: true, next_credit_note_no: nextNumber });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // READ single supplier credit note by ID with line items
 router.get('/:id', async (req, res) => {
   try {
@@ -188,5 +219,8 @@ router.delete('/:id', async (req, res) => {
     conn.release();
   }
 });
+
+
+
 
 module.exports = router;

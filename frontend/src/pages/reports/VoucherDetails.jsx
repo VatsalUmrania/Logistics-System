@@ -23,9 +23,8 @@ const VoucherDetails = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const itemsPerPage = 10;
 
-  // API Base URL
-  const API_BASE_URL = 'http://localhost:5000/api/supplier-payment';
-
+  // // API Base URL
+  const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/api/supplier-payment`;
   // Authentication headers function
   const getAuthHeaders = () => {
     const token = localStorage.getItem('authToken');

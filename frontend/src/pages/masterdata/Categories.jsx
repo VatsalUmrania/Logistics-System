@@ -7,9 +7,10 @@ import Select from 'react-select';
 import toast from 'react-hot-toast';
 import ToastConfig from '../../components/ToastConfig';
 
-const API_URL = 'http://localhost:5000/api/categories';
+
 
 const CategoryInformationPage = () => {
+  const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/api/categories`;
   // State management
   const [categories, setCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -127,7 +128,7 @@ const CategoryInformationPage = () => {
   const fetchCategories = async () => {
     try {
       setIsLoading(true);
-      const res = await fetch(API_URL, { headers: getAuthHeaders() });
+      const res = await fetch(API_BASE_URL, { headers: getAuthHeaders() });
       if (!res.ok) throw new Error(`Failed to fetch categories: ${res.status} ${res.statusText}`);
       const data = await res.json();
       setCategories(data.map(toCamelCase));
@@ -212,7 +213,7 @@ const CategoryInformationPage = () => {
       let res;
 
       if (editingSino !== null) {
-        res = await fetch(`${API_URL}/${editingSino}`, {
+        res = await fetch(`${API_BASE_URL}/${editingSino}`, {
           method: 'PUT',
           headers,
           body: JSON.stringify(categoryData),
@@ -226,7 +227,7 @@ const CategoryInformationPage = () => {
         // Using ToastConfig success style
         toast.success(`✅ "${newCategory.name}" updated successfully!`);
       } else {
-        res = await fetch(API_URL, {
+        res = await fetch(API_BASE_URL, {
           method: 'POST',
           headers,
           body: JSON.stringify(categoryData),
@@ -319,7 +320,7 @@ const CategoryInformationPage = () => {
     const loadingToast = toast.loading(`🗑️ Deleting "${categoryName}"...`);
 
     try {
-      const res = await fetch(`${API_URL}/${sino}`, {
+      const res = await fetch(`${API_BASE_URL}/${sino}`, {
         method: 'DELETE',
         headers: getAuthHeaders(),
       });
@@ -355,7 +356,7 @@ const CategoryInformationPage = () => {
     const loadingToast = toast.loading(`🔄 Updating "${category.name}" status...`);
 
     try {
-      const res = await fetch(`${API_URL}/${sino}`, {
+      const res = await fetch(`${API_BASE_URL}/${sino}`, {
         method: 'PUT',
         headers: getAuthHeaders(),
         body: JSON.stringify({

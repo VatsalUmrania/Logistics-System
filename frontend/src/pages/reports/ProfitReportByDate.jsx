@@ -47,11 +47,11 @@ const ProfitReportByDate = () => {
     menuPortal: (base) => ({ ...base, zIndex: 9999 }),
     menu: (base) => ({ ...base, zIndex: 9999 })
   };
-
-  const API_URL = 'http://localhost:5000/api/profit-report';
-  const API_SUPPLIERS = 'http://localhost:5000/api/suppliers';
-  const API_CLIENTS = 'http://localhost:5000/api/clients';
-  const API_JOB_NUMBERS = 'http://localhost:5000/api/invoices/job-numbers';
+  const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/api`;
+  const API_URL = `${API_BASE_URL}/profit-report`;
+  const API_SUPPLIERS = `${API_BASE_URL}/suppliers`;
+  const API_CLIENTS = `${API_BASE_URL}/clients`;
+  const API_JOB_NUMBERS = `${API_BASE_URL}/invoices/job-numbers`;
 
   // Auth header utility
   const getAuthHeaders = () => {

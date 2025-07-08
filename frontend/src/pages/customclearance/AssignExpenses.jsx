@@ -5,6 +5,8 @@ import {
 } from 'lucide-react';
 import Select from 'react-select';
 
+const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/api`;
+
 const AssignExpenses = () => {
   // State management
   const [clients, setClients] = useState([]);
@@ -85,7 +87,7 @@ const AssignExpenses = () => {
         
         // Fetch clients
         const clientsRes = await fetch(
-          'http://localhost:5000/api/clients',
+          `${API_BASE_URL}/clients`,
           getAuthHeaders()
         );
         if (clientsRes.ok) {
@@ -95,7 +97,7 @@ const AssignExpenses = () => {
 
         // Fetch expense items with ID and name structure
         const itemsRes = await fetch(
-          'http://localhost:5000/api/expense-item',
+          `${API_BASE_URL}/expense-item`,
           getAuthHeaders()
         );
         if (itemsRes.ok) {
@@ -105,7 +107,7 @@ const AssignExpenses = () => {
 
         // Fetch expenses
         const expensesRes = await fetch(
-          'http://localhost:5000/api/expense',
+          `${API_BASE_URL}/expense`,
           getAuthHeaders()
         );
         if (expensesRes.ok) {
@@ -115,7 +117,7 @@ const AssignExpenses = () => {
 
         // Fetch job numbers from invoices endpoint
         const jobRes = await fetch(
-          'http://localhost:5000/api/invoices/job-numbers',
+          `${API_BASE_URL}/invoices/job-numbers`,
           getAuthHeaders()
         );
         if (jobRes.ok) {
@@ -157,7 +159,7 @@ const AssignExpenses = () => {
   // CRUD Operations
   const createExpense = async (expenseData) => {
     try {
-      const response = await fetch('http://localhost:5000/api/expense', {
+      const response = await fetch(`${API_BASE_URL}/expense`, {
         method: 'POST',
         ...getAuthHeaders(),
         body: JSON.stringify(expenseData)
@@ -176,7 +178,7 @@ const AssignExpenses = () => {
 
   const updateExpense = async (id, expenseData) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/expense/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/expense/${id}`, {
         method: 'PUT',
         ...getAuthHeaders(),
         body: JSON.stringify(expenseData)
@@ -195,7 +197,7 @@ const AssignExpenses = () => {
 
   const deleteExpense = async (id) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/expense/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/expense/${id}`, {
         method: 'DELETE',
         ...getAuthHeaders()
       });
@@ -258,7 +260,7 @@ const AssignExpenses = () => {
   const fetchExpenses = async () => {
     try {
       const expensesRes = await fetch(
-        'http://localhost:5000/api/expense',
+        `${API_BASE_URL}/expense`,
         getAuthHeaders()
       );
       if (expensesRes.ok) {
@@ -321,7 +323,7 @@ const AssignExpenses = () => {
   const addExpenseItem = async () => {
     if (newItemName.trim() && !expenseItems.find(item => item.name === newItemName)) {
       try {
-        const response = await fetch('http://localhost:5000/api/expense-item', {
+        const response = await fetch(`${API_BASE_URL}/expense-item`, {
           method: 'POST',
           ...getAuthHeaders(),
           body: JSON.stringify({ name: newItemName })
@@ -330,7 +332,7 @@ const AssignExpenses = () => {
         if (response.ok) {
           // Refresh expense items
           const itemsRes = await fetch(
-            'http://localhost:5000/api/expense-item',
+            `${API_BASE_URL}/expense-item`,
             getAuthHeaders()
           );
           if (itemsRes.ok) {
@@ -354,14 +356,14 @@ const AssignExpenses = () => {
     if (window.confirm(`Are you sure you want to delete "${item.name}"?`)) {
       try {
         const response = await fetch(
-          `http://localhost:5000/api/expense-item/${item.id}`,
+          `${API_BASE_URL}/expense-item/${item.id}`,
           { method: 'DELETE', ...getAuthHeaders() }
         );
         
         if (response.ok) {
           // Refresh expense items
           const itemsRes = await fetch(
-            'http://localhost:5000/api/expense-item',
+            `${API_BASE_URL}/expense-item`,
             getAuthHeaders()
           );
           if (itemsRes.ok) {

@@ -7,9 +7,10 @@ import Select from 'react-select';
 import toast from 'react-hot-toast';
 import ToastConfig from '../../components/ToastConfig';
 
-const API_URL = 'http://localhost:5000/api/clients';
+
 
 const ClientsPage = () => {
+  const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/api/clients`;
   // State management
   const [clients, setClients] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -154,7 +155,7 @@ const ClientsPage = () => {
   const fetchClients = async () => {
     try {
       setIsLoading(true);
-      const res = await fetch(API_URL, { headers: getAuthHeaders() });
+      const res = await fetch(API_BASE_URL, { headers: getAuthHeaders() });
       if (!res.ok) throw new Error(`Failed to fetch clients: ${res.status} ${res.statusText}`);
       const data = await res.json();
       setClients(Array.isArray(data) ? data : data.data || []);
@@ -266,7 +267,7 @@ const ClientsPage = () => {
       if (editingId !== null) {
         // For update, remove client_id from payload
         const { client_id, ...updatePayload } = payload;
-        res = await fetch(`${API_URL}/${editingId}`, {
+        res = await fetch(`${API_BASE_URL}/${editingId}`, {
           method: 'PUT',
           headers,
           body: JSON.stringify(updatePayload),
@@ -280,7 +281,7 @@ const ClientsPage = () => {
         // Using ToastConfig success style
         toast.success(`✅ "${newClient.name}" updated successfully!`);
       } else {
-        res = await fetch(API_URL, {
+        res = await fetch(API_BASE_URL, {
           method: 'POST',
           headers,
           body: JSON.stringify(payload),
@@ -351,7 +352,7 @@ const ClientsPage = () => {
     const loadingToast = toast.loading(`🗑️ Deleting "${clientName}"...`);
 
     try {
-      const res = await fetch(`${API_URL}/${id}`, {
+      const res = await fetch(`${API_BASE_URL}/${id}`, {
         method: 'DELETE',
         headers: getAuthHeaders(),
       });

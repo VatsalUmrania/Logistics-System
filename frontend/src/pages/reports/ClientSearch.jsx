@@ -7,6 +7,7 @@ import Select from 'react-select';
 import axios from 'axios';
 
 const ClientsPage = () => {
+  const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/api`;
   // State management
   const [clients, setClients] = useState([]);
   const [error, setError] = useState('');
@@ -83,7 +84,7 @@ const ClientsPage = () => {
   const fetchClients = async () => {
     try {
       setIsLoading(true);
-      const res = await axios.get('http://localhost:5000/api/clients', getAuthHeaders());
+      const res = await axios.get(`${API_BASE_URL}/clients`, getAuthHeaders());
       setClients(res.data);
       setError('');
     } catch (err) {
@@ -177,10 +178,10 @@ const ClientsPage = () => {
       if (editingId !== null) {
         // For update, remove client_id from payload
         const { client_id, ...updatePayload } = payload;
-        await axios.put(`http://localhost:5000/api/clients/${editingId}`, updatePayload, config);
+        await axios.put(`${API_BASE_URL}/clients/${editingId}`, updatePayload, config);
         setSuccessMessage('Client updated successfully!');
       } else {
-        await axios.post('http://localhost:5000/api/clients', payload, config);
+        await axios.post(`${API_BASE_URL}/clients`, payload, config);
         setSuccessMessage('Client added successfully!');
       }
 
@@ -199,7 +200,7 @@ const ClientsPage = () => {
 
     try {
       const config = getAuthHeaders();
-      await axios.delete(`http://localhost:5000/api/clients/${id}`, config);
+      await axios.delete(`${API_BASE_URL}/clients/${id}`, config);
       
       await fetchClients();
       setSuccessMessage('Client deleted successfully!');

@@ -24,8 +24,8 @@ const ContainerDetailsPage = () => {
     status: 'Active'
   });
 
-  const API_URL = 'http://localhost:5000/api/containers';
-
+  const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/api/containers`;
+  
   // Custom styles for react-select dropdowns
   const selectStyles = {
     control: (base) => ({
@@ -120,7 +120,7 @@ const ContainerDetailsPage = () => {
   const fetchContainers = async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get(API_URL, {
+      const response = await axios.get(API_BASE_URL, {
         headers: getAuthHeaders(),
       });
       setContainers(response.data);
@@ -197,13 +197,13 @@ const ContainerDetailsPage = () => {
       const config = { headers: getAuthHeaders() };
       
       if (editingId !== null) {
-        await axios.put(`${API_URL}/${editingId}`, newContainer, config);
+        await axios.put(`${API_BASE_URL}/${editingId}`, newContainer, config);
         
         toast.dismiss(loadingToast);
         // Using ToastConfig success style
         toast.success(`✅ "${newContainer.name}" updated successfully!`);
       } else {
-        await axios.post(API_URL, { ...newContainer, status: 'Active' }, config);
+        await axios.post(API_BASE_URL, { ...newContainer, status: 'Active' }, config);
         
         toast.dismiss(loadingToast);
         // Using ToastConfig success style
@@ -264,7 +264,7 @@ const ContainerDetailsPage = () => {
 
     try {
       const config = { headers: getAuthHeaders() };
-      await axios.delete(`${API_URL}/${id}`, config);
+      await axios.delete(`${API_BASE_URL}/${id}`, config);
       
       toast.dismiss(loadingToast);
       // Using ToastConfig success style
@@ -314,7 +314,7 @@ const ContainerDetailsPage = () => {
 
     try {
       const config = { headers: getAuthHeaders() };
-      await axios.put(`${API_URL}/${id}`, { 
+      await axios.put(`${API_BASE_URL}/${id}`, { 
         name: container.name, 
         status: updatedStatus 
       }, config);

@@ -75,39 +75,39 @@ const ClearanceOperations = {
 
       const [result] = await db.query(
         `UPDATE clearance_operations SET 
-  operation_type = ?, 
-  transport_mode = ?, 
-  client = ?, 
-  client_ref_name = ?, 
-  bayan_no = ?, 
-  date = ?, 
-  yard_date = ?, 
-  line = ?, 
-  line_agent = ?, 
-  bayan_date = ?, 
-  hijri_date = ?, 
-  status = ?, 
-  job_no = ?, 
-  vessel = ?, 
-  representative = ?, 
-  payment_date = ?, 
-  end_date = ?, 
-  notes = ?, 
-  commodity = ?, 
-  net_weight = ?, 
-  receiving_rep = ?, 
-  group_name = ?, 
-  release_date = ?, 
-  bl = ?, 
-  no_of_packages = ?, 
-  gross_weight = ?, 
-  pod = ?, 
-  shipper = ?, 
-  pol = ?, 
-  eta = ?, 
-  po_no = ? 
-WHERE id = ?
-`,
+          operation_type = ?, 
+          transport_mode = ?, 
+          client = ?, 
+          client_ref_name = ?, 
+          bayan_no = ?, 
+          date = ?, 
+          yard_date = ?, 
+          line = ?, 
+          line_agent = ?, 
+          bayan_date = ?, 
+          hijri_date = ?, 
+          status = ?, 
+          job_no = ?, 
+          vessel = ?, 
+          representative = ?, 
+          payment_date = ?, 
+          end_date = ?, 
+          notes = ?, 
+          commodity = ?, 
+          net_weight = ?, 
+          receiving_rep = ?, 
+          group_name = ?, 
+          release_date = ?, 
+          bl = ?, 
+          no_of_packages = ?, 
+          gross_weight = ?, 
+          pod = ?, 
+          shipper = ?, 
+          pol = ?, 
+          eta = ?, 
+          po_no = ? 
+        WHERE id = ?
+        `,
 [
     operation_type, transport_mode, client, client_ref_name, bayan_no,
     formatDate(date), formatDate(yard_date), line, line_agent, formatDate(bayan_date),
@@ -164,6 +164,75 @@ WHERE id = ?
     try {
       const [rows] = await db.query('SELECT job_no FROM clearance_operations');
       return rows; 
+    } catch (err) {
+      throw err;
+    }
+  },
+
+  createContainers: async (operationId, containers) => {
+    try {
+      const results = [];
+      for (const container of containers) {
+        if (container.container || container.qty || container.type) {
+          const [result] = await db.query(
+            `INSERT INTO clearance_containers (operation_id, container_number, quantity, container_type) 
+             VALUES (?, ?, ?, ?)`,
+            [operationId, container.container, parseInt(container.qty) || null, container.type]
+          );
+          results.push(result);
+        }
+      }
+      return results;
+    } catch (err) {
+      throw err;
+    }
+  },
+
+  // Get containers by operation ID
+  getContainersByOperationId: async (operationId) => {
+    try {
+      const [rows] = await db.query(
+        'SELECT * FROM clearance_containers WHERE operation_id = ?',
+        [operationId]
+      );
+      return rows;
+    } catch (err) {
+      throw err;
+    }
+  },
+
+  // Update containers for an operation
+  updateContainers: async (operationId, containers) => {
+    try {
+      // Delete existing containers
+      await db.query('DELETE FROM clearance_containers WHERE operation_id = ?', [operationId]);
+      
+      // Insert new containers
+      return await ClearanceOperations.createContainers(operationId, containers);
+    } catch (err) {
+      throw err;
+    }
+  },
+  getContainersByOperationId: async (operationId) => {
+    try {
+      const [rows] = await db.query(
+        'SELECT * FROM clearance_containers WHERE operation_id = ?',
+        [operationId]
+      );
+      return rows;
+    } catch (err) {
+      throw err;
+    }
+  },
+
+  // Delete containers by operation ID
+  deleteContainersByOperationId: async (operationId) => {
+    try {
+      const [result] = await db.query(
+        'DELETE FROM clearance_containers WHERE operation_id = ?',
+        [operationId]
+      );
+      return result;
     } catch (err) {
       throw err;
     }

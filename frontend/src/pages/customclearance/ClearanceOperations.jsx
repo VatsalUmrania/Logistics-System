@@ -1,31 +1,25 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import {
   ClipboardList,
   Plus,
   X,
-  FileText,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
   Search,
   Pencil,
   Trash2,
-  Activity,
-  Users,
-  CheckCircle2,
   Loader,
-  Check,
-  AlertCircle as Alert,
 } from "lucide-react";
 import axios from 'axios';
 import { format, parseISO } from 'date-fns';
 import Select from 'react-select';
 import toast from 'react-hot-toast';
 import ToastConfig from '../../components/ToastConfig';
-// API Configuration
-const API_URL = "http://localhost:5000/api";
 
-// Authentication helper function
+// API Configuration
+const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/api`;
+
 const getAuthHeaders = () => {
   const token = localStorage.getItem('authToken');
   if (!token) {
@@ -39,52 +33,44 @@ const getAuthHeaders = () => {
   };
 };
 
-// API Services with authentication
+// API Services
 const clearanceOperationsAPI = {
-  getAll: () => axios.get(`${API_URL}/clearance-operations`, getAuthHeaders()),
-  getById: (id) => axios.get(`${API_URL}/clearance-operations/${id}`, getAuthHeaders()),
-  create: (data) => axios.post(`${API_URL}/clearance-operations`, data, getAuthHeaders()),
-  update: (id, data) => axios.put(`${API_URL}/clearance-operations/${id}`, data, getAuthHeaders()),
-  delete: (id) => axios.delete(`${API_URL}/clearance-operations/${id}`, getAuthHeaders()),
+  getAll: () => axios.get(`${API_BASE_URL}/clearance-operations`, getAuthHeaders()),
+  getById: (id) => axios.get(`${API_BASE_URL}/clearance-operations/${id}`, getAuthHeaders()),
+  create: (data) => axios.post(`${API_BASE_URL}/clearance-operations`, data, getAuthHeaders()),
+  update: (id, data) => axios.put(`${API_BASE_URL}/clearance-operations/${id}`, data, getAuthHeaders()),
+  delete: (id) => axios.delete(`${API_BASE_URL}/clearance-operations/${id}`, getAuthHeaders()),
   updateStatus: (id, status) => 
-    axios.patch(`${API_URL}/clearance-operations/${id}/status`, { status }, getAuthHeaders())
+    axios.patch(`${API_BASE_URL}/clearance-operations/${id}/status`, { status }, getAuthHeaders()),
+  getContainers: (id) => axios.get(`${API_BASE_URL}/clearance-operations/${id}/containers`, getAuthHeaders())
 };
 
 const billsAPI = {
-  getByOperationId: (operationId) => axios.get(`${API_URL}/bills/operation/${operationId}`, getAuthHeaders()),
-  create: (data) => axios.post(`${API_URL}/bills`, data, getAuthHeaders()),
-  update: (id, data) => axios.put(`${API_URL}/bills/${id}`, data, getAuthHeaders()),
-  delete: (id) => axios.delete(`${API_URL}/bills/${id}`, getAuthHeaders()),
+  getByOperationId: (operationId) => axios.get(`${API_BASE_URL}/bills/operation/${operationId}`, getAuthHeaders()),
+  create: (data) => axios.post(`${API_BASE_URL}/bills`, data, getAuthHeaders()),
+  update: (id, data) => axios.put(`${API_BASE_URL}/bills/${id}`, data, getAuthHeaders()),
+  delete: (id) => axios.delete(`${API_BASE_URL}/bills/${id}`, getAuthHeaders()),
 };
 
-// Client API service
 const clientsAPI = {
-  getAll: () => axios.get(`${API_URL}/clients`, getAuthHeaders()),
+  getAll: () => axios.get(`${API_BASE_URL}/clients`, getAuthHeaders()),
 };
-
-// Ports API service
 const portsAPI = {
-  getAll: () => axios.get(`${API_URL}/ports`, getAuthHeaders()),
+  getAll: () => axios.get(`${API_BASE_URL}/ports`, getAuthHeaders()),
 };
-
-// Vessels API service
 const vesselsAPI = {
-  getAll: () => axios.get(`${API_URL}/vessels`, getAuthHeaders()),
+  getAll: () => axios.get(`${API_BASE_URL}/vessels`, getAuthHeaders()),
 };
-
-// Containers API service
 const containersAPI = {
-  getAll: () => axios.get(`${API_URL}/containers`, getAuthHeaders()),
+  getAll: () => axios.get(`${API_BASE_URL}/containers`, getAuthHeaders()),
 };
-
-// Commodities API service
 const commoditiesAPI = {
-  getAll: () => axios.get(`${API_URL}/commodities`, getAuthHeaders()),
+  getAll: () => axios.get(`${API_BASE_URL}/commodities`, getAuthHeaders()),
 };
 const JobAPI = {
-  getAll: () => axios.get(`${API_URL}/invoices/job-numbers`, getAuthHeaders()),
+  getAll: () => axios.get(`${API_BASE_URL}/invoices/job-numbers`, getAuthHeaders()),
 };
-// Custom styles for react-select dropdowns (matching AssignExpenses)
+
 const selectStyles = {
   control: (base) => ({
     ...base,
@@ -99,10 +85,8 @@ const selectStyles = {
   menu: (base) => ({ ...base, zIndex: 9999 })
 };
 
-// Toggle Switch Component
 const ToggleSwitch = ({ value, onChange, disabled = false }) => {
   const isActive = value === "Active";
-  
   return (
     <div className="flex items-center">
       <button
@@ -122,7 +106,6 @@ const ToggleSwitch = ({ value, onChange, disabled = false }) => {
   );
 };
 
-// Initial form data structure
 const initialFormData = {
   operation_type: "Import",
   transport_mode: "Sea",
@@ -151,7 +134,7 @@ const initialFormData = {
   hijri_date: "",
   end_date: "",
   release_date: "",
-  status: "",
+  status: "Active",
   notes: "",
   bl: "",
   po_no: "",
@@ -175,8 +158,6 @@ function ClearanceOperation() {
   const [isAdding, setIsAdding] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
   const [vesselOptions, setVesselOptions] = useState([]);
   const [portOptions, setPortOptions] = useState([]);
   const [containerOptions, setContainerOptions] = useState([]);
@@ -187,12 +168,11 @@ function ClearanceOperation() {
     containers: false,
     commodities: false
   });
-  const [jobNumbers, setJobNumbers] = useState([]); // State for job options
-  const [jobNo, setJobNo] = useState('');           // State for selected job number
+  const [jobNumbers, setJobNumbers] = useState([]);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState({});
   const itemsPerPage = 10;
 
-  // Fetch ports function
+  // Fetch functions with proper error handling
   const fetchPorts = async () => {
     setLoadingStates(prev => ({ ...prev, ports: true }));
     try {
@@ -203,7 +183,7 @@ function ClearanceOperation() {
       }));
       setPortOptions(portDropdownOptions);
     } catch (error) {
-      console.error("Error fetching ports:", error);
+      toast.error("Failed to fetch ports");
       setPortOptions([
         { value: "Jeddah", label: "Jeddah" },
         { value: "Dubai", label: "Dubai" },
@@ -215,7 +195,6 @@ function ClearanceOperation() {
     }
   };
 
-  // Fetch vessels function
   const fetchVessels = async () => {
     setLoadingStates(prev => ({ ...prev, vessels: true }));
     try {
@@ -226,7 +205,7 @@ function ClearanceOperation() {
       }));
       setVesselOptions(vesselDropdownOptions);
     } catch (error) {
-      console.error("Error fetching vessels:", error);
+      toast.error("Failed to fetch vessels");
       setVesselOptions([
         { value: "MV Ocean Explorer", label: "MV Ocean Explorer (OX-2391)" },
         { value: "SS Pacific Breeze", label: "SS Pacific Breeze (PB-7732)" },
@@ -237,7 +216,6 @@ function ClearanceOperation() {
     }
   };
 
-  // Fetch containers function
   const fetchContainers = async () => {
     setLoadingStates(prev => ({ ...prev, containers: true }));
     try {
@@ -248,7 +226,7 @@ function ClearanceOperation() {
       }));
       setContainerOptions(containerDropdownOptions);
     } catch (error) {
-      console.error("Error fetching containers:", error);
+      toast.error("Failed to fetch containers");
       setContainerOptions([
         { value: "CONT-1001", label: "CONT-1001" },
         { value: "CONT-1002", label: "CONT-1002" },
@@ -259,7 +237,6 @@ function ClearanceOperation() {
     }
   };
 
-  // Fetch commodities function
   const fetchCommodities = async () => {
     setLoadingStates(prev => ({ ...prev, commodities: true }));
     try {
@@ -270,7 +247,7 @@ function ClearanceOperation() {
       }));
       setCommodityOptions(commodityDropdownOptions);
     } catch (error) {
-      console.error("Error fetching commodities:", error);
+      toast.error("Failed to fetch commodities");
       setCommodityOptions([
         { value: "Electronics", label: "Electronics" },
         { value: "Food", label: "Food" },
@@ -280,7 +257,52 @@ function ClearanceOperation() {
     }
   };
 
-  // Fetch all operations on component mount
+  const fetchClients = async () => {
+    try {
+      const response = await clientsAPI.getAll();
+      const clientDropdownOptions = response.data.map(client => ({
+        value: client.name,
+        label: client.name
+      }));
+      setClientOptions(clientDropdownOptions);
+    } catch (error) {
+      toast.error("Failed to fetch clients");
+      setClientOptions([
+        { value: "Client A", label: "Client A" },
+        { value: "Client B", label: "Client B" },
+      ]);
+    }
+  };
+
+  const fetchJobNumbers = async () => {
+    try {
+      const response = await JobAPI.getAll();
+      const jobDropdownOptions = response.data.map(job => ({
+        value: job.job_number,
+        label: job.job_number
+      }));
+      setJobNumbers(jobDropdownOptions);
+    } catch (error) {
+      toast.error("Failed to fetch job numbers");
+      setJobNumbers([
+        { value: "Job 001", label: "Job 001" },
+        { value: "Job 002", label: "Job 002" },
+      ]);
+    }
+  };
+
+  const fetchOperations = async () => {
+    setIsLoading(true);
+    try {
+      const response = await clearanceOperationsAPI.getAll();
+      setOperations(response.data);
+    } catch (error) {
+      toast.error("Failed to fetch operations");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchOperations();
     fetchClients();
@@ -291,83 +313,16 @@ function ClearanceOperation() {
     fetchJobNumbers();
   }, []);
 
-  const fetchOperations = async () => {
-    setIsLoading(true);
-    try {
-      const response = await clearanceOperationsAPI.getAll();
-      setOperations(response.data);
-      setError('');
-    } catch (error) {
-      setError('Failed to fetch operations');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Fetch clients function
-  const fetchClients = async () => {
-    try {
-      const response = await clientsAPI.getAll();
-      const clientDropdownOptions = response.data.map(client => ({
-        value: client.name,
-        label: client.name
-      }));
-      setClientOptions(clientDropdownOptions);
-    } catch (error) {
-      console.error("Error fetching clients:", error);
-      setClientOptions([
-        { value: "Client A", label: "Client A" },
-        { value: "Client B", label: "Client B" },
-      ]);
-    }
-  };
-  
-
-// FETCH ON MOUNT  (inside useEffect(fetchSuppliers) or a dedicated one)
-
-
-  const fetchJobNumbers = async () => {
-    try {
-      const response = await JobAPI.getAll();
-
-      // Map the response to job dropdown options (value, label)
-      const jobDropdownOptions = response.data.map(job => ({
-        value: job.job_number,   // Assuming job_number is the key
-        label: job.job_number    // Customize as needed (e.g., job.client_name, job.description)
-      }));
-
-      setJobNumbers(jobDropdownOptions);  // Set the job numbers to state
-    } catch (error) {
-      console.error("Error fetching job numbers:", error);
-
-      // Fallback options in case of error
-      setJobNumbers([
-        { value: "Job 001", label: "Job 001" },
-        { value: "Job 002", label: "Job 002" },
-      ]);
-    }
-  };
-
-
-  
-  // Add this function to handle status toggles from the table
   const handleStatusChange = async (operationId, newStatus) => {
     setIsUpdatingStatus(prev => ({ ...prev, [operationId]: true }));
-    
     try {
-      // Optimistic UI update
       setOperations(prev => 
         prev.map(op => op.id === operationId ? { ...op, status: newStatus } : op)
       );
-      
       await clearanceOperationsAPI.updateStatus(operationId, newStatus);
-      setSuccessMessage('Status updated successfully');
-      setTimeout(() => setSuccessMessage(''), 3000);
+      toast.success(`Status updated to ${newStatus}`);
     } catch (error) {
-      console.error("Error updating status:", error);
-      setError('Failed to update status');
-      setTimeout(() => setError(''), 3000);
-      // Revert optimistic update on error
+      toast.error("Failed to update status");
       setOperations(prev => 
         prev.map(op => op.id === operationId ? { ...op, status: op.status } : op)
       );
@@ -376,9 +331,9 @@ function ClearanceOperation() {
     }
   };
 
-  // Handlers
-  const handleFormChange = (field, value) =>
+  const handleFormChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
 
   const addContainer = () => {
     setContainers((prev) => [
@@ -427,27 +382,21 @@ function ClearanceOperation() {
     );
   };
 
-  // Prepare data in the exact format you specified
   const prepareOperationData = (data) => {
     const result = { ...data };
-    
-    // Convert numeric fields - keep as numbers, not strings
     const numericFields = ['net_weight', 'no_of_packages', 'gross_weight'];
     numericFields.forEach(field => {
       if (result[field] === '' || result[field] === null || result[field] === undefined) {
         result[field] = null;
       } else {
-        // For no_of_packages, keep as integer
         if (field === 'no_of_packages') {
           result[field] = parseInt(result[field]) || null;
         } else {
-          // For weights, keep as float with 2 decimal places
           result[field] = parseFloat(result[field]).toFixed(2);
         }
       }
     });
     
-    // Handle date fields properly
     const dateFields = [
       'date', 'yard_date', 'bayan_date', 'payment_date', 
       'end_date', 'release_date'
@@ -455,21 +404,18 @@ function ClearanceOperation() {
     
     dateFields.forEach(field => {
       if (result[field] && result[field] !== '') {
-        // Convert from YYYY-MM-DD to ISO string with time
         result[field] = new Date(result[field] + 'T18:30:00.000Z').toISOString();
       } else {
         result[field] = null;
       }
     });
     
-    // Handle ETA field separately (keep as YYYY-MM-DD format)
     if (result.eta && result.eta !== '') {
-      result.eta = result.eta; // Keep as is (YYYY-MM-DD)
+      result.eta = result.eta;
     } else {
       result.eta = null;
     }
     
-    // Convert empty strings to null for all other fields
     Object.keys(result).forEach(key => {
       if (result[key] === "" || result[key] === undefined) {
         result[key] = null;
@@ -481,53 +427,51 @@ function ClearanceOperation() {
 
   const prepareBillData = (bill) => {
     const result = { ...bill };
-    
-    // Convert date field
     if (result.doDate && result.doDate !== '') {
       result.doDate = new Date(result.doDate + 'T18:30:00.000Z').toISOString();
     } else {
       result.doDate = null;
     }
-    
-    // Convert empty strings to null
     Object.keys(result).forEach(key => {
       if (result[key] === "" || result[key] === undefined) {
         result[key] = null;
       }
     });
-    
     return result;
   };
 
   const handleSave = async () => {
     setIsLoading(true);
+    const loadingToast = toast.loading("Saving operation...");
+    
     try {
       const opData = prepareOperationData(formData);
+      const operationWithContainers = {
+        ...opData,
+        containers: containers.filter(c => c.container || c.qty || c.type)
+      };
       
       let operationId = currentOperationId;
 
       if (!operationId) {
-        // Create new operation
-        const createRes = await clearanceOperationsAPI.create(opData);
-        operationId = createRes.data.id;
+        const createRes = await clearanceOperationsAPI.create(operationWithContainers);
+        operationId = createRes.data.operation?.id || createRes.data.id;
         
-        // Create bills
         for (const bill of bills) {
           if (bill.clientRef || bill.doNo || bill.billNo) {
             const preparedBill = prepareBillData(bill);
             await billsAPI.create({ ...preparedBill, operation_id: operationId });
           }
         }
-        setSuccessMessage('Operation created successfully');
-      } else {
-        // Update existing operation
-        await clearanceOperationsAPI.update(operationId, opData);
         
-        // Process bills
+        toast.dismiss(loadingToast);
+        toast.success("Operation created successfully");
+      } else {
+        await clearanceOperationsAPI.update(operationId, operationWithContainers);
+        
         const currentBills = [...bills];
         const originalBillsIds = originalBills.map(b => b.id);
 
-        // Update/Create bills
         for (const bill of currentBills) {
           if (bill.id) {
             const preparedBill = prepareBillData(bill);
@@ -538,95 +482,217 @@ function ClearanceOperation() {
           }
         }
 
-        // Delete removed bills
         const currentBillsIds = currentBills.filter(b => b.id).map(b => b.id);
         const billsToDeleteIds = originalBillsIds.filter(id => !currentBillsIds.includes(id));
         for (const id of billsToDeleteIds) {
           await billsAPI.delete(id);
         }
-        setSuccessMessage('Operation updated successfully');
+        
+        toast.dismiss(loadingToast);
+        toast.success("Operation updated successfully");
       }
 
-      // Refresh data and reset form
       await fetchOperations();
       resetForm();
       setIsAdding(false);
-      setTimeout(() => setSuccessMessage(''), 3000);
     } catch (error) {
-      setError('Failed to save operation');
-      setTimeout(() => setError(''), 3000);
+      console.error("Error saving operation:", error);
+      toast.dismiss(loadingToast);
+      toast.error("Failed to save operation: " + (error.response?.data?.message || error.message));
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleEdit = async (operation) => {
-    setIsLoading(true);
-    try {
-      // Fetch operation details and bills
-      const opRes = await clearanceOperationsAPI.getById(operation.id);
-      const billsRes = await billsAPI.getByOperationId(operation.id);
+  // const handleEdit = async (operation) => {
+  //   setIsLoading(true);
+  //   const loadingToast = toast.loading("Loading operation...");
+    
+  //   try {
+  //     const opRes = await clearanceOperationsAPI.getById(operation.id);
+  //     const billsRes = await billsAPI.getByOperationId(operation.id);
       
-      // Format dates for form inputs
-      const formattedOperation = { ...opRes.data };
-      const dateFields = [
-        'date', 'yard_date', 'bayan_date', 'payment_date', 
-        'end_date', 'release_date'
-      ];
+  //     const formattedOperation = { ...opRes.data };
+  //     const dateFields = [
+  //       'date', 'yard_date', 'bayan_date', 'payment_date', 
+  //       'end_date', 'release_date'
+  //     ];
       
-      dateFields.forEach(field => {
-        if (formattedOperation[field]) {
-          formattedOperation[field] = formatDateForInput(formattedOperation[field]);
-        }
-      });
+  //     dateFields.forEach(field => {
+  //       if (formattedOperation[field]) {
+  //         formattedOperation[field] = formatDateForInput(formattedOperation[field]);
+  //       }
+  //     });
       
-      // Handle ETA separately
-      if (formattedOperation.eta) {
-        formattedOperation.eta = formattedOperation.eta;
+  //     if (formattedOperation.eta) {
+  //       formattedOperation.eta = formattedOperation.eta;
+  //     }
+      
+  //     setFormData(formattedOperation);
+      
+  //     // Load containers using the containers API endpoint
+  //     try {
+  //       const containersRes = await clearanceOperationsAPI.getContainers(operation.id);
+  //       if (containersRes.data && containersRes.data.length > 0) {
+  //         const formattedContainers = containersRes.data.map(container => ({
+  //           id: container.id,
+  //           container: container.container_number || '',
+  //           qty: container.quantity || '',
+  //           type: container.container_type || ''
+  //         }));
+  //         setContainers(formattedContainers);
+  //       } else {
+  //         setContainers([{ id: Date.now(), container: "", qty: "", type: "" }]);
+  //       }
+  //     } catch (containerError) {
+  //       console.warn("Could not load containers:", containerError);
+  //       setContainers([{ id: Date.now(), container: "", qty: "", type: "" }]);
+  //     }
+      
+  //     const formattedBills = billsRes.data.map(bill => {
+  //       if (bill.doDate) {
+  //         return { ...bill, doDate: formatDateForInput(bill.doDate) };
+  //       }
+  //       return bill;
+  //     });
+      
+  //     setBills(formattedBills);
+  //     setOriginalBills(billsRes.data);
+  //     setCurrentOperationId(operation.id);
+  //     setIsAdding(true);
+      
+  //     toast.dismiss(loadingToast);
+  //     toast.success("Operation loaded for editing");
+  //   } catch (error) {
+  //     console.error("Error loading operation:", error);
+  //     toast.dismiss(loadingToast);
+  //     toast.error("Failed to load operation for editing");
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
+  // Update handleEdit function
+const handleEdit = async (operation) => {
+  setIsLoading(true);
+  const loadingToast = toast.loading("Loading operation...");
+  
+  try {
+    const opRes = await clearanceOperationsAPI.getById(operation.id);
+    const formattedOperation = { ...opRes.data };
+    
+    // Format dates
+    const dateFields = ['date', 'yard_date', 'bayan_date', 'payment_date', 'end_date', 'release_date'];
+    dateFields.forEach(field => {
+      if (formattedOperation[field]) {
+        formattedOperation[field] = formatDateForInput(formattedOperation[field]);
       }
-      
-      setFormData(formattedOperation);
-      
-      // Format bill dates
-      const formattedBills = billsRes.data.map(bill => {
-        if (bill.doDate) {
-          return { ...bill, doDate: formatDateForInput(bill.doDate) };
-        }
-        return bill;
-      });
-      
-      setBills(formattedBills);
-      setOriginalBills(billsRes.data);
-      setCurrentOperationId(operation.id);
-      setIsAdding(true);
-    } catch (error) {
-      setError('Failed to load operation for editing');
-      setTimeout(() => setError(''), 3000);
-    } finally {
-      setIsLoading(false);
+    });
+    
+    setFormData(formattedOperation);
+    
+    // Fetch containers
+    try {
+      const containersRes = await clearanceOperationsAPI.getContainers(operation.id);
+      const formattedContainers = containersRes.data?.map(container => ({
+        id: container.id,
+        container: container.container_number || '',
+        qty: container.quantity || '',
+        type: container.container_type || ''
+      })) || [];
+      setContainers(formattedContainers.length ? formattedContainers : 
+        [{ id: Date.now(), container: "", qty: "", type: "" }]
+      );
+    } catch (containerError) {
+      console.warn("Error loading containers:", containerError);
+      setContainers([{ id: Date.now(), container: "", qty: "", type: "" }]);
     }
-  };
+    
+    // Fetch bills - handle non-array response
+    let billsData = [];
+    try {
+      const billsRes = await billsAPI.getByOperationId(operation.id);
+      billsData = Array.isArray(billsRes.data) ? billsRes.data : [];
+    } catch (billError) {
+      console.error("Error fetching bills:", billError);
+    }
+    
+    const formattedBills = billsData.map(bill => ({
+      ...bill,
+      doDate: bill.doDate ? formatDateForInput(bill.doDate) : ""
+    }));
+    
+    setBills(formattedBills);
+    setOriginalBills(billsData);
+    setCurrentOperationId(operation.id);
+    setIsAdding(true);
+    
+    toast.dismiss(loadingToast);
+    toast.success("Operation loaded for editing");
+  } catch (error) {
+    console.error("Error loading operation:", error);
+    toast.dismiss(loadingToast);
+    toast.error("Failed to load operation for editing");
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+  // const handleDelete = async (id) => {
+  //   if (window.confirm("Are you sure you want to delete this operation?")) {
+  //     setIsLoading(true);
+  //     const loadingToast = toast.loading("Deleting operation...");
+      
+  //     try {
+  //       const billsRes = await billsAPI.getByOperationId(id);
+  //       for (const bill of billsRes.data) {
+  //         await billsAPI.delete(bill.id);
+  //       }
+  //       await clearanceOperationsAPI.delete(id);
+  //       await fetchOperations();
+        
+  //       toast.dismiss(loadingToast);
+  //       toast.success("Operation deleted successfully");
+  //     } catch (error) {
+  //       console.error("Error deleting operation:", error);
+  //       toast.dismiss(loadingToast);
+  //       toast.error("Failed to delete operation");
+  //     } finally {
+  //       setIsLoading(false);
+  //     }
+  //   }
+  // };
 
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this operation?")) {
       setIsLoading(true);
+      const loadingToast = toast.loading("Deleting operation...");
+      
       try {
-        // Delete associated bills first
-        const billsRes = await billsAPI.getByOperationId(id);
-        for (const bill of billsRes.data) {
+        // Fetch bills safely
+        let billsToDelete = [];
+        try {
+          const billsRes = await billsAPI.getByOperationId(id);
+          // Ensure we have an array
+          billsToDelete = Array.isArray(billsRes.data) ? billsRes.data : [];
+        } catch (error) {
+          console.error("Error fetching bills, proceeding with operation deletion", error);
+        }
+  
+        // Delete associated bills
+        for (const bill of billsToDelete) {
           await billsAPI.delete(bill.id);
         }
         
         // Delete operation
         await clearanceOperationsAPI.delete(id);
-        
-        // Refresh operations list
         await fetchOperations();
-        setSuccessMessage('Operation deleted successfully');
-        setTimeout(() => setSuccessMessage(''), 3000);
+        
+        toast.dismiss(loadingToast);
+        toast.success("Operation deleted successfully");
       } catch (error) {
-        setError('Failed to delete operation');
-        setTimeout(() => setError(''), 3000);
+        console.error("Error deleting operation:", error);
+        toast.dismiss(loadingToast);
+        toast.error("Failed to delete operation");
       } finally {
         setIsLoading(false);
       }
@@ -643,7 +709,6 @@ function ClearanceOperation() {
     setCurrentOperationId(null);
   };
 
-  // Sorting
   const handleSort = (field) => {
     if (sortField === field) setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     else {
@@ -653,7 +718,6 @@ function ClearanceOperation() {
     setCurrentPage(1);
   };
 
-  // Render sort icon
   const renderSortIcon = (field) => {
     if (sortField !== field) return <ChevronDown className="w-3 h-3 text-gray-400 inline" />;
     return sortDirection === 'asc' ?
@@ -661,7 +725,6 @@ function ClearanceOperation() {
       <ChevronDown className="w-3 h-3 text-indigo-600 inline" />;
   };
 
-  // Pagination & sorting for operations
   const sortedOperations = [...operations].sort((a, b) => {
     const aValue = a[sortField] || "";
     const bValue = b[sortField] || "";
@@ -690,7 +753,6 @@ function ClearanceOperation() {
     setCurrentPage(1);
   }, [searchTerm]);
 
-  // Format date for input fields (YYYY-MM-DD)
   const formatDateForInput = (dateString) => {
     if (!dateString) return "";
     try {
@@ -700,10 +762,9 @@ function ClearanceOperation() {
     }
   };
 
-  // Constants
   const containerTypes = ["20GP", "40GP", "40HC", "45HC", "20RF", "40RF"];
   const completedOps = operations.filter((o) => o.status === "Completed").length;
-  const activeOps = operations.filter((o) => o.status === "In Progress").length;
+  const activeOps = operations.filter((o) => o.status === "Active").length;
 
   if (isLoading && operations.length === 0) {
     return (
@@ -719,7 +780,7 @@ function ClearanceOperation() {
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
-        {/* Header - Matching AssignExpenses */}
+        {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-gray-800 flex items-center">
@@ -741,7 +802,7 @@ function ClearanceOperation() {
               className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center shadow-md 
                 ${isAdding 
                   ? 'bg-red-600 hover:bg-red-700 text-white' 
-                  : 'bg-white-600 hover:bg-gray-100 text-indigo-600'}`}
+                  : 'bg-indigo-600 hover:bg-indigo-700 text-white'}`}
             >
               {isAdding ? <X className="w-5 h-5 mr-2" /> : <Plus className="w-5 h-5 mr-2" />}
               {isAdding ? 'Cancel' : 'Add Operation'}
@@ -749,25 +810,7 @@ function ClearanceOperation() {
           </div>
         </div>
 
-        {/* Status Messages */}
-        {error && (
-          <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded">
-            <div className="flex items-center">
-              <Alert className="w-5 h-5 text-red-500 mr-2" />
-              <p className="text-red-700">{error}</p>
-            </div>
-          </div>
-        )}
-        {successMessage && (
-          <div className="bg-green-50 border-l-4 border-green-500 p-4 mb-6 rounded">
-            <div className="flex items-center">
-              <Check className="w-5 h-5 text-green-500 mr-2" />
-              <p className="text-green-700">{successMessage}</p>
-            </div>
-          </div>
-        )}
-
-        {/* Search Section - Matching AssignExpenses */}
+        {/* Search Section */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-visible mb-6">
           <div className="bg-indigo-50 p-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-indigo-700 flex items-center">
@@ -876,15 +919,17 @@ function ClearanceOperation() {
                           Job Number <span className="text-red-500">*</span>
                         </label>
                         <Select
-                              options={jobNumbers} // Directly use jobNumbers as options
-                              value={jobNumbers.find(o => o.value === jobNo)} // Find the selected job number based on jobNo
-                              onChange={opt => setJobNo(opt?.value || '')} // Update jobNo on selection
-                              placeholder="Select Job Number"
-                              isSearchable // Enable search feature
-                              styles={selectStyles} // Assuming `selectStyles` is defined somewhere
-                            />
+                          options={jobNumbers}
+                          value={jobNumbers.find(o => o.value === formData.job_no)}
+                          onChange={opt => handleFormChange('job_no', opt?.value || '')}
+                          placeholder="Select Job Number"
+                          isSearchable
+                          menuPortalTarget={document.body}
+                          menuPosition="fixed"
+                          styles={selectStyles}
+                          className="w-full text-sm"
+                        />
                       </div>
-
                     </div>
                     
                     <div className="space-y-3">
@@ -1247,6 +1292,223 @@ function ClearanceOperation() {
                   </div>
                 </div>
 
+                {/* Bills Information */}
+                <div className="mb-6">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-md font-semibold text-gray-800 border-b border-gray-200 pb-2">
+                      Bills Information
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={addBill}
+                      className="bg-indigo-600 text-white px-3 py-1 rounded-lg text-sm flex items-center gap-1 hover:bg-indigo-700"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Add Bill
+                    </button>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full border border-gray-200 rounded-lg">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Client Ref</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">DO Date</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">DO No</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Endorse No</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Bill No</th>
+                          <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {bills.map((bill, index) => (
+                          <tr key={bill.id || index} className="hover:bg-gray-50">
+                            <td className="px-4 py-3">
+                              <input
+                                type="text"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                                value={bill.clientRef}
+                                onChange={(e) => updateBill(bill.id || index, "clientRef", e.target.value)}
+                              />
+                            </td>
+                            <td className="px-4 py-3">
+                              <input
+                                type="date"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                                value={bill.doDate}
+                                onChange={(e) => updateBill(bill.id || index, "doDate", e.target.value)}
+                              />
+                            </td>
+                            <td className="px-4 py-3">
+                              <input
+                                type="text"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                                value={bill.doNo}
+                                onChange={(e) => updateBill(bill.id || index, "doNo", e.target.value)}
+                              />
+                            </td>
+                            <td className="px-4 py-3">
+                              <input
+                                type="text"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                                value={bill.endorseNo}
+                                onChange={(e) => updateBill(bill.id || index, "endorseNo", e.target.value)}
+                              />
+                            </td>
+                            <td className="px-4 py-3">
+                              <input
+                                type="text"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                                value={bill.billNo}
+                                onChange={(e) => updateBill(bill.id || index, "billNo", e.target.value)}
+                              />
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <button
+                                type="button"
+                                onClick={() => removeBill(bill.id || index)}
+                                className="text-red-600 hover:text-red-900"
+                                title="Remove bill"
+                                disabled={bills.length <= 1}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Additional Information */}
+                <div className="mb-6">
+                  <h3 className="text-md font-semibold text-gray-800 mb-4 border-b border-gray-200 pb-2">
+                    Additional Information
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Date
+                        </label>
+                        <input
+                          type="date"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                          value={formData.date}
+                          onChange={(e) => handleFormChange("date", e.target.value)}
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Yard Date
+                        </label>
+                        <input
+                          type="date"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                          value={formData.yard_date}
+                          onChange={(e) => handleFormChange("yard_date", e.target.value)}
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Bayan Date
+                        </label>
+                        <input
+                          type="date"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                          value={formData.bayan_date}
+                          onChange={(e) => handleFormChange("bayan_date", e.target.value)}
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Payment Date
+                        </label>
+                        <input
+                          type="date"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                          value={formData.payment_date}
+                          onChange={(e) => handleFormChange("payment_date", e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          End Date
+                        </label>
+                        <input
+                          type="date"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                          value={formData.end_date}
+                          onChange={(e) => handleFormChange("end_date", e.target.value)}
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Release Date
+                        </label>
+                        <input
+                          type="date"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                          value={formData.release_date}
+                          onChange={(e) => handleFormChange("release_date", e.target.value)}
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Hijri Date
+                        </label>
+                        <input
+                          type="date"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                          placeholder="Enter hijri date"
+                          value={formData.hijri_date}
+                          onChange={(e) => handleFormChange("hijri_date", e.target.value)}
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Group Name
+                        </label>
+                        <input
+                          type="date"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                          placeholder="Enter group name"
+                          value={formData.group_name}
+                          onChange={(e) => handleFormChange("group_name", e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Notes */}
+                <div className="mb-6">
+                  <h3 className="text-md font-semibold text-gray-800 mb-4 border-b border-gray-200 pb-2">
+                    Notes
+                  </h3>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Additional Notes
+                    </label>
+                    <textarea
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                      rows="4"
+                      placeholder="Enter any additional notes..."
+                      value={formData.notes}
+                      onChange={(e) => handleFormChange("notes", e.target.value)}
+                    />
+                  </div>
+                </div>
+
                 {/* Submit Button */}
                 <div className="flex justify-end">
                   <button
@@ -1261,6 +1523,9 @@ function ClearanceOperation() {
             </div>
           </div>
         )}
+
+          {/* Operations Summary */}
+
 
         {/* Operations Summary */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
@@ -1419,4 +1684,3 @@ function ClearanceOperation() {
 }
 
 export default ClearanceOperation;
-

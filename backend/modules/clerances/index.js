@@ -7,5 +7,8 @@ router.use('/expense', require('./routes/expenseRoutes'));
 router.use('/expense-item', require('./routes/expenseItemRoutes'));
 router.use('/credit-note', require('./routes/creditNoteRoutes'));
 router.use('/profit-report',require('./routes/profitReportRoutes'));
+router.use('/other-charges',require('./routes/otherChargesRoutes'));
+router.use('/delivery-notes',require('./routes/deliveryNoteRoutes'));
+router.use('/receipts',require('./routes/receiptRoutes'));
 
 module.exports = router;
